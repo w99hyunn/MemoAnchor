@@ -1,0 +1,22 @@
+Android Logcat 필터링 방법
+=====================================
+
+빌드 후 Android Studio의 Logcat 창에서 다음 키워드로 필터링:
+
+1. MapListItemUI
+2. MemoLocationUI
+
+찾아야 할 로그:
+-------------------
+[MapListItemUI] SetupChildContainer: ...
+[MapListItemUI] Before - Header siblingIndex: X, ChildContainer siblingIndex: Y
+[MapListItemUI] After - Header siblingIndex: 0, ChildContainer siblingIndex: 1
+
+[MemoLocationUI] SetupChildContainer: ...
+[MemoLocationUI] Before - Header siblingIndex: X, ChildContainer siblingIndex: Y
+[MemoLocationUI] After - Header siblingIndex: 0, ChildContainer siblingIndex: 1
+
+
+이 로그를 복사해서 보내주세요!
+
+siblingIndex가 0, 1이 아니면 Hierarchy 순서가 잘못된 것입니다.
