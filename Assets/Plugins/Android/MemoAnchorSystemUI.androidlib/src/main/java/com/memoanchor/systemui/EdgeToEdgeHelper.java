@@ -4,6 +4,7 @@ import android.os.Build;
 import android.view.View;
 import android.view.Window;
 import android.view.WindowInsets;
+import android.view.WindowInsetsController;
 import android.view.WindowManager;
 
 public final class EdgeToEdgeHelper {
@@ -30,13 +31,21 @@ public final class EdgeToEdgeHelper {
 
         if (sdk >= Build.VERSION_CODES.R) {
             window.setDecorFitsSystemWindows(false);
-            window.getInsetsController().show(
+            WindowInsetsController controller = window.getInsetsController();
+            controller.show(
                     WindowInsets.Type.statusBars() | WindowInsets.Type.navigationBars());
+            // 밝은 배경용: 상태바 시계·아이콘을 어둡게
+            controller.setSystemBarsAppearance(
+                    WindowInsetsController.APPEARANCE_LIGHT_STATUS_BARS,
+                    WindowInsetsController.APPEARANCE_LIGHT_STATUS_BARS);
             decorView.setSystemUiVisibility(visibility);
         } else {
             visibility |= View.SYSTEM_UI_FLAG_LAYOUT_STABLE
                     | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
                     | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION;
+            if (sdk >= Build.VERSION_CODES.M) {
+                visibility |= View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR;
+            }
             decorView.setSystemUiVisibility(visibility);
             window.addFlags(WindowManager.LayoutParams.FLAG_FORCE_NOT_FULLSCREEN);
         }
