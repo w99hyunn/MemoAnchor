@@ -1,0 +1,22 @@
+<ui:UXML xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" noNamespaceSchemaLocation="../../../../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
+    <Style src="project://database/Assets/Plugins/UI%20Toolkit/UnityThemes/style.uss?fileID=7433441132597879392&amp;guid=c3edbd9c191f92b49aa6a3ce9ffd69d5&amp;type=3#style"/>
+    <ui:VisualElement name="bottom-nav-wrapper" class="bottom-nav-wrapper">
+        <ui:VisualElement name="bottom-nav" class="bottom-nav">
+            <ui:Button name="nav-home" class="nav-item is-active">
+                <ui:VisualElement class="nav-icon nav-icon-home"/>
+            </ui:Button>
+            <ui:Button name="nav-menu" class="nav-item">
+                <ui:VisualElement class="nav-icon nav-icon-menu"/>
+            </ui:Button>
+            <ui:Button name="nav-scan" class="nav-item">
+                <ui:VisualElement class="nav-icon nav-icon-scan"/>
+            </ui:Button>
+            <ui:Button name="nav-map" class="nav-item">
+                <ui:VisualElement class="nav-icon nav-icon-map"/>
+            </ui:Button>
+            <ui:Button name="nav-profile" class="nav-item">
+                <ui:VisualElement class="nav-icon nav-icon-profile"/>
+            </ui:Button>
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>

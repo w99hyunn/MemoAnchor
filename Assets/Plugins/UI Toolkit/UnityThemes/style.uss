@@ -1,3 +1,98 @@
 :root {
+    --nav-bg: rgb(30, 30, 34);
+    --nav-icon-inactive: rgb(243, 243, 244);
+    --nav-icon-active: rgb(255, 53, 87);
+}
 
+.main-root {
+    flex-grow: 1;
+    position: relative;
+    background-color: rgb(16, 16, 18);
+}
+
+.content-host {
+    flex-grow: 1;
+    padding-bottom: 220px;
+}
+
+.bottom-nav-wrapper {
+    position: absolute;
+    left: 60px;
+    right: 60px;
+    bottom: 60px;
+    height: 200px;
+    align-items: center;
+    justify-content: center;
+}
+
+.bottom-nav {
+    width: 100%;
+    height: 100%;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-around;
+    background-color: var(--nav-bg);
+    border-radius: 76px;
+    padding-left: 16px;
+    padding-right: 16px;
+    border-top-left-radius: 110px;
+    border-top-right-radius: 110px;
+    border-bottom-right-radius: 110px;
+    border-bottom-left-radius: 110px;
+}
+
+.nav-item {
+    width: 104px;
+    height: 104px;
+    border-left-width: 0;
+    border-right-width: 0;
+    border-top-width: 0;
+    border-bottom-width: 0;
+    border-radius: 52px;
+    background-color: rgba(0, 0, 0, 0);
+    align-items: center;
+    justify-content: center;
+    -unity-font-style: normal;
+    color: rgba(0, 0, 0, 0);
+}
+
+.nav-item:hover {
+    background-color: rgba(255, 255, 255, 0.08);
+}
+
+.nav-item:active {
+    background-color: rgba(255, 255, 255, 0.14);
+}
+
+.nav-icon {
+    width: 48px;
+    height: 48px;
+    background-position: center;
+    background-repeat: no-repeat;
+    background-size: contain;
+    -unity-background-image-tint-color: var(--nav-icon-inactive);
+}
+
+.nav-item.is-active .nav-icon {
+    -unity-background-image-tint-color: var(--nav-icon-active);
+}
+
+.nav-icon-home {
+    background-image: url("project://database/Assets/00_MemoAnchor/03_Images/Icon/home.png?fileID=21300000&guid=fa77001cac75fff498ee0977ec93db22&type=3#home");
+}
+
+.nav-icon-menu {
+    background-image: url("project://database/Assets/00_MemoAnchor/03_Images/Icon/memo_list.png?fileID=21300000&guid=71b687c27d6ed9e459d50d724752da37&type=3#memo_list");
+}
+
+.nav-icon-scan {
+    background-image: url("project://database/Assets/00_MemoAnchor/03_Images/Icon/scan.png?fileID=21300000&guid=ea32a5cc2c56260458012ba9f4ed5518&type=3#scan");
+}
+
+.nav-icon-map {
+    background-image: url("project://database/Assets/00_MemoAnchor/03_Images/Icon/map.png?fileID=21300000&guid=369495be6ce1bdd429d49be8dc257664&type=3#map");
+}
+
+.nav-icon-profile {
+    background-image: url("project://database/Assets/00_MemoAnchor/03_Images/Icon/profile.png?fileID=21300000&guid=5049c0bf482af2549afeca45a3efd61c&type=3#profile");
 }
