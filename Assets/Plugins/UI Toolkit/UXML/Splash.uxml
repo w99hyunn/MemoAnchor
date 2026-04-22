@@ -1,9 +1,6 @@
-<?xml version="1.0" encoding="utf-8"?>
-<ui:UXML
-    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-    xmlns:ui="UnityEngine.UIElements"
-    xmlns:uie="UnityEditor.UIElements"
-    xsi:noNamespaceSchemaLocation="../../../../UIElementsSchema/UIElements.xsd"
->
-    
+<ui:UXML xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" noNamespaceSchemaLocation="../../../../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
+    <Style src="project://database/Assets/Plugins/UI%20Toolkit/UnityThemes/style.uss?fileID=7433441132597879392&amp;guid=c3edbd9c191f92b49aa6a3ce9ffd69d5&amp;type=3#style"/>
+    <ui:VisualElement style="flex-grow: 1; background-image: url(&quot;project://database/Assets/00_MemoAnchor/03_Media/splash.renderTexture?fileID=8400000&amp;guid=6aeed065f9a6439499e0ae2f0ef33895&amp;type=2#splash&quot;); justify-content: center;">
+        <ui:VisualElement style="flex-grow: 1; background-image: url(&quot;project://database/Assets/00_MemoAnchor/03_Media/logo.png?fileID=2800000&amp;guid=a402c67bcb520e24fa718d51047c61ed&amp;type=3#logo&quot;); position: absolute; width: 750px; height: 500px; -unity-background-scale-mode: scale-to-fit; align-self: center;"/>
+    </ui:VisualElement>
 </ui:UXML>

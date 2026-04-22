@@ -21,6 +21,8 @@ MonoBehaviour:
   m_OverrideGlobalSceneList: 1
   m_Scenes:
   - m_enabled: 1
+    m_path: Assets/00_MemoAnchor/01_Scenes/Splash.unity
+  - m_enabled: 1
     m_path: Assets/00_MemoAnchor/01_Scenes/Main.unity
   m_HasScriptingDefines: 0
   m_ScriptingDefines: []
