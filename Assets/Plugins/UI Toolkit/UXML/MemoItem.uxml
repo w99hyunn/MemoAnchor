@@ -3,23 +3,22 @@
     <ui:VisualElement class="memo-card">
         <ui:Label text="1층 화장실 보수 작업" class="memo-title"/>
         <ui:VisualElement class="memo-divider"/>
-
         <ui:VisualElement class="memo-check-row">
             <ui:Label text="손상 부위 철거" class="memo-check-text"/>
-            <ui:VisualElement class="memo-checkbox"/>
+            <ui:Toggle label="" class="memo-check-toggle"/>
         </ui:VisualElement>
         <ui:VisualElement class="memo-check-row">
             <ui:Label text="오염·습기 제거 및 건조" class="memo-check-text"/>
-            <ui:VisualElement class="memo-checkbox memo-checkbox-checked"/>
+            <ui:Toggle label="" value="true" class="memo-check-toggle"/>
         </ui:VisualElement>
         <ui:VisualElement class="memo-check-row">
             <ui:Label text="보수 재료 규격 확인" class="memo-check-text"/>
-            <ui:VisualElement class="memo-checkbox memo-checkbox-checked"/>
+            <ui:Toggle label="" value="true" class="memo-check-toggle"/>
         </ui:VisualElement>
-
-        <ui:VisualElement class="memo-footer">
-            <ui:Label text="수리자 김수리" class="memo-footer-text"/>
-            <ui:Label text="자동등 14번지" class="memo-footer-text"/>
+        <ui:VisualElement name="" class="memo-footer">
+            <ui:Label text="수리자&#10;" class="memo-footer-text" style="margin-right: 10px;"/>
+            <ui:Label text="김수리" class="memo-footer-text" style="-unity-font-definition: url(&quot;project://database/Assets/Plugins/UI%20Toolkit/Fonts/Pretendard-Medium.ttf?fileID=12800000&amp;guid=45ed9c45b09f5f2498d91e1982ab7527&amp;type=3#Pretendard-Medium&quot;); margin-right: 50px;"/>
+            <ui:Label text="자양동 14번지" class="memo-footer-text"/>
             <ui:Label text="~ 01/17" class="memo-footer-text memo-footer-date"/>
         </ui:VisualElement>
     </ui:VisualElement>

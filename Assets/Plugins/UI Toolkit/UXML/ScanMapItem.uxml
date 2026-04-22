@@ -1,0 +1,10 @@
+<ui:UXML xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" noNamespaceSchemaLocation="../../../../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
+    <Style src="project://database/Assets/Plugins/UI%20Toolkit/UnityThemes/style.uss?fileID=7433441132597879392&amp;guid=c3edbd9c191f92b49aa6a3ce9ffd69d5&amp;type=3#style"/>
+    <ui:VisualElement class="scan-map-card">
+        <ui:VisualElement class="scan-map-thumbnail"/>
+        <ui:VisualElement class="scan-map-info">
+            <ui:Label text="화장실" class="scan-map-title"/>
+            <ui:Label text="강남구 루카831 3층" class="scan-map-subtitle"/>
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>

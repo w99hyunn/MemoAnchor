@@ -14,7 +14,7 @@ namespace MemoAnchor
         private void Awake()
         {
             TryGetComponent<FadeTransition>(out fadeTransition);
-
+            ConfigureFrameRate();
         }
 
         private void Start()
@@ -36,6 +36,14 @@ namespace MemoAnchor
 
             await fadeTransition.FadeOutAsync();
             loadOperation.allowSceneActivation = true;
+        }
+
+        private static void ConfigureFrameRate()
+        {
+            // Let mobile use the device refresh rate instead of default low-power cap.
+            QualitySettings.vSyncCount = 0;
+            int refreshRate = Mathf.RoundToInt((float)Screen.currentResolution.refreshRateRatio.value);
+            Application.targetFrameRate = refreshRate > 0 ? refreshRate : 60;
         }
     }
 }
