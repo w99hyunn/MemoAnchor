@@ -1,8 +1,43 @@
 <ui:UXML xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" noNamespaceSchemaLocation="../../../../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
     <ui:Template name="BottomNav" src="project://database/Assets/Plugins/UI%20Toolkit/UXML/BottomNav.uxml?fileID=9197481963319205126&amp;guid=237b5a5350e587b40b933da76064788b&amp;type=3#BottomNav"/>
+    <ui:Template name="MemoItem" src="project://database/Assets/Plugins/UI%20Toolkit/UXML/MemoItem.uxml?fileID=9197481963319205126&amp;guid=25071315ed99feb41aa0d3bb9bcc60cf&amp;type=3#MemoItem"/>
     <Style src="project://database/Assets/Plugins/UI%20Toolkit/UnityThemes/style.uss?fileID=7433441132597879392&amp;guid=c3edbd9c191f92b49aa6a3ce9ffd69d5&amp;type=3#style"/>
     <ui:VisualElement name="main-root" class="main-root">
-        <ui:VisualElement name="content-host" class="content-host" style="background-color: rgb(255, 255, 255);"/>
+        <ui:VisualElement name="content-host" class="content-host" style="background-color: rgb(255, 255, 255);">
+            <ui:VisualElement name="tab-home" class="tab-page is-visible">
+                <ui:VisualElement class="home-header" style="align-items: center;">
+                    <ui:Label text="관리자님, 안녕하세요!" class="home-greeting"/>
+                    <ui:Button text="" class="home-alert-button"/>
+                </ui:VisualElement>
+                <ui:VisualElement name="d123" class="memo-section" style="flex-grow: 0;">
+                    <ui:VisualElement class="memo-section-content" style="flex-grow: 0;">
+                        <ui:VisualElement class="memo-section-header">
+                            <ui:Label text="최근 남겨진 메모" class="memo-section-title"/>
+                            <ui:Button text="전체 보기" class="memo-section-more"/>
+                        </ui:VisualElement>
+                        <ui:ScrollView name="memo-scroll" mode="Horizontal" horizontal-scroller-visibility="Hidden" vertical-scroller-visibility="Hidden" class="memo-scroll" style="flex-grow: 0;">
+                            <ui:VisualElement class="memo-scroll-content">
+                                <ui:Instance template="MemoItem"/>
+                                <ui:Instance template="MemoItem"/>
+                                <ui:Instance template="MemoItem"/>
+                            </ui:VisualElement>
+                        </ui:ScrollView>
+                    </ui:VisualElement>
+                </ui:VisualElement>
+            </ui:VisualElement>
+            <ui:VisualElement name="tab-menu" class="tab-page">
+                <ui:Label text="메모 목록" style="font-size: 52px; -unity-font-definition: url(&quot;project://database/Assets/Plugins/UI%20Toolkit/Fonts/Pretendard-Medium.ttf?fileID=12800000&amp;guid=45ed9c45b09f5f2498d91e1982ab7527&amp;type=3#Pretendard-Medium&quot;);"/>
+            </ui:VisualElement>
+            <ui:VisualElement name="tab-scan" class="tab-page">
+                <ui:Label text="스캔" style="font-size: 52px; -unity-font-definition: url(&quot;project://database/Assets/Plugins/UI%20Toolkit/Fonts/Pretendard-Medium.ttf?fileID=12800000&amp;guid=45ed9c45b09f5f2498d91e1982ab7527&amp;type=3#Pretendard-Medium&quot;);"/>
+            </ui:VisualElement>
+            <ui:VisualElement name="tab-map" class="tab-page">
+                <ui:Label text="지도" style="font-size: 52px; -unity-font-definition: url(&quot;project://database/Assets/Plugins/UI%20Toolkit/Fonts/Pretendard-Medium.ttf?fileID=12800000&amp;guid=45ed9c45b09f5f2498d91e1982ab7527&amp;type=3#Pretendard-Medium&quot;);"/>
+            </ui:VisualElement>
+            <ui:VisualElement name="tab-profile" class="tab-page">
+                <ui:Label text="프로필" style="font-size: 52px; -unity-font-definition: url(&quot;project://database/Assets/Plugins/UI%20Toolkit/Fonts/Pretendard-Medium.ttf?fileID=12800000&amp;guid=45ed9c45b09f5f2498d91e1982ab7527&amp;type=3#Pretendard-Medium&quot;);"/>
+            </ui:VisualElement>
+        </ui:VisualElement>
         <ui:Instance template="BottomNav"/>
     </ui:VisualElement>
 </ui:UXML>

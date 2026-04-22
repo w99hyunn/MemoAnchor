@@ -1,0 +1,26 @@
+<ui:UXML xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" noNamespaceSchemaLocation="../../../../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
+    <Style src="project://database/Assets/Plugins/UI%20Toolkit/UnityThemes/style.uss?fileID=7433441132597879392&amp;guid=c3edbd9c191f92b49aa6a3ce9ffd69d5&amp;type=3#style"/>
+    <ui:VisualElement class="memo-card">
+        <ui:Label text="1층 화장실 보수 작업" class="memo-title"/>
+        <ui:VisualElement class="memo-divider"/>
+
+        <ui:VisualElement class="memo-check-row">
+            <ui:Label text="손상 부위 철거" class="memo-check-text"/>
+            <ui:VisualElement class="memo-checkbox"/>
+        </ui:VisualElement>
+        <ui:VisualElement class="memo-check-row">
+            <ui:Label text="오염·습기 제거 및 건조" class="memo-check-text"/>
+            <ui:VisualElement class="memo-checkbox memo-checkbox-checked"/>
+        </ui:VisualElement>
+        <ui:VisualElement class="memo-check-row">
+            <ui:Label text="보수 재료 규격 확인" class="memo-check-text"/>
+            <ui:VisualElement class="memo-checkbox memo-checkbox-checked"/>
+        </ui:VisualElement>
+
+        <ui:VisualElement class="memo-footer">
+            <ui:Label text="수리자 김수리" class="memo-footer-text"/>
+            <ui:Label text="자동등 14번지" class="memo-footer-text"/>
+            <ui:Label text="~ 01/17" class="memo-footer-text memo-footer-date"/>
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>

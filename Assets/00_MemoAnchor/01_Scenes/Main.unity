@@ -267,6 +267,7 @@ GameObject:
   - component: {fileID: 1996884577}
   - component: {fileID: 1996884576}
   - component: {fileID: 1996884578}
+  - component: {fileID: 1996884579}
   m_Layer: 5
   m_Name: UIDocument
   m_TagString: Untagged
@@ -324,6 +325,18 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f2c4cce10371e114b9a12057390a1d5b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::MemoAnchor.UI.FadeTransition
+--- !u!114 &1996884579
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1996884575}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: afa409d017c1eca4cb5d2d00d7fd5e0b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::MemoAnchor.UI.MainTabController
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0
