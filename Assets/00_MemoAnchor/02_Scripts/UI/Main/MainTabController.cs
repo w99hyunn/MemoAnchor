@@ -25,7 +25,7 @@ namespace MemoAnchor.UI
             _view.MapButton.clicked += OnClickMap;
             _view.ProfileButton.clicked += OnClickProfile;
             _view.TabViewport.RegisterCallback<GeometryChangedEvent>(OnViewportGeometryChanged);
-            ShowTab("home");
+            ShowTab(0);
         }
 
         private void OnDisable()
@@ -41,44 +41,36 @@ namespace MemoAnchor.UI
         private void OnClickHome()
         {
             PlayNavTapAnimation(_view.HomeButton);
-            ShowTab("home");
+            ShowTab(0);
         }
 
         private void OnClickMenu()
         {
             PlayNavTapAnimation(_view.MenuButton);
-            ShowTab("menu");
+            ShowTab(1);
         }
 
         private void OnClickScan()
         {
             PlayNavTapAnimation(_view.ScanButton);
-            ShowTab("scan");
+            ShowTab(2);
         }
 
         private void OnClickMap()
         {
             PlayNavTapAnimation(_view.MapButton);
-            ShowTab("map");
+            ShowTab(3);
         }
 
         private void OnClickProfile()
         {
             PlayNavTapAnimation(_view.ProfileButton);
-            ShowTab("profile");
+            ShowTab(4);
         }
 
-        private void ShowTab(string tab)
+        private void ShowTab(int tabIndex)
         {
-            _currentTabIndex = tab switch
-            {
-                "home" => 0,
-                "menu" => 1,
-                "scan" => 2,
-                "map" => 3,
-                "profile" => 4,
-                _ => 0
-            };
+            _currentTabIndex = Mathf.Clamp(tabIndex, 0, 4);
 
             SetState(_view.HomeButton, _currentTabIndex == 0);
             SetState(_view.MenuButton, _currentTabIndex == 1);

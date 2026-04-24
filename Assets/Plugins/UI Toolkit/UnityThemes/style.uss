@@ -40,6 +40,7 @@
     transition-property: left;
     transition-duration: 0.22s;
     transition-timing-function: ease-out;
+    width: 500%;
 }
 
 .tab-page {
@@ -57,7 +58,7 @@
     min-height: 0;
     padding-right: 50px;
     padding-left: 50px;
-    padding-top: 150px;
+    padding-top: 175px;
     padding-bottom: 0;
 }
 
