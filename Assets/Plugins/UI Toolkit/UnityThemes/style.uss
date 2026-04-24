@@ -788,11 +788,11 @@
     bottom: 0;
     justify-content: flex-end;
     background-color: rgba(0, 0, 0, 0.6);
-    padding-left: 50px;
-    padding-right: 50px;
-    padding-bottom: 50px;
+    padding-left: 40px;
+    padding-right: 40px;
+    padding-bottom: 40px;
     visibility: visible;
-    padding-top: 50px;
+    padding-top: 40px;
     opacity: 0;
     transition-property: opacity;
     transition-duration: 0.24s;
@@ -876,8 +876,7 @@
     background-color: rgb(228, 233, 241);
 }
 
-.scan-action-list-item:hover:enabled,
-.scan-action-list-item:focus:enabled {
+.scan-action-list-item:hover:enabled {
     background-color: rgb(237, 240, 245);
 }
 
