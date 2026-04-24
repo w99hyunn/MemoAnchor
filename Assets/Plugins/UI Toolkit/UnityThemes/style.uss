@@ -8,6 +8,7 @@
     padding: 0;
     margin: 0;
     -unity-font-definition: url("project://database/Assets/Plugins/UI%20Toolkit/Fonts/Pretendard-Regular.ttf?fileID=12800000&guid=c19593ccf51a3b643a58d19da7851c10&type=3#Pretendard-Regular");
+    color: rgb(28, 28, 28);
 }
 
 .unity-button {
@@ -25,25 +26,89 @@
     background-color: rgb(255, 255, 255);
 }
 
-.main-scroll {
+.tab-viewport {
     flex-grow: 1;
+    min-height: 0;
+    overflow: hidden;
 }
 
-.content-host {
-    flex-grow: 0;
-    padding-right: 50px;
-    padding-left: 50px;
-    padding-top: 150px;
-    padding-bottom: 320px;
+.tab-strip {
+    flex-direction: row;
+    position: relative;
+    left: 0;
+    height: 100%;
+    transition-property: left;
+    transition-duration: 0.22s;
+    transition-timing-function: ease-out;
 }
 
 .tab-page {
-    flex-grow: 1;
-    display: none;
+    width: 100%;
+    height: 100%;
+    flex-shrink: 0;
+    flex-grow: 0;
+    min-height: 0;
+    display: flex;
 }
 
-.tab-page.is-visible {
-    display: flex;
+.tab-page-layout {
+    height: 100%;
+    flex-direction: column;
+    min-height: 0;
+    padding-right: 50px;
+    padding-left: 50px;
+    padding-top: 150px;
+    padding-bottom: 0;
+}
+
+.tab-fixed-header {
+    flex-grow: 0;
+    flex-shrink: 0;
+}
+
+.tab-content-scroll {
+    flex-grow: 1;
+    height: 100%;
+    min-height: 0;
+}
+
+.tab-content-scroll .unity-scroll-view__content-container {
+    align-items: stretch;
+}
+
+.tab-content-inner {
+    flex-grow: 0;
+    padding-bottom: 300px;
+}
+
+#home-content-scroll {
+    margin-left: -50px;
+    margin-right: -50px;
+}
+
+#home-content-scroll .unity-scroll-view__content-container {
+    padding-left: 0;
+    padding-right: 0;
+}
+
+#home-content-scroll .memo-section {
+    margin-left: 0;
+    margin-right: 0;
+}
+
+#memo-content-scroll {
+    margin-left: -50px;
+    margin-right: -50px;
+}
+
+#memo-content-scroll .unity-scroll-view__content-container {
+    padding-left: 0;
+    padding-right: 0;
+}
+
+#memo-content-scroll .memo-section {
+    margin-left: 0;
+    margin-right: 0;
 }
 
 .home-header {
@@ -58,12 +123,13 @@
     -unity-font-definition: url("project://database/Assets/Plugins/UI%20Toolkit/Fonts/Pretendard-Medium.ttf?fileID=12800000&guid=45ed9c45b09f5f2498d91e1982ab7527&type=3#Pretendard-Medium");
 }
 
-.home-alert-button {
+.home-right-icon-button {
     width: 65px;
     height: 65px;
     background-image: url("project://database/Assets/00_MemoAnchor/03_Media/Icon/alert.png?fileID=2800000&guid=a8ce16252c0ae1d46840a9dfaf22b609&type=3#alert");
-    -unity-background-image-tint-color: rgb(0, 0, 0);
+    -unity-background-image-tint-color: rgb(28, 28, 28);
     -unity-background-scale-mode: scale-to-fit;
+    margin-left: 30px;
 }
 
 .memo-section {
@@ -440,4 +506,99 @@
     right: 0;
     bottom: 0;
     background-color: rgb(0, 0, 0);
+}
+
+.memo-search-input {
+    font-size: 50px;
+    -unity-font-definition: url("project://database/Assets/Plugins/UI%20Toolkit/Fonts/Pretendard-Regular.ttf?fileID=12800000&guid=c19593ccf51a3b643a58d19da7851c10&type=3#Pretendard-Regular");
+    background-color: rgba(255, 255, 255, 0);
+    height: 95px;
+    margin-top: 0;
+    margin-right: 0;
+    margin-bottom: 0;
+    margin-left: 0;
+    color: rgb(255, 255, 255);
+}
+
+.memo-search-input .unity-base-text-field__input {
+    background-color: transparent;
+    border-radius: 45px;
+    padding-left: 120px;
+    border-color: rgb(178, 178, 178);
+}
+
+.unity-base-text-field__input {
+    color: rgb(255, 255, 255);
+}
+
+.unity-base-text-field__input--placeholder {
+    color: rgb(88, 88, 88);
+}
+
+.memo-list-container {
+    margin-top: 0;
+    padding-top: 0;
+    padding-right: 0;
+    padding-left: 0;
+    margin-right: 0;
+    margin-bottom: 0;
+    margin-left: 0;
+    padding-bottom: 0;
+}
+
+.memo-list-scroll {
+    flex-grow: 1;
+    min-height: 0;
+    margin-top: 8px;
+}
+
+.memo-list-item {
+    height: 350px;
+    flex-direction: row;
+    align-items: center;
+    padding-left: 75px;
+    padding-right: 75px;
+    background-color: rgb(255, 255, 255);
+    padding-top: 75px;
+    padding-bottom: 75px;
+}
+
+.memo-list-item-icon {
+    width: 50px;
+    height: 50px;
+    margin-right: 20px;
+    background-image: url("project://database/Assets/00_MemoAnchor/03_Media/Icon/memo-list/gallery.png?fileID=2800000&guid=805e5b39866ef38418d58c22145056e8&type=3#gallery");
+    -unity-background-scale-mode: scale-to-fit;
+}
+
+.memo-list-item-body {
+    flex-grow: 1;
+    min-width: 0;
+    height: 100%;
+}
+
+.memo-list-item-title {
+    font-size: 50px;
+    color: rgb(22, 22, 22);
+    -unity-font-definition: url("project://database/Assets/Plugins/UI%20Toolkit/Fonts/Pretendard-SemiBold.ttf?fileID=12800000&guid=7136488b0fb8f924b91754e33f3b5abc&type=3#Pretendard-SemiBold");
+}
+
+.memo-list-item-meta-row {
+    flex-direction: row;
+    margin-top: 10px;
+    margin-left: 70px;
+}
+
+.memo-list-item-meta {
+    margin-right: 22px;
+    font-size: 40px;
+    color: rgb(156, 156, 156);
+}
+
+.memo-list-item-dot {
+    width: 22px;
+    height: 22px;
+    margin-left: 12px;
+    border-radius: 11px;
+    background-color: rgb(236, 60, 85);
 }

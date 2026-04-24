@@ -10,6 +10,7 @@ namespace MemoAnchor.UI
         private const int NavTapDownDurationMs = 105;
 
         private MainTabView _view;
+        private int _currentTabIndex;
 
         private void Awake()
         {
@@ -23,6 +24,7 @@ namespace MemoAnchor.UI
             _view.ScanButton.clicked += OnClickScan;
             _view.MapButton.clicked += OnClickMap;
             _view.ProfileButton.clicked += OnClickProfile;
+            _view.TabViewport.RegisterCallback<GeometryChangedEvent>(OnViewportGeometryChanged);
             ShowTab("home");
         }
 
@@ -33,6 +35,7 @@ namespace MemoAnchor.UI
             _view.ScanButton.clicked -= OnClickScan;
             _view.MapButton.clicked -= OnClickMap;
             _view.ProfileButton.clicked -= OnClickProfile;
+            _view.TabViewport.UnregisterCallback<GeometryChangedEvent>(OnViewportGeometryChanged);
         }
 
         private void OnClickHome()
@@ -67,17 +70,44 @@ namespace MemoAnchor.UI
 
         private void ShowTab(string tab)
         {
-            SetState(_view.HomeButton, _view.HomeTab, tab == "home");
-            SetState(_view.MenuButton, _view.MenuTab, tab == "menu");
-            SetState(_view.ScanButton, _view.ScanTab, tab == "scan");
-            SetState(_view.MapButton, _view.MapTab, tab == "map");
-            SetState(_view.ProfileButton, _view.ProfileTab, tab == "profile");
+            _currentTabIndex = tab switch
+            {
+                "home" => 0,
+                "menu" => 1,
+                "scan" => 2,
+                "map" => 3,
+                "profile" => 4,
+                _ => 0
+            };
+
+            SetState(_view.HomeButton, _currentTabIndex == 0);
+            SetState(_view.MenuButton, _currentTabIndex == 1);
+            SetState(_view.ScanButton, _currentTabIndex == 2);
+            SetState(_view.MapButton, _currentTabIndex == 3);
+            SetState(_view.ProfileButton, _currentTabIndex == 4);
+            UpdateTabStripOffset();
         }
 
-        private static void SetState(Button button, VisualElement page, bool active)
+        private static void SetState(Button button, bool active)
         {
             button.EnableInClassList("is-active", active);
-            page.EnableInClassList("is-visible", active);
+        }
+
+        private void OnViewportGeometryChanged(GeometryChangedEvent _)
+        {
+            UpdateTabStripOffset();
+        }
+
+        private void UpdateTabStripOffset()
+        {
+            float width = _view.TabViewport.resolvedStyle.width;
+            if (width <= 0f)
+            {
+                return;
+            }
+
+            _view.SetTabPageWidth(width);
+            _view.SetTabStripOffset(-_currentTabIndex * width);
         }
 
         private static void PlayNavTapAnimation(Button button)

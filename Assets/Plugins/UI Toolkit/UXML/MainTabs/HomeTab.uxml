@@ -1,0 +1,43 @@
+<ui:UXML xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" noNamespaceSchemaLocation="../../../../../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
+    <ui:Template name="MemoItem" src="project://database/Assets/Plugins/UI%20Toolkit/UXML/DynamicItems/MemoItem.uxml?fileID=9197481963319205126&amp;guid=25071315ed99feb41aa0d3bb9bcc60cf&amp;type=3#MemoItem"/>
+    <ui:Template name="ScanMapItem" src="project://database/Assets/Plugins/UI%20Toolkit/UXML/DynamicItems/ScanMapItem.uxml?fileID=9197481963319205126&amp;guid=d4b216a9f54568546832867b7a98c94b&amp;type=3#ScanMapItem"/>
+    <Style src="project://database/Assets/Plugins/UI%20Toolkit/UnityThemes/style.uss?fileID=7433441132597879392&amp;guid=c3edbd9c191f92b49aa6a3ce9ffd69d5&amp;type=3#style"/>
+    <ui:VisualElement name="tab-home" class="tab-page tab-page-layout is-visible">
+        <ui:VisualElement class="home-header tab-fixed-header" style="align-items: center;">
+            <ui:Label text="관리자님, 안녕하세요!" class="home-greeting"/>
+            <ui:Button text="" class="home-right-icon-button"/>
+        </ui:VisualElement>
+        <ui:ScrollView name="home-content-scroll" mode="Vertical" horizontal-scroller-visibility="Hidden" vertical-scroller-visibility="Hidden" touch-scroll-type="Elastic" class="tab-content-scroll">
+            <ui:VisualElement class="tab-content-inner">
+                <ui:VisualElement class="memo-section" style="flex-grow: 0; margin-bottom: 50px;">
+                    <ui:VisualElement class="memo-section-content" style="flex-grow: 0;">
+                        <ui:VisualElement class="memo-section-header">
+                            <ui:Label text="최근 남겨진 메모" class="memo-section-title" style="color: rgb(255, 255, 255);"/>
+                            <ui:Button text="전체 보기" class="memo-section-more"/>
+                        </ui:VisualElement>
+                        <ui:ScrollView name="memo-scroll" mode="Horizontal" horizontal-scroller-visibility="Hidden" vertical-scroller-visibility="Hidden" touch-scroll-type="Elastic" class="memo-scroll" style="flex-grow: 0;">
+                            <ui:VisualElement class="memo-scroll-content">
+                                <ui:Instance template="MemoItem"/>
+                                <ui:Instance template="MemoItem"/>
+                                <ui:Instance template="MemoItem"/>
+                            </ui:VisualElement>
+                        </ui:ScrollView>
+                    </ui:VisualElement>
+                </ui:VisualElement>
+                <ui:VisualElement class="memo-section" style="flex-grow: 0; margin-bottom: 50px; background-color: rgb(255, 255, 255);">
+                    <ui:VisualElement class="memo-section-content" style="flex-grow: 0;">
+                        <ui:VisualElement class="memo-section-header">
+                            <ui:Label text="스캔 완료된 맵" class="memo-section-title"/>
+                        </ui:VisualElement>
+                        <ui:ScrollView name="scan-map-scroll" mode="Horizontal" horizontal-scroller-visibility="Hidden" vertical-scroller-visibility="Hidden" touch-scroll-type="Elastic" class="memo-scroll" style="flex-grow: 0; height: 900px;">
+                            <ui:VisualElement class="scan-map-scroll-content">
+                                <ui:Instance template="ScanMapItem"/>
+                                <ui:Instance template="ScanMapItem"/>
+                            </ui:VisualElement>
+                        </ui:ScrollView>
+                    </ui:VisualElement>
+                </ui:VisualElement>
+            </ui:VisualElement>
+        </ui:ScrollView>
+    </ui:VisualElement>
+</ui:UXML>

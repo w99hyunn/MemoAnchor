@@ -1,0 +1,23 @@
+<ui:UXML xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" noNamespaceSchemaLocation="../../../../../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
+    <Style src="project://database/Assets/Plugins/UI%20Toolkit/UnityThemes/style.uss?fileID=7433441132597879392&amp;guid=c3edbd9c191f92b49aa6a3ce9ffd69d5&amp;type=3#style"/>
+    <ui:VisualElement class="memo-list-item" style="justify-content: center;">
+        <ui:VisualElement class="memo-list-item-body">
+            <ui:VisualElement style="flex-grow: 1; flex-direction: row; align-items: center; margin-bottom: 50px;">
+                <ui:VisualElement style="flex-grow: 1; flex-direction: row; align-items: center;">
+                    <ui:VisualElement class="memo-list-item-icon"/>
+                    <ui:Label text="천장 배관 확인 요망" class="memo-list-item-title" style="-unity-text-align: middle-left;"/>
+                </ui:VisualElement>
+                <ui:VisualElement class="memo-list-item-dot"/>
+            </ui:VisualElement>
+            <ui:VisualElement class="memo-list-item-meta-row">
+                <ui:Label text="엑스알동 - 1층 - 화장실" class="memo-list-item-meta"/>
+                <ui:Label text="" class="memo-list-item-meta"/>
+            </ui:VisualElement>
+            <ui:VisualElement class="memo-list-item-meta-row">
+                <ui:Label text="마감 10일 전" class="memo-list-item-meta"/>
+                <ui:Label text="대상자 전예슬" class="memo-list-item-meta"/>
+            </ui:VisualElement>
+        </ui:VisualElement>
+    </ui:VisualElement>
+    <ui:VisualElement name="" style="flex-grow: 0; background-color: rgb(224, 230, 236); position: relative; height: 2px;"/>
+</ui:UXML>

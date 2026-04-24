@@ -1,0 +1,33 @@
+<ui:UXML xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" noNamespaceSchemaLocation="../../../../../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
+    <ui:Template name="MemoListItem" src="project://database/Assets/Plugins/UI%20Toolkit/UXML/DynamicItems/MemoListItem.uxml?fileID=9197481963319205126&amp;guid=fd34d1f1c1b6ecd4287e00e18419777e&amp;type=3#MemoListItem"/>
+    <Style src="project://database/Assets/Plugins/UI%20Toolkit/UnityThemes/style.uss?fileID=7433441132597879392&amp;guid=c3edbd9c191f92b49aa6a3ce9ffd69d5&amp;type=3#style"/>
+    <ui:VisualElement name="tab-menu" class="tab-page tab-page-layout">
+        <ui:VisualElement class="home-header tab-fixed-header" style="align-items: center;">
+            <ui:Label text="메모 모음 목록" class="home-greeting"/>
+            <ui:VisualElement style="flex-grow: 0; flex-direction: row;">
+                <ui:Button text="" class="home-right-icon-button" style="background-image: url(&quot;project://database/Assets/00_MemoAnchor/03_Media/Icon/trash.png?fileID=2800000&amp;guid=c2fd465122bc15242b8cf6da00d7bbb1&amp;type=3#trash&quot;);"/>
+                <ui:Button text="" class="home-right-icon-button" style="background-image: url(&quot;project://database/Assets/00_MemoAnchor/03_Media/Icon/filter.png?fileID=2800000&amp;guid=e72bd049f96e09a46a5f4816cd8c55cc&amp;type=3#filter&quot;);"/>
+            </ui:VisualElement>
+        </ui:VisualElement>
+        <ui:VisualElement class="memo-section" style="flex-grow: 0; padding-top: 25px; padding-bottom: 25px;">
+            <ui:VisualElement class="memo-section-content" style="flex-grow: 0; padding-right: 50px; padding-left: 50px;">
+                <ui:TextField label="" placeholder-text="메모 검색..." class="memo-search-input" style="align-items: center; -unity-font-definition: url(&quot;project://database/Assets/Plugins/UI%20Toolkit/Fonts/Pretendard-Light.ttf?fileID=12800000&amp;guid=8c634880071f83d4da7be3c9ff6f0be8&amp;type=3#Pretendard-Light&quot;);">
+                    <ui:VisualElement style="flex-grow: 1; position: absolute; width: 35px; height: 35px; background-image: url(&quot;project://database/Assets/00_MemoAnchor/03_Media/Icon/search.png?fileID=2800000&amp;guid=273a16649170cad4087f1c15c86ae7ea&amp;type=3#search&quot;); margin-left: 50px;"/>
+                </ui:TextField>
+            </ui:VisualElement>
+        </ui:VisualElement>
+        <ui:ScrollView name="memo-content-scroll" mode="Vertical" horizontal-scroller-visibility="Hidden" vertical-scroller-visibility="Hidden" touch-scroll-type="Elastic" class="tab-content-scroll">
+            <ui:VisualElement class="tab-content-inner">
+                <ui:VisualElement class="memo-list-container">
+                    <ui:Instance template="MemoListItem"/>
+                    <ui:Instance template="MemoListItem"/>
+                    <ui:Instance template="MemoListItem"/>
+                    <ui:Instance template="MemoListItem"/>
+                    <ui:Instance template="MemoListItem"/>
+                    <ui:Instance template="MemoListItem"/>
+                    <ui:Instance template="MemoListItem" name=""/>
+                </ui:VisualElement>
+            </ui:VisualElement>
+        </ui:ScrollView>
+    </ui:VisualElement>
+</ui:UXML>
