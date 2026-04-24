@@ -155,8 +155,8 @@ Camera:
   m_GameObject: {fileID: 847410148}
   m_Enabled: 1
   serializedVersion: 2
-  m_ClearFlags: 1
-  m_BackGroundColor: {r: 0.19215687, g: 0.3019608, b: 0.4745098, a: 0}
+  m_ClearFlags: 2
+  m_BackGroundColor: {r: 0, g: 0, b: 0, a: 0}
   m_projectionMatrixMode: 1
   m_GateFitMode: 2
   m_FOVAxisMode: 0
@@ -350,6 +350,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7ad7983a77196a844b61d2f6d54f2a41, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::MemoAnchor.UI.MainTabView
+  _scanActionDialogAsset: {fileID: 9197481963319205126, guid: c089c196f57e6c34e9cca09e94a770fd, type: 3}
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0

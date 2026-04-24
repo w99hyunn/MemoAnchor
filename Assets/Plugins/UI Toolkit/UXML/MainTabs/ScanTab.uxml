@@ -1,6 +1,39 @@
 <ui:UXML xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" noNamespaceSchemaLocation="../../../../../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
     <Style src="project://database/Assets/Plugins/UI%20Toolkit/UnityThemes/style.uss?fileID=7433441132597879392&amp;guid=c3edbd9c191f92b49aa6a3ce9ffd69d5&amp;type=3#style"/>
-    <ui:VisualElement name="tab-scan" class="tab-page">
-        <ui:Label text="스캔" style="font-size: 52px; -unity-font-definition: url(&quot;project://database/Assets/Plugins/UI%20Toolkit/Fonts/Pretendard-Medium.ttf?fileID=12800000&amp;guid=45ed9c45b09f5f2498d91e1982ab7527&amp;type=3#Pretendard-Medium&quot;);"/>
+    <ui:VisualElement name="tab-scan" class="tab-page tab-page-layout">
+        <ui:VisualElement class="home-header tab-fixed-header">
+            <ui:Label text="새로운 공간 스캔" class="home-greeting"/>
+        </ui:VisualElement>
+        <ui:ScrollView name="scan-content-scroll" mode="Vertical" horizontal-scroller-visibility="Hidden" vertical-scroller-visibility="Hidden" touch-scroll-type="Elastic" class="tab-content-scroll" style="padding-right: 50px; padding-left: 50px;">
+            <ui:VisualElement class="tab-content-inner">
+                <ui:Label text="①  스캔 전 설정" class="scan-step-title"/>
+                <ui:VisualElement class="scan-field-group">
+                    <ui:Label text="공간명" class="scan-field-label"/>
+                    <ui:VisualElement class="scan-input-box">
+                        <ui:TextField name="scan-space-name-field" label="" placeholder-text="ex. 화장실" class="scan-input-field"/>
+                    </ui:VisualElement>
+                </ui:VisualElement>
+                <ui:VisualElement class="scan-field-group">
+                    <ui:Label text="주소 선택" class="scan-field-label"/>
+                    <ui:VisualElement class="scan-input-box">
+                        <ui:TextField name="scan-address-field" label="" placeholder-text="속해있는 건물 주소를 선택해주세요." class="scan-input-field scan-input-field-select"/>
+                    </ui:VisualElement>
+                </ui:VisualElement>
+                <ui:VisualElement class="scan-field-group">
+                    <ui:Label text="수리자 참여코드 (6자리)" class="scan-field-label"/>
+                    <ui:VisualElement class="scan-input-box">
+                        <ui:TextField name="scan-participation-code-field" label="" placeholder-text="영어, 숫자 포함 6자리" class="scan-input-field"/>
+                    </ui:VisualElement>
+                </ui:VisualElement>
+                <ui:VisualElement class="scan-field-group">
+                    <ui:Label text="수리자 초대하기" class="scan-field-label"/>
+                    <ui:VisualElement class="scan-input-box scan-input-row">
+                        <ui:TextField name="scan-invite-field" label="" placeholder-text="수리자에게 참여코드가 발송됩니다." class="scan-input-field"/>
+                    </ui:VisualElement>
+                </ui:VisualElement>
+                <ui:Label text="②  스캔하기" class="scan-step-title" style="margin-top: 100px;"/>
+                <ui:Label text="스캔할 장소로 이동 후 ‘스캔 시작’ 버튼을 눌러주세요." style="color: rgb(87, 87, 87); font-size: 45px; margin-top: 30px;"/>
+            </ui:VisualElement>
+        </ui:ScrollView>
     </ui:VisualElement>
 </ui:UXML>

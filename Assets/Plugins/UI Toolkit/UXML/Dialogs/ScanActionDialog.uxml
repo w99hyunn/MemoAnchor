@@ -1,0 +1,31 @@
+<ui:UXML xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" noNamespaceSchemaLocation="../../../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
+    <Style src="project://database/Assets/Plugins/UI%20Toolkit/UnityThemes/style.uss?fileID=7433441132597879392&amp;guid=c3edbd9c191f92b49aa6a3ce9ffd69d5&amp;type=3#style"/>
+    <ui:VisualElement name="scan-action-dialog-overlay" class="scan-action-dialog-overlay">
+        <ui:VisualElement name="scan-action-dialog-sheet" class="scan-action-dialog-sheet">
+            <ui:VisualElement class="scan-action-dialog-handle"/>
+            <ui:Label text="맵 생성방식을 선택해주세요." class="scan-action-dialog-title"/>
+            <ui:VisualElement class="scan-action-list">
+                <ui:Button name="scan-action-join-button" class="scan-action-list-item">
+                    <ui:VisualElement class="scan-action-option-icon-slot">
+                        <ui:VisualElement class="scan-action-option-icon-placeholder"/>
+                    </ui:VisualElement>
+                    <ui:VisualElement class="scan-action-option-texts">
+                        <ui:Label text="참여하기" class="scan-action-option-title"/>
+                        <ui:Label text="참여코드를 받았다면 참여할 수 있어요." class="scan-action-option-description"/>
+                    </ui:VisualElement>
+                    <ui:Label text="›" class="scan-action-list-chevron"/>
+                </ui:Button>
+                <ui:Button name="scan-action-create-button" class="scan-action-list-item">
+                    <ui:VisualElement class="scan-action-option-icon-slot">
+                        <ui:VisualElement class="scan-action-option-icon-placeholder"/>
+                    </ui:VisualElement>
+                    <ui:VisualElement class="scan-action-option-texts">
+                        <ui:Label text="생성하기" class="scan-action-option-title"/>
+                        <ui:Label text="새로운 맵을 스캔할 수 있어요." class="scan-action-option-description"/>
+                    </ui:VisualElement>
+                    <ui:Label text="›" class="scan-action-list-chevron"/>
+                </ui:Button>
+            </ui:VisualElement>
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>

@@ -28,5 +28,8 @@
                 <ui:Label text="프로필" class="nav-label"/>
             </ui:Button>
         </ui:VisualElement>
+        <ui:VisualElement name="scan-start-bg" class="scan-start-bg">
+            <ui:Button name="nav-scan-start" text="스캔 시작" class="scan-nav-start"/>
+        </ui:VisualElement>
     </ui:VisualElement>
 </ui:UXML>

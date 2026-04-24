@@ -11,6 +11,7 @@ namespace MemoAnchor.UI
 
         private MainTabView _view;
         private int _currentTabIndex;
+        private bool _isScanNavModeActive;
 
         private void Awake()
         {
@@ -53,7 +54,22 @@ namespace MemoAnchor.UI
         private void OnClickScan()
         {
             PlayNavTapAnimation(_view.ScanButton);
-            ShowTab(2);
+
+            if (_isScanNavModeActive)
+            {
+                _isScanNavModeActive = false;
+                ShowTab(2);
+                return;
+            }
+
+            if (_currentTabIndex == 2)
+            {
+                _isScanNavModeActive = true;
+                ShowTab(2);
+                return;
+            }
+
+            _view.ShowScanActionDialog(OnClickScanActionCreate, OnClickScanActionJoin);
         }
 
         private void OnClickMap()
@@ -71,13 +87,30 @@ namespace MemoAnchor.UI
         private void ShowTab(int tabIndex)
         {
             _currentTabIndex = Mathf.Clamp(tabIndex, 0, 4);
+            if (_currentTabIndex != 2)
+            {
+                _isScanNavModeActive = false;
+                _view.HideScanActionDialog();
+            }
 
             SetState(_view.HomeButton, _currentTabIndex == 0);
             SetState(_view.MenuButton, _currentTabIndex == 1);
             SetState(_view.ScanButton, _currentTabIndex == 2);
             SetState(_view.MapButton, _currentTabIndex == 3);
             SetState(_view.ProfileButton, _currentTabIndex == 4);
+            _view.SetScanNavMode(_isScanNavModeActive);
             UpdateTabStripOffset();
+        }
+
+        private void OnClickScanActionCreate()
+        {
+            _isScanNavModeActive = true;
+            ShowTab(2);
+        }
+
+        private void OnClickScanActionJoin()
+        {
+            _view.HideScanActionDialog();
         }
 
         private static void SetState(Button button, bool active)
