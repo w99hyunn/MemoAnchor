@@ -780,6 +780,33 @@
     -unity-font-definition: url("project://database/Assets/Plugins/UI%20Toolkit/Fonts/Pretendard-Medium.ttf?fileID=12800000&guid=45ed9c45b09f5f2498d91e1982ab7527&type=3#Pretendard-Medium");
 }
 
+.scan-select-button {
+    flex-grow: 1;
+    height: 100%;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    padding-left: 0;
+    padding-right: 0;
+}
+
+.scan-select-button-text-field {
+    flex-grow: 1;
+    margin: 0;
+    padding: 0;
+}
+
+.scan-select-button-text-field > .unity-text-field__input {
+    padding-right: 16px;
+}
+
+.scan-select-button-arrow {
+    margin-left: 24px;
+    font-size: 68px;
+    color: rgb(160, 160, 160);
+    -unity-font-definition: url("project://database/Assets/Plugins/UI%20Toolkit/Fonts/Pretendard-Regular.ttf?fileID=12800000&guid=c19593ccf51a3b643a58d19da7851c10&type=3#Pretendard-Regular");
+}
+
 .scan-action-dialog-overlay {
     position: absolute;
     left: 0;
@@ -793,13 +820,17 @@
     padding-bottom: 40px;
     visibility: visible;
     padding-top: 40px;
+    opacity: 1;
+}
+
+.scan-action-dialog-overlay.is-anim-ready {
     opacity: 0;
     transition-property: opacity;
     transition-duration: 0.24s;
     transition-timing-function: ease-out;
 }
 
-.scan-action-dialog-overlay.is-open {
+.scan-action-dialog-overlay.is-anim-ready.is-open {
     opacity: 1;
 }
 
@@ -812,18 +843,23 @@
     padding-right: 50px;
     padding-bottom: 50px;
     padding-left: 50px;
-    translate: 0 48px;
+    translate: 0 0;
     border-top-left-radius: 90px;
     border-top-right-radius: 90px;
     border-bottom-right-radius: 90px;
     border-bottom-left-radius: 90px;
+    opacity: 1;
+}
+
+.scan-action-dialog-overlay.is-anim-ready .scan-action-dialog-sheet {
     opacity: 0;
+    translate: 0 48px;
     transition-property: opacity, translate;
     transition-duration: 0.24s;
     transition-timing-function: ease-out;
 }
 
-.scan-action-dialog-overlay.is-open .scan-action-dialog-sheet {
+.scan-action-dialog-overlay.is-anim-ready.is-open .scan-action-dialog-sheet {
     opacity: 1;
     translate: 0 0;
 }
@@ -949,4 +985,143 @@
 .scan-action-footer-button-primary {
     background-color: rgb(59, 130, 232);
     color: rgb(255, 255, 255);
+}
+
+.alert-dialog-page {
+    flex-grow: 1;
+    background-color: rgb(246, 246, 246);
+    padding-top: 175px;
+}
+
+.alert-dialog-header {
+    height: 170px;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    padding-left: 36px;
+    padding-right: 36px;
+    background-color: rgb(246, 246, 246);
+}
+
+.alert-back-button {
+    width: 92px;
+    height: 92px;
+    color: rgb(44, 44, 44);
+    font-size: 86px;
+    -unity-text-align: middle-center;
+    -unity-font-definition: url("project://database/Assets/Plugins/UI%20Toolkit/Fonts/Pretendard-Regular.ttf?fileID=12800000&guid=c19593ccf51a3b643a58d19da7851c10&type=3#Pretendard-Regular");
+}
+
+.alert-dialog-title {
+    font-size: 50px;
+    color: rgb(24, 24, 24);
+    -unity-font-definition: url("project://database/Assets/Plugins/UI%20Toolkit/Fonts/Pretendard-SemiBold.ttf?fileID=12800000&guid=7136488b0fb8f924b91754e33f3b5abc&type=3#Pretendard-SemiBold");
+}
+
+.alert-header-spacer {
+    width: 92px;
+    height: 92px;
+}
+
+.alert-scroll {
+    flex-grow: 1;
+    background-color: rgb(246, 246, 246);
+}
+
+.alert-section {
+    background-color: rgb(255, 255, 255);
+}
+
+.alert-request-item {
+    min-height: 220px;
+    padding-top: 34px;
+    padding-right: 36px;
+    padding-bottom: 32px;
+    padding-left: 36px;
+    border-bottom-width: 1px;
+    border-bottom-color: rgb(235, 235, 235);
+}
+
+.alert-map-item {
+    min-height: 220px;
+    padding-top: 34px;
+    padding-right: 36px;
+    padding-bottom: 32px;
+    padding-left: 36px;
+    border-bottom-width: 1px;
+    border-bottom-color: rgb(235, 235, 235);
+}
+
+.alert-request-main {
+    flex-direction: row;
+    align-items: flex-start;
+    justify-content: space-between;
+}
+
+.alert-text-column {
+    flex-grow: 1;
+    min-width: 0;
+}
+
+.alert-primary-text {
+    font-size: 38px;
+    color: rgb(16, 16, 16);
+    -unity-font-definition: url("project://database/Assets/Plugins/UI%20Toolkit/Fonts/Pretendard-SemiBold.ttf?fileID=12800000&guid=7136488b0fb8f924b91754e33f3b5abc&type=3#Pretendard-SemiBold");
+    white-space: normal;
+}
+
+.alert-secondary-text {
+    margin-top: 14px;
+    font-size: 34px;
+    color: rgb(97, 97, 97);
+    -unity-font-definition: url("project://database/Assets/Plugins/UI%20Toolkit/Fonts/Pretendard-Regular.ttf?fileID=12800000&guid=c19593ccf51a3b643a58d19da7851c10&type=3#Pretendard-Regular");
+}
+
+.alert-time-text {
+    flex-shrink: 0;
+    margin-left: 24px;
+    font-size: 34px;
+    color: rgb(154, 154, 154);
+    -unity-font-definition: url("project://database/Assets/Plugins/UI%20Toolkit/Fonts/Pretendard-Regular.ttf?fileID=12800000&guid=c19593ccf51a3b643a58d19da7851c10&type=3#Pretendard-Regular");
+}
+
+.alert-action-row {
+    flex-direction: row;
+    justify-content: flex-end;
+    margin-top: 24px;
+}
+
+.alert-action-button {
+    min-width: 220px;
+    height: 76px;
+    border-radius: 38px;
+    border-width: 2px;
+    font-size: 34px;
+    margin-left: 18px;
+    -unity-font-definition: url("project://database/Assets/Plugins/UI%20Toolkit/Fonts/Pretendard-SemiBold.ttf?fileID=12800000&guid=7136488b0fb8f924b91754e33f3b5abc&type=3#Pretendard-SemiBold");
+}
+
+.alert-action-secondary {
+    color: rgb(30, 30, 30);
+    background-color: rgb(255, 255, 255);
+    border-color: rgb(78, 78, 78);
+}
+
+.alert-action-primary {
+    color: rgb(255, 255, 255);
+    background-color: rgb(75, 88, 132);
+    border-color: rgb(75, 88, 132);
+}
+
+.alert-gap {
+    height: 200px;
+    background-color: rgb(246, 246, 246);
+}
+
+.alert-close-button {
+    width: 70px;
+    height: 70px;
+    color: rgb(65, 171, 219);
+    font-size: 42px;
+    -unity-font-definition: url("project://database/Assets/Plugins/UI%20Toolkit/Fonts/Pretendard-SemiBold.ttf?fileID=12800000&guid=7136488b0fb8f924b91754e33f3b5abc&type=3#Pretendard-SemiBold");
 }

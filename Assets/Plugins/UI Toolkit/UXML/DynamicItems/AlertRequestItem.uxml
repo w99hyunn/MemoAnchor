@@ -1,0 +1,16 @@
+<ui:UXML xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" noNamespaceSchemaLocation="../../../../../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
+    <Style src="project://database/Assets/Plugins/UI%20Toolkit/UnityThemes/style.uss?fileID=7433441132597879392&amp;guid=c3edbd9c191f92b49aa6a3ce9ffd69d5&amp;type=3#style"/>
+    <ui:VisualElement class="alert-request-item">
+        <ui:VisualElement class="alert-request-main">
+            <ui:VisualElement class="alert-text-column">
+                <ui:Label name="alert-primary-text" text="김서진 (sj1011)님께서 친구요청을 보내셨습니다." class="alert-primary-text"/>
+                <ui:Label name="alert-secondary-text" text="" class="alert-secondary-text"/>
+            </ui:VisualElement>
+            <ui:Label name="alert-time-text" text="5분 전" class="alert-time-text"/>
+        </ui:VisualElement>
+        <ui:VisualElement class="alert-action-row">
+            <ui:Button name="alert-reject-button" text="거절" class="alert-action-button alert-action-secondary"/>
+            <ui:Button name="alert-accept-button" text="수락" class="alert-action-button alert-action-primary"/>
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>

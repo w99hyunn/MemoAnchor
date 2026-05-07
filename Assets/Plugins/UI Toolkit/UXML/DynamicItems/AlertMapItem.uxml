@@ -1,0 +1,20 @@
+<ui:UXML xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" noNamespaceSchemaLocation="../../../../../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
+    <Style src="project://database/Assets/Plugins/UI%20Toolkit/UnityThemes/style.uss?fileID=7433441132597879392&amp;guid=c3edbd9c191f92b49aa6a3ce9ffd69d5&amp;type=3#style"/>
+    <ui:VisualElement class="alert-map-item">
+        <ui:VisualElement class="alert-request-main">
+            <ui:VisualElement class="alert-text-column">
+                <ui:Label name="alert-primary-text" text="전기실" class="alert-primary-text"/>
+                <ui:Label name="alert-secondary-text" text="3일 뒤 마감알림" class="alert-secondary-text"/>
+            </ui:VisualElement>
+            <ui:Button name="alert-close-button" text="×" class="alert-close-button"/>
+        </ui:VisualElement>
+        <ui:VisualElement class="alert-request-main alert-map-time-row">
+            <ui:VisualElement/>
+            <ui:Label name="alert-time-text" text="10분 전" class="alert-time-text"/>
+        </ui:VisualElement>
+        <ui:VisualElement name="alert-action-row" class="alert-action-row">
+            <ui:Button name="alert-delete-button" text="삭제" class="alert-action-button alert-action-secondary"/>
+            <ui:Button name="alert-open-button" text="바로가기" class="alert-action-button alert-action-primary"/>
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>

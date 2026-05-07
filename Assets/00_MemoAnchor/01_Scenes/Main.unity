@@ -269,6 +269,8 @@ GameObject:
   - component: {fileID: 1996884578}
   - component: {fileID: 1996884580}
   - component: {fileID: 1996884579}
+  - component: {fileID: 1996884581}
+  - component: {fileID: 1996884582}
   m_Layer: 5
   m_Name: UIDocument
   m_TagString: Untagged
@@ -351,6 +353,33 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::MemoAnchor.UI.MainTabView
   _scanActionDialogAsset: {fileID: 9197481963319205126, guid: c089c196f57e6c34e9cca09e94a770fd, type: 3}
+  _alertDialogAsset: {fileID: 9197481963319205126, guid: 02e6d7dc83cc43ed87e7b64916661516, type: 3}
+  _alertRequestItemAsset: {fileID: 9197481963319205126, guid: 947d4cfd7f6a40b8aa63af803cd4219c, type: 3}
+  _alertMapItemAsset: {fileID: 9197481963319205126, guid: d5f9982459534f41b893bf1fe14a792f, type: 3}
+--- !u!114 &1996884581
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1996884575}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 05edd1a01b1a477496823bb68f43a488, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::MemoAnchor.UI.Tab_ScanView
+--- !u!114 &1996884582
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1996884575}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 93cd5129c5744b19a443bafd96ff155d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::MemoAnchor.UI.Tab_ScanController
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0

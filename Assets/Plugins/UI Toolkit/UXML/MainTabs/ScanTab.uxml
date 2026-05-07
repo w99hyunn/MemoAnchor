@@ -16,7 +16,10 @@
                 <ui:VisualElement class="scan-field-group">
                     <ui:Label text="주소 선택" class="scan-field-label"/>
                     <ui:VisualElement class="scan-input-box">
-                        <ui:TextField name="scan-address-field" label="" placeholder-text="속해있는 건물 주소를 선택해주세요." class="scan-input-field scan-input-field-select"/>
+                        <ui:Button name="scan-address-field" class="scan-select-button">
+                            <ui:TextField name="scan-address-field-text" label="" placeholder-text="속해있는 건물 주소를 선택해주세요." focusable="true" readonly="true" enabled="true" class="scan-input-field scan-select-button-text-field"/>
+                            <ui:Label text="›" class="scan-select-button-arrow"/>
+                        </ui:Button>
                     </ui:VisualElement>
                 </ui:VisualElement>
                 <ui:VisualElement class="scan-field-group">
