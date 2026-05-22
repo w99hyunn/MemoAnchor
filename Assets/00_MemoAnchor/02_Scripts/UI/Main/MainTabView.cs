@@ -7,26 +7,36 @@ namespace MemoAnchor.UI
     [RequireComponent(typeof(UIDocument))]
     public class MainTabView : MonoBehaviour
     {
-        private const string DialogOpenClass = "is-open";
-        private const string DialogAnimReadyClass = "is-anim-ready";
+        private const string DIALOG_OPEN_CLASS = "is-open";
+        private const string DIALOG_ANIM_READY_CLASS = "is-anim-ready";
+        private const string MEMO_DELETE_OPEN_CLASS = "is-delete-open";
+        private const string HOME_ADMIN_MODE_CLASS = "is-admin-mode";
+        private const string HOME_WORK_MODE_CLASS = "is-work-mode";
+        private const string HOME_ADMIN_TITLE = "관리자";
+        private const string HOME_WORK_TITLE = "내 업무";
+        private const float MEMO_SWIPE_INTENT_THRESHOLD = 20f;
+        private const float MEMO_SWIPE_OPEN_THRESHOLD = 80f;
 
         [SerializeField] private VisualTreeAsset _scanActionDialogAsset;
         [SerializeField] private VisualTreeAsset _alertDialogAsset;
         [SerializeField] private VisualTreeAsset _alertRequestItemAsset;
         [SerializeField] private VisualTreeAsset _alertMapItemAsset;
 
-        private Button _homeButton, _menuButton, _scanButton, _mapButton, _profileButton, _scanStartButton, _alertButton;
+        private Button _homeButton, _menuButton, _scanButton, _mapButton, _profileButton, _scanStartButton, _alertButton, _homeModeToggle, _memoModeToggle;
         private Button _scanActionCreateButton, _scanActionJoinButton;
         private Button _alertBackButton;
 
         private VisualElement _root, _tabViewport, _tabStrip, _bottomNavWrapper, _bottomNav;
         private VisualElement _homeTab, _menuTab, _scanTab, _mapTab, _profileTab;
+        private VisualElement _homeModeBack;
         private VisualElement _scanActionDialogOverlay;
         private VisualElement _alertDialogPage, _alertRequestList, _alertMapList;
+        private Label _homeModeTitle;
         private TemplateContainer _scanActionDialogTree;
         private TemplateContainer _alertDialogTree;
         private Action _onScanActionCreate, _onScanActionJoin;
         private int _scanActionDialogTransitionToken;
+        private bool _isHomeWorkMode = true;
 
         public Button HomeButton => _homeButton;
         public Button MenuButton => _menuButton;
@@ -46,6 +56,8 @@ namespace MemoAnchor.UI
             _profileButton = _root.Q<Button>("nav-profile");
             _scanStartButton = _root.Q<Button>("nav-scan-start");
             _alertButton = _root.Q<Button>("alert");
+            _homeModeToggle = _root.Q<Button>("home-mode-toggle");
+            _memoModeToggle = _root.Q<Button>("memo-mode-toggle");
 
             _tabViewport = _root.Q<VisualElement>("tab-viewport");
             _tabStrip = _root.Q<VisualElement>("tab-strip");
@@ -56,13 +68,21 @@ namespace MemoAnchor.UI
             _scanTab = _root.Q<VisualElement>("tab-scan");
             _mapTab = _root.Q<VisualElement>("tab-map");
             _profileTab = _root.Q<VisualElement>("tab-profile");
+            _homeModeBack = _root.Q<VisualElement>("mode-back");
+            _homeModeTitle = _root.Q<Label>("home-mode-title");
 
             _alertButton.clicked += ShowAlertDialog;
+            _homeModeToggle.clicked += ToggleHomeMode;
+            _memoModeToggle.clicked += ToggleHomeMode;
+            ApplyHomeMode();
+            RegisterMemoSwipeRows();
         }
 
         private void OnDisable()
         {
             _alertButton.clicked -= ShowAlertDialog;
+            _homeModeToggle.clicked -= ToggleHomeMode;
+            _memoModeToggle.clicked -= ToggleHomeMode;
             _alertBackButton.clicked -= HideAlertDialog;
 
         }
@@ -89,6 +109,21 @@ namespace MemoAnchor.UI
             _tabStrip.style.width = width * 5f;
         }
 
+        private void ToggleHomeMode()
+        {
+            _isHomeWorkMode = !_isHomeWorkMode;
+            ApplyHomeMode();
+        }
+
+        private void ApplyHomeMode()
+        {
+            _homeModeTitle.text = _isHomeWorkMode ? HOME_WORK_TITLE : HOME_ADMIN_TITLE;
+            _homeModeToggle.EnableInClassList(HOME_WORK_MODE_CLASS, _isHomeWorkMode);
+            _memoModeToggle.EnableInClassList(HOME_WORK_MODE_CLASS, _isHomeWorkMode);
+            _homeModeBack.EnableInClassList(HOME_ADMIN_MODE_CLASS, !_isHomeWorkMode);
+            _menuTab.EnableInClassList(HOME_ADMIN_MODE_CLASS, !_isHomeWorkMode);
+        }
+
         public void ShowScanActionDialog(Action onCreate, Action onJoin)
         {
             EnsureScanActionDialog();
@@ -99,7 +134,7 @@ namespace MemoAnchor.UI
 
             if (_scanActionDialogTree.parent == null)
             {
-                _scanActionDialogOverlay.RemoveFromClassList(DialogOpenClass);
+                _scanActionDialogOverlay.RemoveFromClassList(DIALOG_OPEN_CLASS);
                 _root.Add(_scanActionDialogTree);
             }
 
@@ -111,7 +146,7 @@ namespace MemoAnchor.UI
                     return;
                 }
 
-                _scanActionDialogOverlay.AddToClassList(DialogOpenClass);
+                _scanActionDialogOverlay.AddToClassList(DIALOG_OPEN_CLASS);
             }).ExecuteLater(16);
         }
 
@@ -125,7 +160,7 @@ namespace MemoAnchor.UI
             _scanActionDialogTransitionToken++;
             int token = _scanActionDialogTransitionToken;
 
-            _scanActionDialogOverlay.RemoveFromClassList(DialogOpenClass);
+            _scanActionDialogOverlay.RemoveFromClassList(DIALOG_OPEN_CLASS);
             _scanActionDialogOverlay.schedule.Execute(() =>
             {
                 if (token != _scanActionDialogTransitionToken)
@@ -171,7 +206,7 @@ namespace MemoAnchor.UI
             _scanActionCreateButton = _scanActionDialogTree.Q<Button>("scan-action-create-button");
             _scanActionJoinButton = _scanActionDialogTree.Q<Button>("scan-action-join-button");
 
-            _scanActionDialogOverlay.AddToClassList(DialogAnimReadyClass);
+            _scanActionDialogOverlay.AddToClassList(DIALOG_ANIM_READY_CLASS);
 
             _scanActionDialogOverlay.RegisterCallback<ClickEvent>(_ => HideScanActionDialog());
             dialogSheet.RegisterCallback<ClickEvent>(evt => evt.StopPropagation());
@@ -244,6 +279,88 @@ namespace MemoAnchor.UI
             item.Q<Button>("alert-close-button").style.display = showsActions ? DisplayStyle.None : DisplayStyle.Flex;
             item.Q<VisualElement>("alert-action-row").style.display = showsActions ? DisplayStyle.Flex : DisplayStyle.None;
             _alertMapList.Add(item);
+        }
+
+        private void RegisterMemoSwipeRows()
+        {
+            _root.Query<VisualElement>(className: "memo-list-swipe-row").ForEach(row =>
+            {
+                Vector3 pointerDownPosition = Vector3.zero;
+                bool isSwipeIntent = false;
+                bool isGestureResolved = false;
+
+                row.RegisterCallback<PointerDownEvent>(evt =>
+                {
+                    pointerDownPosition = evt.position;
+                    isSwipeIntent = false;
+                    isGestureResolved = false;
+                });
+
+                row.RegisterCallback<PointerMoveEvent>(evt =>
+                {
+                    Vector3 delta = evt.position - pointerDownPosition;
+                    if (!isGestureResolved)
+                    {
+                        float absX = Mathf.Abs(delta.x);
+                        float absY = Mathf.Abs(delta.y);
+                        if (absX < MEMO_SWIPE_INTENT_THRESHOLD && absY < MEMO_SWIPE_INTENT_THRESHOLD)
+                        {
+                            return;
+                        }
+
+                        isSwipeIntent = absX > absY;
+                        isGestureResolved = true;
+                        if (isSwipeIntent)
+                        {
+                            row.CapturePointer(evt.pointerId);
+                        }
+                    }
+
+                    if (!isSwipeIntent)
+                    {
+                        return;
+                    }
+
+                    evt.StopPropagation();
+                });
+
+                row.RegisterCallback<PointerUpEvent>(evt =>
+                {
+                    Vector3 delta = evt.position - pointerDownPosition;
+                    if (!isSwipeIntent && Mathf.Abs(delta.x) <= Mathf.Abs(delta.y))
+                    {
+                        return;
+                    }
+
+                    evt.StopPropagation();
+                    if (delta.x < -MEMO_SWIPE_OPEN_THRESHOLD)
+                    {
+                        row.AddToClassList(MEMO_DELETE_OPEN_CLASS);
+                    }
+                    else if (delta.x > MEMO_SWIPE_OPEN_THRESHOLD)
+                    {
+                        row.RemoveFromClassList(MEMO_DELETE_OPEN_CLASS);
+                    }
+
+                    if (row.HasPointerCapture(evt.pointerId))
+                    {
+                        row.ReleasePointer(evt.pointerId);
+                    }
+                });
+
+                row.RegisterCallback<PointerCancelEvent>(evt =>
+                {
+                    if (row.HasPointerCapture(evt.pointerId))
+                    {
+                        row.ReleasePointer(evt.pointerId);
+                    }
+                });
+
+                row.Q<Button>("memo-list-delete-button").clicked += () =>
+                {
+                    row.parent.RemoveFromHierarchy();
+                };
+            });
         }
     }
 }

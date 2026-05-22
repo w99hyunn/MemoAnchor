@@ -9,11 +9,16 @@
         </ui:VisualElement>
         <ui:ScrollView name="home-content-scroll" mode="Vertical" horizontal-scroller-visibility="Hidden" vertical-scroller-visibility="Hidden" touch-scroll-type="Elastic" class="tab-content-scroll">
             <ui:VisualElement class="tab-content-inner">
-                <ui:VisualElement class="memo-section" style="flex-grow: 0; margin-bottom: 50px;">
+                <ui:VisualElement name="mode-back" class="memo-section" style="flex-grow: 0; margin-bottom: 50px;">
                     <ui:VisualElement class="memo-section-content" style="flex-grow: 0;">
                         <ui:VisualElement class="memo-section-header">
-                            <ui:Label text="내 업무" class="memo-section-title" style="color: rgb(255, 255, 255);"/>
-                            <ui:Button text="전체 보기" class="memo-section-more"/>
+                            <ui:VisualElement class="home-mode-title-row">
+                                <ui:Label text="내 업무" name="home-mode-title" class="memo-section-title home-mode-title"/>
+                                <ui:Button text="" name="home-mode-toggle" class="home-mode-toggle is-work-mode">
+                                    <ui:VisualElement class="home-mode-toggle-thumb"/>
+                                </ui:Button>
+                            </ui:VisualElement>
+                            <ui:Button text="전체보기" class="memo-section-more"/>
                         </ui:VisualElement>
                         <ui:ScrollView name="memo-scroll" mode="Horizontal" horizontal-scroller-visibility="Hidden" vertical-scroller-visibility="Hidden" touch-scroll-type="Elastic" class="memo-scroll" style="flex-grow: 0;">
                             <ui:VisualElement class="memo-scroll-content">

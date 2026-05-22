@@ -51,8 +51,6 @@ namespace MemoAnchor.UI
             bridge.CallStatic("open", activity, gameObject.name);
 #elif UNITY_IOS && !UNITY_EDITOR
             MemoAnchor_OpenKakaoPostcodeSearch(gameObject.name);
-#else
-            Debug.LogWarning("Kakao postcode search is currently implemented for mobile runtime only.");
 #endif
         }
 

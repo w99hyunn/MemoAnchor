@@ -122,6 +122,28 @@
     margin-right: 0;
 }
 
+.memo-tab-mode-page {
+    background-color: rgb(86, 99, 142);
+}
+
+.memo-tab-mode-page.is-admin-mode {
+    background-color: rgb(177, 28, 68);
+}
+
+.memo-tab-mode-page .home-right-icon-button {
+    -unity-background-image-tint-color: rgb(245, 245, 245);
+}
+
+.memo-mode-title-row {
+    flex-direction: row;
+    align-items: center;
+}
+
+.memo-mode-title {
+    color: rgb(255, 255, 255);
+    margin-right: 28px;
+}
+
 .home-header {
     flex-grow: 0;
     flex-direction: row;
@@ -156,6 +178,14 @@
     padding-bottom: 100px;
 }
 
+#mode-back {
+    background-color: rgb(86, 99, 142);
+}
+
+#mode-back.is-admin-mode {
+    background-color: rgb(177, 28, 68);
+}
+
 .memo-section-content {
     flex-grow: 1;
 }
@@ -164,9 +194,55 @@
     flex-grow: 0;
     flex-direction: row;
     justify-content: space-between;
+    align-items: center;
     margin-bottom: 30px;
     padding-right: 50px;
     padding-left: 50px;
+}
+
+.home-mode-title-row {
+    flex-direction: row;
+    align-items: center;
+}
+
+.home-mode-title {
+    color: rgb(255, 255, 255);
+    margin-right: 28px;
+}
+
+.home-mode-toggle {
+    width: 160px;
+    height: 76px;
+    border-radius: 38px;
+    background-color: rgb(234, 236, 239);
+    padding-top: 6px;
+    padding-right: 6px;
+    padding-bottom: 6px;
+    padding-left: 6px;
+    justify-content: center;
+    border-width: 0;
+    flex-shrink: 0;
+}
+
+.home-mode-toggle:hover:enabled,
+.home-mode-toggle:active:enabled {
+    background-color: rgb(234, 236, 239);
+}
+
+.home-mode-toggle-thumb {
+    width: 64px;
+    height: 64px;
+    border-radius: 32px;
+    background-color: rgb(177, 28, 68);
+    align-self: flex-start;
+    transition-property: translate, background-color;
+    transition-duration: 0.18s;
+    transition-timing-function: ease-out;
+}
+
+.home-mode-toggle.is-work-mode .home-mode-toggle-thumb {
+    translate: 84px 0;
+    background-color: rgb(86, 99, 142);
 }
 
 .memo-section-title {
@@ -642,19 +718,12 @@
 }
 
 .memo-search-input .unity-base-text-field__input {
-    background-color: rgb(255, 255, 255);
-    border-radius: 45px;
+    background-color: transparent;
+    border-radius: 55px;
     padding-left: 120px;
-    border-color: rgb(178, 178, 178);
+    border-color: #B2B2B2;
     height: 110px;
-    border-top-left-radius: 30px;
-    border-top-right-radius: 30px;
-    border-bottom-right-radius: 30px;
-    border-bottom-left-radius: 30px;
-    border-top-width: 0;
-    border-right-width: 0;
-    border-bottom-width: 0;
-    border-left-width: 0;
+    border-width: 2px;
 }
 
 .unity-base-text-field__input {
@@ -676,8 +745,45 @@
     padding-bottom: 0;
 }
 
+.memo-list-swipe-row {
+    height: 350px;
+    position: relative;
+    overflow: hidden;
+    background-color: rgb(236, 60, 85);
+}
+
+.memo-list-delete-button {
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: 180px;
+    border-width: 0;
+    border-radius: 0;
+    margin-top: 0;
+    margin-right: 0;
+    margin-bottom: 0;
+    margin-left: 0;
+    background-color: rgb(236, 60, 85);
+    justify-content: center;
+    align-items: center;
+}
+
+.memo-list-delete-icon {
+    width: 62px;
+    height: 62px;
+    background-image: url("project://database/Assets/00_MemoAnchor/03_Media/Icon/trash.png?fileID=2800000&guid=c2fd465122bc15242b8cf6da00d7bbb1&type=3#trash");
+    -unity-background-scale-mode: scale-to-fit;
+    -unity-background-image-tint-color: rgb(255, 255, 255);
+}
+
 .memo-list-item {
     height: 350px;
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
     flex-direction: row;
     align-items: center;
     padding-left: 75px;
@@ -685,6 +791,13 @@
     background-color: rgb(255, 255, 255);
     padding-top: 75px;
     padding-bottom: 75px;
+    transition-property: translate;
+    transition-duration: 0.16s;
+    transition-timing-function: ease-out;
+}
+
+.memo-list-swipe-row.is-delete-open .memo-list-item {
+    translate: -180px 0;
 }
 
 .memo-list-item-icon {
