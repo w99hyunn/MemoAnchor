@@ -24,5 +24,5 @@
             </ui:VisualElement>
         </ui:VisualElement>
     </ui:VisualElement>
-    <ui:VisualElement name="" style="flex-grow: 0; background-color: rgb(224, 230, 236); position: relative; height: 2px; width: 90%; align-self: center;"/>
+    <ui:VisualElement style="flex-grow: 0; background-color: rgb(224, 230, 236); position: relative; height: 2px; width: 90%; align-self: center;"/>
 </ui:UXML>

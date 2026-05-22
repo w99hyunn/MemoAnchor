@@ -912,6 +912,20 @@
     background-color: rgb(236, 60, 85);
 }
 
+.memo-filter-page-host {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    flex-grow: 0;
+    display: none;
+}
+
+.memo-filter-page-host.is-open {
+    display: flex;
+}
+
 .memo-filter-page {
     position: absolute;
     left: 0;
@@ -1073,9 +1087,21 @@
     width: 34px;
     height: 34px;
     margin-left: 18px;
-    background-image: url("project://database/Assets/00_MemoAnchor/03_Media/Icon/memo-list/check.png?fileID=2800000&guid=58748a6a6a4f1844bbfce9d91182e6d3&type=3#check");
+    background-image: url("project://database/Assets/00_MemoAnchor/03_Media/Icon/calendar_month.png?fileID=2800000&guid=b1dcfd6da9be6544b8081fdc92d97423&type=3#calendar_month");
     -unity-background-scale-mode: scale-to-fit;
     -unity-background-image-tint-color: rgb(84, 84, 84);
+}
+
+.memo-filter-date-button.is-selected .memo-filter-calendar-icon {
+    -unity-background-image-tint-color: rgb(86, 99, 142);
+}
+
+.memo-filter-page.is-admin-mode .memo-filter-date-button.is-selected .memo-filter-calendar-icon {
+    -unity-background-image-tint-color: rgb(177, 28, 68);
+}
+
+.memo-filter-date-button.is-error .memo-filter-calendar-icon {
+    -unity-background-image-tint-color: rgb(236, 60, 85);
 }
 
 .memo-filter-date-dash {

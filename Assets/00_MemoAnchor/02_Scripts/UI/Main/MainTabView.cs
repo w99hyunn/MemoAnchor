@@ -1,12 +1,11 @@
 using System;
-using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UIElements;
 
 namespace MemoAnchor.UI
 {
     [RequireComponent(typeof(UIDocument))]
-    public class MainTabView : MonoBehaviour
+    public partial class MainTabView : MonoBehaviour
     {
         private const string DIALOG_OPEN_CLASS = "is-open";
         private const string DIALOG_ANIM_READY_CLASS = "is-anim-ready";
@@ -20,10 +19,6 @@ namespace MemoAnchor.UI
         private const string HOME_WORK_TITLE = "내 업무";
         private const float MEMO_SWIPE_INTENT_THRESHOLD = 20f;
         private const float MEMO_SWIPE_OPEN_THRESHOLD = 80f;
-        private const int MEMO_FILTER_SORT_LATEST = 0;
-        private const int MEMO_FILTER_SORT_UNHANDLED = 1;
-        private const int MEMO_FILTER_SORT_ADDRESS = 2;
-        private const int MEMO_FILTER_SORT_DEADLINE = 3;
 
         [SerializeField] private VisualTreeAsset _scanActionDialogAsset;
         [SerializeField] private VisualTreeAsset _alertDialogAsset;
@@ -33,33 +28,17 @@ namespace MemoAnchor.UI
         private Button _homeButton, _menuButton, _scanButton, _mapButton, _profileButton, _scanStartButton, _alertButton, _homeModeToggle, _memoModeToggle;
         private Button _scanActionCreateButton, _scanActionJoinButton;
         private Button _alertBackButton;
-        private Button _memoFilterButton, _memoFilterBackButton, _memoFilterStartDateButton, _memoFilterEndDateButton, _memoFilterDateToggle;
-        private Button _memoFilterSortLatestButton, _memoFilterSortUnhandledButton, _memoFilterSortAddressButton, _memoFilterSortDeadlineButton;
-        private Button _memoFilterMapButton, _memoFilterMap1Button, _memoFilterMap2Button, _memoFilterMap3Button;
-        private Button _memoFilterUrgencyHighButton, _memoFilterUrgencyMediumButton, _memoFilterUrgencyLowButton, _memoFilterUrgencyToggle;
-        private Button _memoFilterCalendarPrevButton, _memoFilterCalendarNextButton, _memoFilterCalendarCloseButton, _memoFilterResetButton, _memoFilterApplyButton;
+        private Button _memoFilterButton;
 
         private VisualElement _root, _tabViewport, _tabStrip, _bottomNavWrapper, _bottomNav;
         private VisualElement _homeTab, _menuTab, _scanTab, _mapTab, _profileTab;
         private VisualElement _homeModeBack;
-        private VisualElement _memoFilterPage, _memoFilterCalendar, _memoFilterCalendarGrid, _memoFilterMapList;
         private VisualElement _scanActionDialogOverlay;
         private VisualElement _alertDialogPage, _alertRequestList, _alertMapList;
-        private Label _homeModeTitle, _memoFilterStartDateLabel, _memoFilterEndDateLabel, _memoFilterMapLabel, _memoFilterCalendarTitle;
+        private Label _homeModeTitle;
         private TemplateContainer _scanActionDialogTree;
         private TemplateContainer _alertDialogTree;
         private Action _onScanActionCreate, _onScanActionJoin;
-        private readonly List<MemoFilterRow> _memoFilterRows = new();
-        private readonly List<string> _memoFilterMapOptions = new();
-        private DateTime _memoFilterStartDate;
-        private DateTime _memoFilterEndDate;
-        private bool _memoFilterDateEnabled;
-        private bool _memoFilterUrgencyEnabled;
-        private bool _memoFilterEditingStartDate = true;
-        private int _memoFilterSortMode = MEMO_FILTER_SORT_LATEST;
-        private int _memoFilterUrgency = 1;
-        private string _memoFilterMap;
-        private DateTime _memoFilterCalendarMonth;
         private int _scanActionDialogTransitionToken;
         private bool _isHomeWorkMode = true;
 
@@ -113,27 +92,7 @@ namespace MemoAnchor.UI
             _homeModeToggle.clicked -= ToggleHomeMode;
             _memoModeToggle.clicked -= ToggleHomeMode;
             _memoFilterButton.clicked -= ShowMemoFilterPage;
-            _memoFilterBackButton.clicked -= HideMemoFilterPage;
-            _memoFilterStartDateButton.clicked -= ShowMemoFilterStartCalendar;
-            _memoFilterEndDateButton.clicked -= ShowMemoFilterEndCalendar;
-            _memoFilterDateToggle.clicked -= ToggleMemoFilterDate;
-            _memoFilterSortLatestButton.clicked -= SelectMemoFilterSortLatest;
-            _memoFilterSortUnhandledButton.clicked -= SelectMemoFilterSortUnhandled;
-            _memoFilterSortAddressButton.clicked -= SelectMemoFilterSortAddress;
-            _memoFilterSortDeadlineButton.clicked -= SelectMemoFilterSortDeadline;
-            _memoFilterMapButton.clicked -= ToggleMemoFilterMapList;
-            _memoFilterMap1Button.clicked -= SelectMemoFilterMap1;
-            _memoFilterMap2Button.clicked -= SelectMemoFilterMap2;
-            _memoFilterMap3Button.clicked -= SelectMemoFilterMap3;
-            _memoFilterUrgencyHighButton.clicked -= SelectMemoFilterUrgencyHigh;
-            _memoFilterUrgencyMediumButton.clicked -= SelectMemoFilterUrgencyMedium;
-            _memoFilterUrgencyLowButton.clicked -= SelectMemoFilterUrgencyLow;
-            _memoFilterUrgencyToggle.clicked -= ToggleMemoFilterUrgency;
-            _memoFilterCalendarPrevButton.clicked -= ShowPreviousMemoFilterCalendarMonth;
-            _memoFilterCalendarNextButton.clicked -= ShowNextMemoFilterCalendarMonth;
-            _memoFilterCalendarCloseButton.clicked -= HideMemoFilterCalendar;
-            _memoFilterResetButton.clicked -= ResetMemoFilter;
-            _memoFilterApplyButton.clicked -= ApplyMemoFilterAndClose;
+            UnregisterMemoFilterPage();
             if (_alertBackButton != null)
             {
                 _alertBackButton.clicked -= HideAlertDialog;
@@ -336,435 +295,6 @@ namespace MemoAnchor.UI
             _alertMapList.Add(item);
         }
 
-        private void InitializeMemoFilterDates()
-        {
-            DateTime today = DateTime.Today;
-            _memoFilterStartDate = today;
-            _memoFilterEndDate = today;
-            _memoFilterCalendarMonth = new DateTime(today.Year, today.Month, 1);
-        }
-
-        private void RegisterMemoFilterPage()
-        {
-            _memoFilterPage = _root.Q<VisualElement>("memo-filter-page");
-            _memoFilterCalendar = _root.Q<VisualElement>("memo-filter-calendar");
-            _memoFilterCalendarGrid = _root.Q<VisualElement>("memo-filter-calendar-grid");
-            _memoFilterMapList = _root.Q<VisualElement>("memo-filter-map-list");
-            _memoFilterBackButton = _root.Q<Button>("memo-filter-back-button");
-            _memoFilterStartDateButton = _root.Q<Button>("memo-filter-start-date-button");
-            _memoFilterEndDateButton = _root.Q<Button>("memo-filter-end-date-button");
-            _memoFilterDateToggle = _root.Q<Button>("memo-filter-date-toggle");
-            _memoFilterSortLatestButton = _root.Q<Button>("memo-filter-sort-latest");
-            _memoFilterSortUnhandledButton = _root.Q<Button>("memo-filter-sort-deadline");
-            _memoFilterSortAddressButton = _root.Q<Button>("memo-filter-sort-address");
-            _memoFilterSortDeadlineButton = _root.Q<Button>("memo-filter-sort-deadline-date");
-            _memoFilterMapButton = _root.Q<Button>("memo-filter-map-button");
-            _memoFilterMap1Button = _root.Q<Button>("memo-filter-map-1");
-            _memoFilterMap2Button = _root.Q<Button>("memo-filter-map-2");
-            _memoFilterMap3Button = _root.Q<Button>("memo-filter-map-3");
-            _memoFilterUrgencyHighButton = _root.Q<Button>("memo-filter-urgency-high");
-            _memoFilterUrgencyMediumButton = _root.Q<Button>("memo-filter-urgency-medium");
-            _memoFilterUrgencyLowButton = _root.Q<Button>("memo-filter-urgency-low");
-            _memoFilterUrgencyToggle = _root.Q<Button>("memo-filter-urgency-toggle");
-            _memoFilterCalendarPrevButton = _root.Q<Button>("memo-filter-calendar-prev");
-            _memoFilterCalendarNextButton = _root.Q<Button>("memo-filter-calendar-next");
-            _memoFilterCalendarCloseButton = _root.Q<Button>("memo-filter-calendar-close");
-            _memoFilterResetButton = _root.Q<Button>("memo-filter-reset-button");
-            _memoFilterApplyButton = _root.Q<Button>("memo-filter-apply-button");
-            _memoFilterStartDateLabel = _root.Q<Label>("memo-filter-start-date-label");
-            _memoFilterEndDateLabel = _root.Q<Label>("memo-filter-end-date-label");
-            _memoFilterMapLabel = _root.Q<Label>("memo-filter-map-label");
-            _memoFilterCalendarTitle = _root.Q<Label>("memo-filter-calendar-title");
-
-            _memoFilterBackButton.clicked += HideMemoFilterPage;
-            _memoFilterStartDateButton.clicked += ShowMemoFilterStartCalendar;
-            _memoFilterEndDateButton.clicked += ShowMemoFilterEndCalendar;
-            _memoFilterDateToggle.clicked += ToggleMemoFilterDate;
-            _memoFilterSortLatestButton.clicked += SelectMemoFilterSortLatest;
-            _memoFilterSortUnhandledButton.clicked += SelectMemoFilterSortUnhandled;
-            _memoFilterSortAddressButton.clicked += SelectMemoFilterSortAddress;
-            _memoFilterSortDeadlineButton.clicked += SelectMemoFilterSortDeadline;
-            _memoFilterMapButton.clicked += ToggleMemoFilterMapList;
-            _memoFilterMap1Button.clicked += SelectMemoFilterMap1;
-            _memoFilterMap2Button.clicked += SelectMemoFilterMap2;
-            _memoFilterMap3Button.clicked += SelectMemoFilterMap3;
-            _memoFilterUrgencyHighButton.clicked += SelectMemoFilterUrgencyHigh;
-            _memoFilterUrgencyMediumButton.clicked += SelectMemoFilterUrgencyMedium;
-            _memoFilterUrgencyLowButton.clicked += SelectMemoFilterUrgencyLow;
-            _memoFilterUrgencyToggle.clicked += ToggleMemoFilterUrgency;
-            _memoFilterCalendarPrevButton.clicked += ShowPreviousMemoFilterCalendarMonth;
-            _memoFilterCalendarNextButton.clicked += ShowNextMemoFilterCalendarMonth;
-            _memoFilterCalendarCloseButton.clicked += HideMemoFilterCalendar;
-            _memoFilterResetButton.clicked += ResetMemoFilter;
-            _memoFilterApplyButton.clicked += ApplyMemoFilterAndClose;
-
-            CacheMemoFilterRows();
-            RebuildMemoFilterCalendar();
-            RefreshMemoFilterVisualState();
-        }
-
-        private void CacheMemoFilterRows()
-        {
-            _memoFilterRows.Clear();
-            _memoFilterMapOptions.Clear();
-            int index = 0;
-            _root.Query<VisualElement>(className: "memo-list-swipe-row").ForEach(row =>
-            {
-                string map = GetMemoFilterRowMap(row, index);
-                if (!_memoFilterMapOptions.Contains(map))
-                {
-                    _memoFilterMapOptions.Add(map);
-                }
-
-                int urgency = index % 3;
-                bool handled = index % 2 == 0;
-                DateTime deadline = DateTime.Today.AddDays(index);
-                _memoFilterRows.Add(new MemoFilterRow(row, index, map, urgency, handled, deadline));
-                index++;
-            });
-
-            RefreshMemoFilterMapButtons();
-        }
-
-        private static string GetMemoFilterRowMap(VisualElement row, int index)
-        {
-            Label mapLabel = row.Q<Label>(className: "memo-list-item-meta");
-            return mapLabel != null && mapLabel.text.Length > 0 ? mapLabel.text : $"맵 {index + 1}";
-        }
-
-        private void RefreshMemoFilterMapButtons()
-        {
-            RefreshMemoFilterMapButton(_memoFilterMap1Button, 0);
-            RefreshMemoFilterMapButton(_memoFilterMap2Button, 1);
-            RefreshMemoFilterMapButton(_memoFilterMap3Button, 2);
-        }
-
-        private void RefreshMemoFilterMapButton(Button button, int optionIndex)
-        {
-            bool hasOption = optionIndex < _memoFilterMapOptions.Count;
-            button.style.display = hasOption ? DisplayStyle.Flex : DisplayStyle.None;
-            if (hasOption)
-            {
-                button.text = _memoFilterMapOptions[optionIndex];
-            }
-        }
-
-        private void ShowMemoFilterPage()
-        {
-            _memoFilterPage.AddToClassList(OPEN_CLASS);
-        }
-
-        private void HideMemoFilterPage()
-        {
-            _memoFilterPage.RemoveFromClassList(OPEN_CLASS);
-            HideMemoFilterCalendar();
-            _memoFilterMapList.RemoveFromClassList(OPEN_CLASS);
-        }
-
-        private void ShowMemoFilterStartCalendar()
-        {
-            _memoFilterEditingStartDate = true;
-            _memoFilterDateEnabled = true;
-            _memoFilterCalendarMonth = new DateTime(_memoFilterStartDate.Year, _memoFilterStartDate.Month, 1);
-            _memoFilterCalendar.AddToClassList(OPEN_CLASS);
-            RebuildMemoFilterCalendar();
-            RefreshMemoFilterVisualState();
-        }
-
-        private void ShowMemoFilterEndCalendar()
-        {
-            _memoFilterEditingStartDate = false;
-            _memoFilterDateEnabled = true;
-            _memoFilterCalendarMonth = new DateTime(_memoFilterEndDate.Year, _memoFilterEndDate.Month, 1);
-            _memoFilterCalendar.AddToClassList(OPEN_CLASS);
-            RebuildMemoFilterCalendar();
-            RefreshMemoFilterVisualState();
-        }
-
-        private void HideMemoFilterCalendar()
-        {
-            _memoFilterCalendar.RemoveFromClassList(OPEN_CLASS);
-        }
-
-        private void ToggleMemoFilterDate()
-        {
-            _memoFilterDateEnabled = !_memoFilterDateEnabled;
-            RefreshMemoFilterVisualState();
-        }
-
-        private void ShowPreviousMemoFilterCalendarMonth()
-        {
-            _memoFilterCalendarMonth = _memoFilterCalendarMonth.AddMonths(-1);
-            RebuildMemoFilterCalendar();
-            RefreshMemoFilterVisualState();
-        }
-
-        private void ShowNextMemoFilterCalendarMonth()
-        {
-            _memoFilterCalendarMonth = _memoFilterCalendarMonth.AddMonths(1);
-            RebuildMemoFilterCalendar();
-            RefreshMemoFilterVisualState();
-        }
-
-        private void SelectMemoFilterSortLatest()
-        {
-            SelectMemoFilterSort(MEMO_FILTER_SORT_LATEST);
-        }
-
-        private void SelectMemoFilterSortUnhandled()
-        {
-            SelectMemoFilterSort(MEMO_FILTER_SORT_UNHANDLED);
-        }
-
-        private void SelectMemoFilterSortAddress()
-        {
-            SelectMemoFilterSort(MEMO_FILTER_SORT_ADDRESS);
-        }
-
-        private void SelectMemoFilterSortDeadline()
-        {
-            SelectMemoFilterSort(MEMO_FILTER_SORT_DEADLINE);
-        }
-
-        private void SelectMemoFilterSort(int sortMode)
-        {
-            _memoFilterSortMode = sortMode;
-            RefreshMemoFilterVisualState();
-        }
-
-        private void ToggleMemoFilterMapList()
-        {
-            _memoFilterMapList.EnableInClassList(OPEN_CLASS, !_memoFilterMapList.ClassListContains(OPEN_CLASS));
-        }
-
-        private void SelectMemoFilterMap1()
-        {
-            SelectMemoFilterMapAt(0);
-        }
-
-        private void SelectMemoFilterMap2()
-        {
-            SelectMemoFilterMapAt(1);
-        }
-
-        private void SelectMemoFilterMap3()
-        {
-            SelectMemoFilterMapAt(2);
-        }
-
-        private void SelectMemoFilterMapAt(int optionIndex)
-        {
-            if (optionIndex < _memoFilterMapOptions.Count)
-            {
-                SelectMemoFilterMap(_memoFilterMapOptions[optionIndex]);
-            }
-        }
-
-        private void SelectMemoFilterMap(string map)
-        {
-            _memoFilterMap = map;
-            _memoFilterMapList.RemoveFromClassList(OPEN_CLASS);
-            RefreshMemoFilterVisualState();
-        }
-
-        private void SelectMemoFilterUrgencyHigh()
-        {
-            SelectMemoFilterUrgency(0);
-        }
-
-        private void SelectMemoFilterUrgencyMedium()
-        {
-            SelectMemoFilterUrgency(1);
-        }
-
-        private void SelectMemoFilterUrgencyLow()
-        {
-            SelectMemoFilterUrgency(2);
-        }
-
-        private void SelectMemoFilterUrgency(int urgency)
-        {
-            _memoFilterUrgency = urgency;
-            _memoFilterUrgencyEnabled = true;
-            RefreshMemoFilterVisualState();
-        }
-
-        private void ToggleMemoFilterUrgency()
-        {
-            _memoFilterUrgencyEnabled = !_memoFilterUrgencyEnabled;
-            RefreshMemoFilterVisualState();
-        }
-
-        private void ResetMemoFilter()
-        {
-            InitializeMemoFilterDates();
-            _memoFilterDateEnabled = false;
-            _memoFilterUrgencyEnabled = false;
-            _memoFilterEditingStartDate = true;
-            _memoFilterSortMode = MEMO_FILTER_SORT_LATEST;
-            _memoFilterUrgency = 1;
-            _memoFilterMap = null;
-            HideMemoFilterCalendar();
-            _memoFilterMapList.RemoveFromClassList(OPEN_CLASS);
-            RebuildMemoFilterCalendar();
-            RefreshMemoFilterVisualState();
-            ApplyMemoFilter();
-        }
-
-        private void ApplyMemoFilterAndClose()
-        {
-            ApplyMemoFilter();
-            HideMemoFilterPage();
-        }
-
-        private void ApplyMemoFilter()
-        {
-            _memoFilterRows.Sort(CompareMemoFilterRows);
-
-            foreach (MemoFilterRow row in _memoFilterRows)
-            {
-                row.Element.parent.Add(row.Element);
-                bool matchesDate = !_memoFilterDateEnabled || (row.Deadline.Date >= _memoFilterStartDate.Date && row.Deadline.Date <= _memoFilterEndDate.Date);
-                bool matchesMap = string.IsNullOrEmpty(_memoFilterMap) || row.Map == _memoFilterMap;
-                bool matchesUrgency = !_memoFilterUrgencyEnabled || row.Urgency == _memoFilterUrgency;
-                row.Element.style.display = matchesDate && matchesMap && matchesUrgency ? DisplayStyle.Flex : DisplayStyle.None;
-            }
-        }
-
-        private void RemoveMemoFilterRow(VisualElement element)
-        {
-            _memoFilterRows.RemoveAll(row => row.Element == element);
-        }
-
-        private int CompareMemoFilterRows(MemoFilterRow first, MemoFilterRow second)
-        {
-            return _memoFilterSortMode switch
-            {
-                MEMO_FILTER_SORT_UNHANDLED => first.Handled.CompareTo(second.Handled),
-                MEMO_FILTER_SORT_ADDRESS => string.Compare(first.Map, second.Map, StringComparison.Ordinal),
-                MEMO_FILTER_SORT_DEADLINE => first.Deadline.CompareTo(second.Deadline),
-                _ => first.OriginalIndex.CompareTo(second.OriginalIndex)
-            };
-        }
-
-        private void RebuildMemoFilterCalendar()
-        {
-            _memoFilterCalendarGrid.Clear();
-            _memoFilterCalendarTitle.text = _memoFilterCalendarMonth.ToString("yyyy년 M월");
-
-            string[] weekdays = { "일", "월", "화", "수", "목", "금", "토" };
-            for (int i = 0; i < weekdays.Length; i++)
-            {
-                Button weekday = new() { text = weekdays[i] };
-                weekday.AddToClassList("memo-filter-calendar-cell");
-                weekday.AddToClassList("is-weekday-header");
-                if (i == 0)
-                {
-                    weekday.AddToClassList("is-sunday");
-                }
-                else if (i == 6)
-                {
-                    weekday.AddToClassList("is-saturday");
-                }
-
-                _memoFilterCalendarGrid.Add(weekday);
-            }
-
-            int leadingBlankCount = (int)_memoFilterCalendarMonth.DayOfWeek;
-            DateTime firstVisibleDate = _memoFilterCalendarMonth.AddDays(-leadingBlankCount);
-            const int CALENDAR_VISIBLE_DAY_COUNT = 42;
-            for (int i = 0; i < CALENDAR_VISIBLE_DAY_COUNT; i++)
-            {
-                DateTime date = firstVisibleDate.AddDays(i);
-                int dayOfWeek = (int)date.DayOfWeek;
-                bool isMuted = date.Month != _memoFilterCalendarMonth.Month;
-                Button dayButton = new() { text = date.Day.ToString() };
-                dayButton.AddToClassList("memo-filter-calendar-cell");
-                if (isMuted)
-                {
-                    dayButton.AddToClassList("is-muted");
-                }
-
-                if (dayOfWeek == 0)
-                {
-                    dayButton.AddToClassList("is-sunday");
-                }
-                else if (dayOfWeek == 6)
-                {
-                    dayButton.AddToClassList("is-saturday");
-                }
-
-                DateTime capturedDate = date;
-                dayButton.clicked += () => SelectMemoFilterDate(capturedDate);
-
-                _memoFilterCalendarGrid.Add(dayButton);
-            }
-        }
-
-        private void SelectMemoFilterDate(DateTime date)
-        {
-            if (_memoFilterEditingStartDate)
-            {
-                _memoFilterStartDate = date;
-            }
-            else
-            {
-                _memoFilterEndDate = date;
-            }
-
-            _memoFilterCalendarMonth = new DateTime(date.Year, date.Month, 1);
-            RebuildMemoFilterCalendar();
-            RefreshMemoFilterVisualState();
-        }
-
-        private void RefreshMemoFilterVisualState()
-        {
-            _memoFilterStartDateLabel.text = _memoFilterStartDate.ToString("yyyy-MM-dd");
-            _memoFilterEndDateLabel.text = _memoFilterEndDate.ToString("yyyy-MM-dd");
-            _memoFilterMapLabel.text = string.IsNullOrEmpty(_memoFilterMap) ? "건물 선택하기" : _memoFilterMap;
-            _memoFilterCalendarTitle.text = _memoFilterCalendarMonth.ToString("yyyy년 M월");
-
-            _memoFilterDateToggle.EnableInClassList(SELECTED_CLASS, _memoFilterDateEnabled);
-            _memoFilterStartDateButton.EnableInClassList(SELECTED_CLASS, _memoFilterDateEnabled && _memoFilterEditingStartDate);
-            _memoFilterEndDateButton.EnableInClassList(SELECTED_CLASS, _memoFilterDateEnabled && !_memoFilterEditingStartDate);
-            _memoFilterStartDateButton.EnableInClassList(ERROR_CLASS, _memoFilterDateEnabled && _memoFilterStartDate > _memoFilterEndDate);
-            _memoFilterCalendar.EnableInClassList(ERROR_CLASS, _memoFilterDateEnabled && _memoFilterStartDate > _memoFilterEndDate);
-
-            _memoFilterSortLatestButton.EnableInClassList(SELECTED_CLASS, _memoFilterSortMode == MEMO_FILTER_SORT_LATEST);
-            _memoFilterSortUnhandledButton.EnableInClassList(SELECTED_CLASS, _memoFilterSortMode == MEMO_FILTER_SORT_UNHANDLED);
-            _memoFilterSortAddressButton.EnableInClassList(SELECTED_CLASS, _memoFilterSortMode == MEMO_FILTER_SORT_ADDRESS);
-            _memoFilterSortDeadlineButton.EnableInClassList(SELECTED_CLASS, _memoFilterSortMode == MEMO_FILTER_SORT_DEADLINE);
-
-            _memoFilterMap1Button.EnableInClassList(SELECTED_CLASS, _memoFilterMapOptions.Count > 0 && _memoFilterMap == _memoFilterMapOptions[0]);
-            _memoFilterMap2Button.EnableInClassList(SELECTED_CLASS, _memoFilterMapOptions.Count > 1 && _memoFilterMap == _memoFilterMapOptions[1]);
-            _memoFilterMap3Button.EnableInClassList(SELECTED_CLASS, _memoFilterMapOptions.Count > 2 && _memoFilterMap == _memoFilterMapOptions[2]);
-
-            _memoFilterUrgencyToggle.EnableInClassList(SELECTED_CLASS, _memoFilterUrgencyEnabled);
-            _memoFilterUrgencyHighButton.EnableInClassList(SELECTED_CLASS, _memoFilterUrgency == 0);
-            _memoFilterUrgencyMediumButton.EnableInClassList(SELECTED_CLASS, _memoFilterUrgency == 1);
-            _memoFilterUrgencyLowButton.EnableInClassList(SELECTED_CLASS, _memoFilterUrgency == 2);
-
-            RefreshMemoFilterCalendarSelection();
-        }
-
-        private void RefreshMemoFilterCalendarSelection()
-        {
-            DateTime selectedDate = _memoFilterEditingStartDate ? _memoFilterStartDate : _memoFilterEndDate;
-            _memoFilterCalendarGrid.Query<Button>(className: "memo-filter-calendar-cell").ForEach(button =>
-            {
-                bool isSelected = false;
-                if (int.TryParse(button.text, out int day))
-                {
-                    isSelected = selectedDate.Year == _memoFilterCalendarMonth.Year
-                                 && selectedDate.Month == _memoFilterCalendarMonth.Month
-                                 && selectedDate.Day == day
-                                 && !button.ClassListContains("is-muted");
-                }
-
-                button.EnableInClassList(SELECTED_CLASS, isSelected);
-            });
-        }
-
         private void RegisterMemoSwipeRows()
         {
             _root.Query<VisualElement>(className: "memo-list-swipe-row").ForEach(row =>
@@ -848,24 +378,5 @@ namespace MemoAnchor.UI
             });
         }
 
-        private readonly struct MemoFilterRow
-        {
-            public MemoFilterRow(VisualElement element, int originalIndex, string map, int urgency, bool handled, DateTime deadline)
-            {
-                Element = element;
-                OriginalIndex = originalIndex;
-                Map = map;
-                Urgency = urgency;
-                Handled = handled;
-                Deadline = deadline;
-            }
-
-            public VisualElement Element { get; }
-            public int OriginalIndex { get; }
-            public string Map { get; }
-            public int Urgency { get; }
-            public bool Handled { get; }
-            public DateTime Deadline { get; }
-        }
     }
 }

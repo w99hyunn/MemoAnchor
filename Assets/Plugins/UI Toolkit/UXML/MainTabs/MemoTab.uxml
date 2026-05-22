@@ -32,7 +32,7 @@
                     <ui:Instance template="MemoListItem"/>
                     <ui:Instance template="MemoListItem"/>
                     <ui:Instance template="MemoListItem"/>
-                    <ui:Instance template="MemoListItem" name=""/>
+                    <ui:Instance template="MemoListItem"/>
                 </ui:VisualElement>
             </ui:VisualElement>
         </ui:ScrollView>

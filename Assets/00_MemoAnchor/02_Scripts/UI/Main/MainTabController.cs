@@ -12,6 +12,7 @@ namespace MemoAnchor.UI
         private MainTabView _view;
         private int _currentTabIndex;
         private bool _isScanNavModeActive;
+        private bool _isRegistered;
 
         private void Awake()
         {
@@ -26,17 +27,24 @@ namespace MemoAnchor.UI
             _view.MapButton.clicked += OnClickMap;
             _view.ProfileButton.clicked += OnClickProfile;
             _view.TabViewport.RegisterCallback<GeometryChangedEvent>(OnViewportGeometryChanged);
+            _isRegistered = true;
             ShowTab(0);
         }
 
         private void OnDisable()
         {
+            if (!_isRegistered)
+            {
+                return;
+            }
+
             _view.HomeButton.clicked -= OnClickHome;
             _view.MenuButton.clicked -= OnClickMenu;
             _view.ScanButton.clicked -= OnClickScan;
             _view.MapButton.clicked -= OnClickMap;
             _view.ProfileButton.clicked -= OnClickProfile;
             _view.TabViewport.UnregisterCallback<GeometryChangedEvent>(OnViewportGeometryChanged);
+            _isRegistered = false;
         }
 
         private void OnClickHome()
