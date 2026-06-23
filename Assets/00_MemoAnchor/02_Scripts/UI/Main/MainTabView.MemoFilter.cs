@@ -72,6 +72,7 @@ namespace MemoAnchor.UI
             _memoFilterMapLabel = _root.Q<Label>("memo-filter-map-label");
             _memoFilterCalendarTitle = _root.Q<Label>("memo-filter-calendar-title");
 
+            PrepareMemoFilterRuntimeVisibility();
             _memoFilterBackButton.clicked += HideMemoFilterPage;
             _memoFilterStartDateButton.clicked += ShowMemoFilterStartCalendar;
             _memoFilterEndDateButton.clicked += ShowMemoFilterEndCalendar;
@@ -97,6 +98,19 @@ namespace MemoAnchor.UI
             CacheMemoFilterRows();
             RebuildMemoFilterCalendar();
             RefreshMemoFilterVisualState();
+        }
+
+        private void PrepareMemoFilterRuntimeVisibility()
+        {
+            SetVisible(_memoFilterPageHost, false);
+            SetVisible(_memoFilterPage, false);
+            SetVisible(_memoFilterCalendar, false);
+            SetVisible(_memoFilterMapList, false);
+        }
+
+        private static void SetVisible(VisualElement element, bool visible)
+        {
+            element.EnableInClassList(HIDDEN_CLASS, !visible);
         }
 
         private void UnregisterMemoFilterPage()
@@ -172,16 +186,16 @@ namespace MemoAnchor.UI
 
         private void ShowMemoFilterPage()
         {
-            _memoFilterPageHost.AddToClassList(OPEN_CLASS);
-            _memoFilterPage.AddToClassList(OPEN_CLASS);
+            SetVisible(_memoFilterPageHost, true);
+            SetVisible(_memoFilterPage, true);
         }
 
         private void HideMemoFilterPage()
         {
-            _memoFilterPageHost.RemoveFromClassList(OPEN_CLASS);
-            _memoFilterPage.RemoveFromClassList(OPEN_CLASS);
+            SetVisible(_memoFilterPageHost, false);
+            SetVisible(_memoFilterPage, false);
             HideMemoFilterCalendar();
-            _memoFilterMapList.RemoveFromClassList(OPEN_CLASS);
+            SetVisible(_memoFilterMapList, false);
         }
 
         private void ShowMemoFilterStartCalendar()
@@ -189,7 +203,7 @@ namespace MemoAnchor.UI
             _memoFilterEditingStartDate = true;
             _memoFilterDateEnabled = true;
             _memoFilterCalendarMonth = new DateTime(_memoFilterStartDate.Year, _memoFilterStartDate.Month, 1);
-            _memoFilterCalendar.AddToClassList(OPEN_CLASS);
+            SetVisible(_memoFilterCalendar, true);
             RebuildMemoFilterCalendar();
             RefreshMemoFilterVisualState();
         }
@@ -199,14 +213,14 @@ namespace MemoAnchor.UI
             _memoFilterEditingStartDate = false;
             _memoFilterDateEnabled = true;
             _memoFilterCalendarMonth = new DateTime(_memoFilterEndDate.Year, _memoFilterEndDate.Month, 1);
-            _memoFilterCalendar.AddToClassList(OPEN_CLASS);
+            SetVisible(_memoFilterCalendar, true);
             RebuildMemoFilterCalendar();
             RefreshMemoFilterVisualState();
         }
 
         private void HideMemoFilterCalendar()
         {
-            _memoFilterCalendar.RemoveFromClassList(OPEN_CLASS);
+            SetVisible(_memoFilterCalendar, false);
         }
 
         private void ToggleMemoFilterDate()
@@ -257,7 +271,7 @@ namespace MemoAnchor.UI
 
         private void ToggleMemoFilterMapList()
         {
-            _memoFilterMapList.EnableInClassList(OPEN_CLASS, !_memoFilterMapList.ClassListContains(OPEN_CLASS));
+            SetVisible(_memoFilterMapList, _memoFilterMapList.ClassListContains(HIDDEN_CLASS));
         }
 
         private void SelectMemoFilterMap1()
@@ -286,7 +300,7 @@ namespace MemoAnchor.UI
         private void SelectMemoFilterMap(string map)
         {
             _memoFilterMap = map;
-            _memoFilterMapList.RemoveFromClassList(OPEN_CLASS);
+            SetVisible(_memoFilterMapList, false);
             RefreshMemoFilterVisualState();
         }
 
@@ -328,7 +342,7 @@ namespace MemoAnchor.UI
             _memoFilterUrgency = 1;
             _memoFilterMap = null;
             HideMemoFilterCalendar();
-            _memoFilterMapList.RemoveFromClassList(OPEN_CLASS);
+            SetVisible(_memoFilterMapList, false);
             RebuildMemoFilterCalendar();
             RefreshMemoFilterVisualState();
             ApplyMemoFilter();

@@ -203,6 +203,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::MemoAnchor.Splash
   mainScene: Main
   minimumSplashTime: 3
+  serverBaseUrl: https://localhost:7001
+  kakaoProviderName: oidc-kakao
+  googleProviderName: oidc-google
 --- !u!1 &498469366
 GameObject:
   m_ObjectHideFlags: 0

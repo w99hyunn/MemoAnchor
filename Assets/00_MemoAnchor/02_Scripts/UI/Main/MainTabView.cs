@@ -11,12 +11,13 @@ namespace MemoAnchor.UI
         private const string DIALOG_ANIM_READY_CLASS = "is-anim-ready";
         private const string MEMO_DELETE_OPEN_CLASS = "is-delete-open";
         private const string SELECTED_CLASS = "is-selected";
-        private const string OPEN_CLASS = "is-open";
+        private const string HIDDEN_CLASS = "is-hidden";
         private const string ERROR_CLASS = "is-error";
         private const string HOME_ADMIN_MODE_CLASS = "is-admin-mode";
         private const string HOME_WORK_MODE_CLASS = "is-work-mode";
         private const string HOME_ADMIN_TITLE = "관리자";
         private const string HOME_WORK_TITLE = "내 업무";
+        private const string DEFAULT_PLAYER_NAME = "관리자";
         private const float MEMO_SWIPE_INTENT_THRESHOLD = 20f;
         private const float MEMO_SWIPE_OPEN_THRESHOLD = 80f;
 
@@ -35,7 +36,7 @@ namespace MemoAnchor.UI
         private VisualElement _homeModeBack;
         private VisualElement _scanActionDialogOverlay;
         private VisualElement _alertDialogPage, _alertRequestList, _alertMapList;
-        private Label _homeModeTitle;
+        private Label _homeGreetingLabel, _homeModeTitle;
         private TemplateContainer _scanActionDialogTree;
         private TemplateContainer _alertDialogTree;
         private Action _onScanActionCreate, _onScanActionJoin;
@@ -74,8 +75,10 @@ namespace MemoAnchor.UI
             _mapTab = _root.Q<VisualElement>("tab-map");
             _profileTab = _root.Q<VisualElement>("tab-profile");
             _homeModeBack = _root.Q<VisualElement>("mode-back");
+            _homeGreetingLabel = _root.Q<Label>("home-greeting-label");
             _homeModeTitle = _root.Q<Label>("home-mode-title");
 
+            ApplyPlayerProfile();
             _alertButton.clicked += ShowAlertDialog;
             _homeModeToggle.clicked += ToggleHomeMode;
             _memoModeToggle.clicked += ToggleHomeMode;
@@ -136,6 +139,13 @@ namespace MemoAnchor.UI
             _homeModeBack.EnableInClassList(HOME_ADMIN_MODE_CLASS, !_isHomeWorkMode);
             _menuTab.EnableInClassList(HOME_ADMIN_MODE_CLASS, !_isHomeWorkMode);
             _memoFilterPage.EnableInClassList(HOME_ADMIN_MODE_CLASS, !_isHomeWorkMode);
+        }
+
+        private void ApplyPlayerProfile()
+        {
+            MemoAnchor.PlayerProfile profile = MemoAnchor.PlayerSession.Profile;
+            string playerName = string.IsNullOrWhiteSpace(profile.Name) ? DEFAULT_PLAYER_NAME : profile.Name;
+            _homeGreetingLabel.text = $"{playerName}님, 안녕하세요!";
         }
 
         public void ShowScanActionDialog(Action onCreate, Action onJoin)

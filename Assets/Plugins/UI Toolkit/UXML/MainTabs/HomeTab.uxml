@@ -4,7 +4,7 @@
     <Style src="project://database/Assets/Plugins/UI%20Toolkit/UnityThemes/style.uss?fileID=7433441132597879392&amp;guid=c3edbd9c191f92b49aa6a3ce9ffd69d5&amp;type=3#style"/>
     <ui:VisualElement name="tab-home" class="tab-page tab-page-layout is-visible">
         <ui:VisualElement class="home-header tab-fixed-header" style="align-items: center;">
-            <ui:Label text="관리자님, 안녕하세요!" class="home-greeting"/>
+            <ui:Label name="home-greeting-label" text="관리자님, 안녕하세요!" class="home-greeting"/>
             <ui:Button text="" name="alert" class="home-right-icon-button"/>
         </ui:VisualElement>
         <ui:ScrollView name="home-content-scroll" mode="Vertical" horizontal-scroller-visibility="Hidden" vertical-scroller-visibility="Hidden" touch-scroll-type="Elastic" class="tab-content-scroll">

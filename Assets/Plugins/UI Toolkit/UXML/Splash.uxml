@@ -1,6 +1,59 @@
 <ui:UXML xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" noNamespaceSchemaLocation="../../../../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
     <Style src="project://database/Assets/Plugins/UI%20Toolkit/UnityThemes/style.uss?fileID=7433441132597879392&amp;guid=c3edbd9c191f92b49aa6a3ce9ffd69d5&amp;type=3#style"/>
-    <ui:VisualElement style="flex-grow: 1; background-image: url(&quot;project://database/Assets/00_MemoAnchor/03_Media/splash.renderTexture?fileID=8400000&amp;guid=6aeed065f9a6439499e0ae2f0ef33895&amp;type=2#splash&quot;); justify-content: center;">
+    <ui:VisualElement class="splash-root" style="background-image: url(&quot;project://database/Assets/00_MemoAnchor/03_Media/splash.renderTexture?fileID=8400000&amp;guid=6aeed065f9a6439499e0ae2f0ef33895&amp;type=2#splash&quot;);">
         <ui:VisualElement style="flex-grow: 1; background-image: url(&quot;project://database/Assets/00_MemoAnchor/03_Media/logo.png?fileID=2800000&amp;guid=a402c67bcb520e24fa718d51047c61ed&amp;type=3#logo&quot;); position: absolute; width: 750px; height: 500px; -unity-background-scale-mode: scale-to-fit; align-self: center;"/>
+        <ui:VisualElement name="login-panel" class="splash-panel">
+            <ui:Button name="kakao-login-button" class="memo-filter-bottom-button splash-action-button splash-login-button-kakao">
+                <ui:VisualElement class="splash-login-icon splash-login-icon-kakao"/>
+                <ui:Label text="Kakao로 로그인" class="splash-login-label"/>
+            </ui:Button>
+            <ui:Button name="google-login-button" class="memo-filter-bottom-button memo-filter-reset-button splash-action-button" style="margin-top: 16px;">
+                <ui:VisualElement class="splash-login-icon splash-login-icon-google"/>
+                <ui:Label text="Google로 로그인" class="splash-login-label"/>
+            </ui:Button>
+        </ui:VisualElement>
+        <ui:VisualElement name="signup-panel" class="splash-panel splash-signup-panel tab-page-layout">
+            <ui:VisualElement class="home-header tab-fixed-header">
+                <ui:Label text="추가 정보 작성" class="home-greeting"/>
+                <ui:Label text="회원가입을 위해 필요한 정보를 입력해주세요." class="splash-signup-description"/>
+            </ui:VisualElement>
+            <ui:ScrollView name="signup-content-scroll" mode="Vertical" horizontal-scroller-visibility="Hidden" vertical-scroller-visibility="Hidden" touch-scroll-type="Elastic" class="tab-content-scroll" style="padding-right: 50px; padding-left: 50px;">
+                <ui:VisualElement class="tab-content-inner">
+                    <ui:Label text="프로필 설정" class="scan-step-title"/>
+                    <ui:VisualElement class="scan-field-group">
+                        <ui:Label text="이름" class="scan-field-label"/>
+                        <ui:VisualElement name="signup-name-input-box" class="scan-input-box">
+                            <ui:TextField name="signup-name-input" label="" placeholder-text="이름을 입력하세요." class="scan-input-field"/>
+                            <ui:VisualElement picking-mode="Ignore" class="signup-input-border"/>
+                        </ui:VisualElement>
+                    </ui:VisualElement>
+                    <ui:VisualElement class="scan-field-group">
+                        <ui:Label text="이메일" class="scan-field-label"/>
+                        <ui:VisualElement name="signup-email-input-box" class="scan-input-box">
+                            <ui:TextField name="signup-email-input" label="" placeholder-text="이메일 주소를 입력하세요." class="scan-input-field"/>
+                            <ui:VisualElement picking-mode="Ignore" class="signup-input-border"/>
+                        </ui:VisualElement>
+                    </ui:VisualElement>
+                    <ui:VisualElement class="scan-field-group">
+                        <ui:Label text="소속" class="scan-field-label"/>
+                        <ui:VisualElement name="signup-company-input-box" class="scan-input-box">
+                            <ui:TextField name="signup-company-input" label="" placeholder-text="예: MemoAnchor" class="scan-input-field"/>
+                            <ui:VisualElement picking-mode="Ignore" class="signup-input-border"/>
+                        </ui:VisualElement>
+                    </ui:VisualElement>
+                    <ui:Label name="signup-status-label" class="splash-signup-status"/>
+                </ui:VisualElement>
+            </ui:ScrollView>
+            <ui:VisualElement class="splash-signup-bottom-bar">
+                <ui:Button name="signup-submit-button" text="시작하기" class="memo-filter-bottom-button memo-filter-apply-button splash-action-button splash-primary-button"/>
+            </ui:VisualElement>
+        </ui:VisualElement>
+        <ui:VisualElement name="auth-message-popup" class="splash-auth-popup">
+            <ui:VisualElement class="splash-auth-popup-sheet">
+                <ui:Label name="auth-message-title-label" class="home-greeting splash-auth-popup-title"/>
+                <ui:Label name="auth-message-label" class="scan-action-option-title splash-auth-popup-message"/>
+                <ui:Button name="auth-message-close-button" text="확인" class="memo-filter-bottom-button memo-filter-apply-button splash-primary-button splash-auth-popup-button"/>
+            </ui:VisualElement>
+        </ui:VisualElement>
     </ui:VisualElement>
 </ui:UXML>

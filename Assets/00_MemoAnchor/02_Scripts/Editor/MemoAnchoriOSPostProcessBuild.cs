@@ -23,6 +23,16 @@ namespace MemoAnchor.Editor
             project.AddFrameworkToProject(frameworkTargetGuid, "WebKit.framework", false);
 
             File.WriteAllText(projectPath, project.WriteToString());
+
+            string plistPath = Path.Combine(buildPath, "Info.plist");
+            PlistDocument plist = new();
+            plist.ReadFromFile(plistPath);
+            PlistElementArray urlTypes = plist.root.CreateArray("CFBundleURLTypes");
+            PlistElementDict urlType = urlTypes.AddDict();
+            urlType.SetString("CFBundleURLName", "MemoAnchor");
+            PlistElementArray urlSchemes = urlType.CreateArray("CFBundleURLSchemes");
+            urlSchemes.AddString("memoanchor");
+            plist.WriteToFile(plistPath);
         }
     }
 }

@@ -1,31 +1,26 @@
-<ui:UXML xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" noNamespaceSchemaLocation="../../../../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
+﻿<ui:UXML xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" noNamespaceSchemaLocation="../../../../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
     <Style src="project://database/Assets/Plugins/UI%20Toolkit/UnityThemes/style.uss?fileID=7433441132597879392&amp;guid=c3edbd9c191f92b49aa6a3ce9ffd69d5&amp;type=3#style"/>
     <ui:VisualElement name="bottom-nav-wrapper" class="bottom-nav-wrapper">
         <ui:VisualElement name="bottom-nav" class="bottom-nav">
             <ui:Button name="nav-home" class="nav-item is-active">
                 <ui:VisualElement class="nav-press-bg"/>
                 <ui:VisualElement class="nav-icon" style="background-image: url(&quot;project://database/Assets/00_MemoAnchor/03_Media/Icon/home.png?fileID=2800000&amp;guid=fa77001cac75fff498ee0977ec93db22&amp;type=3#home&quot;);"/>
-                <ui:Label text="홈" class="nav-label"/>
             </ui:Button>
             <ui:Button name="nav-menu" class="nav-item">
                 <ui:VisualElement class="nav-press-bg"/>
                 <ui:VisualElement class="nav-icon nav-icon-menu" style="background-image: url(&quot;project://database/Assets/00_MemoAnchor/03_Media/Icon/memo_list.png?fileID=2800000&amp;guid=71b687c27d6ed9e459d50d724752da37&amp;type=3#memo_list&quot;);"/>
-                <ui:Label text="메모" class="nav-label"/>
             </ui:Button>
             <ui:Button name="nav-scan" class="nav-item">
                 <ui:VisualElement class="nav-press-bg"/>
                 <ui:VisualElement class="nav-icon nav-icon-scan" style="background-image: url(&quot;project://database/Assets/00_MemoAnchor/03_Media/Icon/scan.png?fileID=2800000&amp;guid=ea32a5cc2c56260458012ba9f4ed5518&amp;type=3#scan&quot;);"/>
-                <ui:Label text="스캔" class="nav-label"/>
             </ui:Button>
             <ui:Button name="nav-map" class="nav-item">
                 <ui:VisualElement class="nav-press-bg"/>
                 <ui:VisualElement class="nav-icon nav-icon-map" style="background-image: url(&quot;project://database/Assets/00_MemoAnchor/03_Media/Icon/map.png?fileID=2800000&amp;guid=369495be6ce1bdd429d49be8dc257664&amp;type=3#map&quot;);"/>
-                <ui:Label text="지도" class="nav-label"/>
             </ui:Button>
             <ui:Button name="nav-profile" class="nav-item">
                 <ui:VisualElement class="nav-press-bg"/>
                 <ui:VisualElement class="nav-icon nav-icon-profile" style="background-image: url(&quot;project://database/Assets/00_MemoAnchor/03_Media/Icon/profile.png?fileID=2800000&amp;guid=5049c0bf482af2549afeca45a3efd61c&amp;type=3#profile&quot;);"/>
-                <ui:Label text="프로필" class="nav-label"/>
             </ui:Button>
         </ui:VisualElement>
         <ui:VisualElement name="scan-start-bg" class="scan-start-bg">

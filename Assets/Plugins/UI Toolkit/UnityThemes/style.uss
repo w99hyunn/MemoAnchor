@@ -30,6 +30,60 @@
     border-color: transparent;
 }
 
+.splash-root {
+    flex-grow: 1;
+    justify-content: center;
+}
+
+.splash-panel {
+    position: absolute;
+    left: 72px;
+    right: 72px;
+    bottom: 86px;
+    display: flex;
+}
+
+.splash-signup-panel {
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    background-color: rgb(246, 246, 246);
+}
+
+.splash-signup-panel .home-header {
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: flex-start;
+}
+
+.splash-signup-description {
+    margin-top: 12px;
+    font-size: 34px;
+    color: rgb(135, 135, 135);
+}
+
+.splash-signup-bottom-bar {
+    position: absolute;
+    left: 60px;
+    right: 60px;
+    bottom: 60px;
+    height: 200px;
+    flex-direction: row;
+    align-items: center;
+}
+
+.splash-login-button-kakao:hover:enabled {
+    background-color: rgb(246, 220, 0);
+}
+
+.splash-signup-status {
+    min-height: 42px;
+    margin-top: 44px;
+    color: rgb(87, 87, 87);
+    font-size: 34px;
+}
+
 .main-root {
     flex-grow: 1;
     position: relative;
@@ -289,15 +343,20 @@
     height: 64px;
     border-radius: 32px;
     background-color: rgb(177, 28, 68);
+    background-image: url("project://database/Assets/00_MemoAnchor/03_Media/Icon/admin.png?fileID=2800000&guid=5b0fcf6366924744cb2f0df276925867&type=3#admin");
+    -unity-background-scale-mode: scale-to-fit;
+    -unity-background-image-tint-color: rgb(255, 255, 255);
     align-self: flex-start;
     transition-property: translate, background-color;
     transition-duration: 0.18s;
     transition-timing-function: ease-out;
+    background-size: 60% 60%;
 }
 
 .home-mode-toggle.is-work-mode .home-mode-toggle-thumb {
     translate: 84px 0;
     background-color: rgb(86, 99, 142);
+    background-image: url("project://database/Assets/00_MemoAnchor/03_Media/Icon/user.png?fileID=2800000&guid=3a95cf702d6e3e64ca7c035145fdacfd&type=3#user");
 }
 
 .memo-section-title {
@@ -539,12 +598,12 @@
     border-radius: 28px;
     background-color: rgba(0, 0, 0, 0);
     position: relative;
-    flex-direction: column;
+    flex-direction: row;
     align-items: center;
     justify-content: center;
     -unity-font-style: normal;
-    padding-top: 10px;
-    padding-bottom: 10px;
+    padding-top: 0;
+    padding-bottom: 0;
     transition-duration: 0.26s;
     transition-timing-function: ease-out;
     transition-property: opacity, translate;
@@ -633,12 +692,6 @@
     transition-property: width, height, border-radius, background-color, margin-left;
 }
 
-#nav-scan .nav-label {
-    transition-duration: 0.2s;
-    transition-timing-function: ease-out;
-    transition-property: opacity, margin-top;
-}
-
 .bottom-nav.is-scan-mode #nav-scan {
     width: 132px;
     height: 132px;
@@ -650,10 +703,6 @@
     align-items: center;
     padding-top: 0;
     padding-bottom: 0;
-}
-
-.bottom-nav.is-scan-mode #nav-scan .nav-label {
-    display: none;
 }
 
 .bottom-nav.is-scan-mode #nav-scan .nav-icon {
@@ -683,7 +732,7 @@
     left: -10px;
     right: -10px;
     top: -10px;
-    bottom: -20px;
+    bottom: -10px;
     border-radius: 24px;
     background-color: rgba(42, 42, 47, 0);
     transition-duration: 0.16s;
@@ -725,16 +774,14 @@
     background-color: rgba(50, 50, 56, 0.95);
 }
 
-.nav-item > .nav-icon,
-.nav-item > .nav-label {
+.nav-item > .nav-icon {
     position: relative;
     top: 0;
     transition-duration: 0.16s;
     transition-timing-function: ease-out;
 }
 
-.nav-item.is-tapping-down > .nav-icon,
-.nav-item.is-tapping-down > .nav-label {
+.nav-item.is-tapping-down > .nav-icon {
     top: 2px;
 }
 
@@ -748,6 +795,7 @@
 }
 
 .nav-label {
+    display: none;
     font-size: 30px;
     color: var(--nav-icon-inactive);
     -unity-font-definition: url("project://database/Assets/Plugins/UI%20Toolkit/Fonts/Pretendard-Medium.ttf?fileID=12800000&guid=45ed9c45b09f5f2498d91e1982ab7527&type=3#Pretendard-Medium");
@@ -756,11 +804,6 @@
 
 .nav-item.is-active .nav-icon {
     -unity-background-image-tint-color: var(--nav-icon-active);
-    transition-duration: 0.18s;
-}
-
-.nav-item.is-active .nav-label {
-    color: var(--nav-icon-active);
     transition-duration: 0.18s;
 }
 
@@ -789,7 +832,7 @@
     background-color: transparent;
     border-radius: 55px;
     padding-left: 120px;
-    border-color: #B2B2B2;
+    border-color: rgb(178, 178, 178);
     height: 110px;
     border-width: 2px;
 }
@@ -919,11 +962,11 @@
     top: 0;
     bottom: 0;
     flex-grow: 0;
-    display: none;
+    display: flex;
 }
 
-.memo-filter-page-host.is-open {
-    display: flex;
+.memo-filter-page-host.is-hidden {
+    display: none;
 }
 
 .memo-filter-page {
@@ -934,11 +977,11 @@
     bottom: 0;
     background-color: rgb(250, 250, 250);
     padding-top: 120px;
-    display: none;
+    display: flex;
 }
 
-.memo-filter-page.is-open {
-    display: flex;
+.memo-filter-page.is-hidden {
+    display: none;
 }
 
 .memo-filter-header {
@@ -1174,11 +1217,11 @@
     padding-right: 40px;
     padding-bottom: 40px;
     padding-left: 40px;
-    display: none;
+    display: flex;
 }
 
-.memo-filter-calendar.is-open {
-    display: flex;
+.memo-filter-calendar.is-hidden {
+    display: none;
 }
 
 .memo-filter-calendar.is-error {
@@ -1425,11 +1468,11 @@
     background-color: rgb(255, 255, 255);
     padding-top: 24px;
     padding-bottom: 24px;
-    display: none;
+    display: flex;
 }
 
-.memo-filter-map-list.is-open {
-    display: flex;
+.memo-filter-map-list.is-hidden {
+    display: none;
 }
 
 .memo-filter-map-item {
@@ -1504,7 +1547,7 @@
     height: 164px;
     border-radius: 82px;
     color: rgb(255, 255, 255);
-    font-size: 38px;
+    font-size: 44px;
     -unity-font-definition: url("project://database/Assets/Plugins/UI%20Toolkit/Fonts/Pretendard-SemiBold.ttf?fileID=12800000&guid=7136488b0fb8f924b91754e33f3b5abc&type=3#Pretendard-SemiBold");
     transition-property: background-color;
     transition-duration: 0.14s;
@@ -1549,6 +1592,18 @@
     background-color: rgb(136, 20, 52);
 }
 
+.splash-action-button {
+    width: 100%;
+    flex-grow: 0;
+    margin-left: 0;
+    margin-right: 0;
+}
+
+.splash-action-button.splash-login-button-kakao {
+    background-color: rgb(254, 229, 0);
+    color: rgb(25, 22, 0);
+}
+
 .scan-step-title {
     margin-top: 50px;
     font-size: 60px;
@@ -1574,6 +1629,17 @@
     justify-content: center;
     padding-left: 30px;
     padding-right: 30px;
+    border-left-width: 3px;
+    border-right-width: 3px;
+    border-top-width: 3px;
+    border-bottom-width: 3px;
+    border-left-color: rgba(0, 0, 0, 0);
+    border-right-color: rgba(0, 0, 0, 0);
+    border-top-color: rgba(0, 0, 0, 0);
+    border-bottom-color: rgba(0, 0, 0, 0);
+    transition-property: border-left-color, border-right-color, border-top-color, border-bottom-color, background-color, translate;
+    transition-duration: 0.08s;
+    transition-timing-function: ease-out;
 }
 
 .scan-input-field {
@@ -1586,11 +1652,15 @@
     color: rgb(84, 84, 84);
 }
 
+.scan-input-field .unity-base-field__input,
 .scan-input-field .unity-base-text-field__input {
     height: 100%;
     margin: 0;
     padding: 0;
-    border-width: 0;
+    border-left-width: 0;
+    border-right-width: 0;
+    border-top-width: 0;
+    border-bottom-width: 0;
     background-color: rgba(0, 0, 0, 0);
     color: rgb(84, 84, 84);
     font-size: 42px;
@@ -1946,4 +2016,164 @@
     color: rgb(65, 171, 219);
     font-size: 42px;
     -unity-font-definition: url("project://database/Assets/Plugins/UI%20Toolkit/Fonts/Pretendard-SemiBold.ttf?fileID=12800000&guid=7136488b0fb8f924b91754e33f3b5abc&type=3#Pretendard-SemiBold");
+}
+
+#signup-company-input-box.is-error,
+#signup-name-input-box.is-error,
+#signup-email-input-box.is-error {
+    background-color: rgb(255, 247, 249);
+}
+
+.splash-root .splash-signup-panel .scan-input-box {
+    position: relative;
+}
+
+.splash-root .splash-signup-panel .scan-input-box .signup-input-border {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    border-top-left-radius: 28px;
+    border-top-right-radius: 28px;
+    border-bottom-right-radius: 28px;
+    border-bottom-left-radius: 28px;
+    border-left-width: 4px;
+    border-right-width: 4px;
+    border-top-width: 4px;
+    border-bottom-width: 4px;
+    border-left-color: rgba(0, 0, 0, 0);
+    border-right-color: rgba(0, 0, 0, 0);
+    border-top-color: rgba(0, 0, 0, 0);
+    border-bottom-color: rgba(0, 0, 0, 0);
+}
+
+.splash-root .splash-signup-panel .scan-input-box.is-error .signup-input-border {
+    border-left-color: rgb(248, 128, 148);
+    border-right-color: rgb(248, 128, 148);
+    border-top-color: rgb(248, 128, 148);
+    border-bottom-color: rgb(248, 128, 148);
+}
+
+.splash-root .splash-panel {
+    display: flex;
+    opacity: 1;
+    visibility: visible;
+    translate: 0 0;
+    transition-property: opacity, translate;
+    transition-duration: 0.28s;
+    transition-timing-function: ease-out;
+}
+
+.splash-root .splash-panel.is-hidden {
+    opacity: 0;
+    visibility: hidden;
+    translate: 0 28px;
+}
+
+.splash-root .splash-action-button {
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+}
+
+.splash-root .splash-login-icon {
+    width: 48px;
+    height: 48px;
+    margin-right: 22px;
+    -unity-background-scale-mode: scale-to-fit;
+}
+
+.splash-root .splash-login-label {
+    color: rgb(255, 255, 255);
+    font-size: 44px;
+    -unity-font-definition: url("project://database/Assets/Plugins/UI%20Toolkit/Fonts/Pretendard-SemiBold.ttf?fileID=12800000&guid=7136488b0fb8f924b91754e33f3b5abc&type=3#Pretendard-SemiBold");
+}
+
+.splash-root .splash-login-button-kakao .splash-login-label {
+    color: rgb(25, 22, 0);
+}
+
+.splash-root .splash-login-icon-kakao {
+    background-image: url("project://database/Assets/00_MemoAnchor/03_Media/kakao.png?fileID=2800000&guid=ced5c007636d4164e8a3ccfbc2205ad8&type=3#kakao");
+}
+
+.splash-root .splash-login-icon-google {
+    background-image: url("project://database/Assets/00_MemoAnchor/03_Media/google.png?fileID=2800000&guid=34f0e8d1f61950e41abd1b3637218c23&type=3#google");
+}
+
+.splash-root .splash-primary-button {
+    background-color: rgb(177, 28, 68);
+    color: rgb(255, 255, 255);
+    font-size: 44px;
+}
+
+.splash-root .splash-primary-button:hover:enabled {
+    background-color: rgb(158, 24, 61);
+}
+
+.splash-root .splash-primary-button:active:enabled {
+    background-color: rgb(136, 20, 52);
+}
+
+.splash-root .splash-auth-popup {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    align-items: center;
+    justify-content: center;
+    padding-left: 50px;
+    padding-right: 50px;
+    background-color: rgba(0, 0, 0, 0.48);
+    visibility: visible;
+    opacity: 1;
+    transition-property: opacity;
+    transition-duration: 0.18s;
+    transition-timing-function: ease-out;
+}
+
+.splash-root .splash-auth-popup.is-hidden {
+    visibility: hidden;
+    opacity: 0;
+}
+
+.splash-root .splash-auth-popup-sheet {
+    width: 88%;
+    min-height: 420px;
+    border-top-left-radius: 90px;
+    border-top-right-radius: 90px;
+    border-bottom-right-radius: 90px;
+    border-bottom-left-radius: 90px;
+    background-color: rgb(255, 255, 255);
+    padding-top: 68px;
+    padding-right: 58px;
+    padding-bottom: 58px;
+    padding-left: 58px;
+}
+
+.splash-root .splash-auth-popup-title {
+    color: rgb(49, 57, 73);
+    margin-bottom: 34px;
+    padding-left: 18px;
+    padding-right: 18px;
+    -unity-text-align: upper-left;
+}
+
+.splash-root .splash-auth-popup-message {
+    color: rgb(72, 82, 99);
+    -unity-text-align: upper-left;
+    white-space: normal;
+    margin-bottom: 54px;
+    padding-left: 18px;
+    padding-right: 18px;
+    -unity-font-definition: url("project://database/Assets/Plugins/UI%20Toolkit/Fonts/Pretendard-Light.ttf?fileID=12800000&guid=8c634880071f83d4da7be3c9ff6f0be8&type=3#Pretendard-Light");
+}
+
+.splash-root .splash-auth-popup-button {
+    width: 100%;
+    flex-grow: 0;
+    height: 136px;
+    border-radius: 40px;
 }
