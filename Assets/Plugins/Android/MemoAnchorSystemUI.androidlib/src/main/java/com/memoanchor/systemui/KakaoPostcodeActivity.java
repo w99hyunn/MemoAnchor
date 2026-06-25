@@ -46,8 +46,8 @@ public class KakaoPostcodeActivity extends Activity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         unityGameObjectName = getIntent().getStringExtra(EXTRA_UNITY_GAME_OBJECT);
-        EdgeToEdgeHelper.apply(getWindow());
-        getWindow().setStatusBarColor(Color.WHITE);
+        SystemBarsHelper.apply(getWindow());
+        getWindow().setStatusBarColor(Color.TRANSPARENT);
         getWindow().setNavigationBarColor(Color.WHITE);
         getWindow().getDecorView().setBackgroundColor(Color.WHITE);
         setupWebView();

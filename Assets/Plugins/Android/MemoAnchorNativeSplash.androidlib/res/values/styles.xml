@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="MemoAnchorNativeSplashTheme" parent="@style/MemoAnchorUnityTheme">
+        <item name="android:windowBackground">@color/memo_anchor_native_splash_background</item>
+    </style>
+</resources>

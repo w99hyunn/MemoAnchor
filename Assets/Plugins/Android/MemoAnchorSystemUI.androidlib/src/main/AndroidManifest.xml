@@ -4,6 +4,6 @@
     <activity
       android:name="com.memoanchor.systemui.KakaoPostcodeActivity"
       android:exported="false"
-      android:theme="@style/UnityThemeSelector" />
+      android:theme="@style/MemoAnchorUnityTheme" />
   </application>
 </manifest>
