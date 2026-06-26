@@ -1,0 +1,23 @@
+<ui:UXML xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" noNamespaceSchemaLocation="../../../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
+    <Style src="project://database/Assets/Plugins/UI%20Toolkit/UnityThemes/style.uss?fileID=7433441132597879392&amp;guid=c3edbd9c191f92b49aa6a3ce9ffd69d5&amp;type=3#style"/>
+    <ui:VisualElement name="common-confirm-popup-overlay" class="common-confirm-popup-overlay">
+        <ui:VisualElement name="common-confirm-popup-sheet" class="scan-action-dialog-sheet common-confirm-popup-sheet" style="min-height: 600px;">
+            <ui:Label name="common-confirm-popup-title" text="확인" class="scan-action-dialog-title"/>
+            <ui:Label name="common-confirm-popup-message" text="진행할까요?" class="common-confirm-popup-message"/>
+            <ui:VisualElement name="common-confirm-input-box" class="memo-search-page common-confirm-input-section" style="display: none;">
+                <ui:VisualElement class="scan-input-box memo-search-input-box">
+                    <ui:TextField name="common-confirm-input" label="" placeholder-text="친구코드 입력" class="scan-input-field"/>
+                </ui:VisualElement>
+            </ui:VisualElement>
+            <ui:Label name="common-confirm-status-label" text="" class="common-confirm-status-label is-hidden"/>
+            <ui:VisualElement class="scan-action-list common-confirm-popup-actions">
+                <ui:Button name="common-confirm-cancel-button" class="scan-action-list-item common-confirm-popup-button common-confirm-cancel-button">
+                    <ui:Label name="common-confirm-cancel-label" text="취소" class="common-confirm-popup-button-label"/>
+                </ui:Button>
+                <ui:Button name="common-confirm-submit-button" class="scan-action-list-item common-confirm-popup-button common-confirm-submit-button">
+                    <ui:Label name="common-confirm-submit-label" text="확인" class="common-confirm-popup-button-label common-confirm-submit-label"/>
+                </ui:Button>
+            </ui:VisualElement>
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>

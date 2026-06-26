@@ -104,6 +104,7 @@ namespace MemoAnchor.UI
         {
             SetVisible(_memoFilterPageHost, false);
             SetVisible(_memoFilterPage, false);
+            SetVisible(_memoFilterBottomBar, false);
             SetVisible(_memoFilterCalendar, false);
             SetVisible(_memoFilterMapList, false);
         }
@@ -188,12 +189,16 @@ namespace MemoAnchor.UI
         {
             SetVisible(_memoFilterPageHost, true);
             SetVisible(_memoFilterPage, true);
+            SetVisible(_bottomNav, false);
+            SetVisible(_memoFilterBottomBar, true);
         }
 
         private void HideMemoFilterPage()
         {
             SetVisible(_memoFilterPageHost, false);
             SetVisible(_memoFilterPage, false);
+            SetVisible(_bottomNav, true);
+            SetVisible(_memoFilterBottomBar, false);
             HideMemoFilterCalendar();
             SetVisible(_memoFilterMapList, false);
         }

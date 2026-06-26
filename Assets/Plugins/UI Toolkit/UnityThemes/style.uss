@@ -223,6 +223,12 @@
     -unity-font-definition: url("project://database/Assets/Plugins/UI%20Toolkit/Fonts/Pretendard-SemiBold.ttf?fileID=12800000&guid=7136488b0fb8f924b91754e33f3b5abc&type=3#Pretendard-SemiBold");
 }
 
+.page-header-title {
+    font-size: 50px;
+    color: rgb(28, 28, 28);
+    -unity-font-definition: url("project://database/Assets/Plugins/UI%20Toolkit/Fonts/Pretendard-SemiBold.ttf?fileID=12800000&guid=7136488b0fb8f924b91754e33f3b5abc&type=3#Pretendard-SemiBold");
+}
+
 .home-right-icon-button {
     width: 65px;
     height: 65px;
@@ -271,6 +277,8 @@
 }
 
 .memo-filter-back-icon {
+    width: 42px;
+    height: 42px;
     -unity-background-image-tint-color: rgb(42, 42, 42);
 }
 
@@ -997,6 +1005,8 @@
 .memo-filter-back-button {
     position: absolute;
     left: 50px;
+    width: 65px;
+    height: 65px;
 }
 
 .memo-filter-back-button:hover:enabled {
@@ -1529,10 +1539,11 @@
 
 .memo-filter-bottom-bar {
     position: absolute;
-    left: 60px;
-    right: 60px;
-    bottom: 60px;
-    height: 200px;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    height: auto;
     padding-top: 18px;
     padding-right: 18px;
     padding-bottom: 18px;
@@ -1540,6 +1551,10 @@
     border-radius: 100px;
     background-color: var(--nav-bg);
     flex-direction: row;
+}
+
+.memo-filter-bottom-bar.is-hidden {
+    display: none;
 }
 
 .memo-filter-bottom-button {
@@ -1722,6 +1737,464 @@
 
 .memo-search-empty-label.is-hidden {
     display: none;
+}
+
+.profile-tab-page {
+    background-color: rgb(246, 246, 246);
+}
+
+.profile-main-content.is-hidden,
+.profile-account-settings-page.is-hidden {
+    display: none;
+}
+
+.profile-page-title {
+    font-size: 58px;
+    color: rgb(28, 28, 28);
+    -unity-font-definition: url("project://database/Assets/Plugins/UI%20Toolkit/Fonts/Pretendard-SemiBold.ttf?fileID=12800000&guid=7136488b0fb8f924b91754e33f3b5abc&type=3#Pretendard-SemiBold");
+}
+
+.profile-content {
+    flex-grow: 0;
+}
+
+.profile-card {
+    flex-grow: 0;
+    background-color: rgb(255, 255, 255);
+    border-radius: 42px;
+    margin-bottom: 38px;
+    padding-left: 62px;
+    padding-right: 62px;
+}
+
+.profile-summary-card {
+    height: 260px;
+    justify-content: center;
+}
+
+.profile-summary-header {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 34px;
+}
+
+.profile-name-label {
+    flex-grow: 1;
+    min-width: 0;
+    margin-right: 28px;
+    font-size: 46px;
+    color: rgb(22, 22, 22);
+    overflow: hidden;
+    -unity-text-overflow-position: end;
+    -unity-font-definition: url("project://database/Assets/Plugins/UI%20Toolkit/Fonts/Pretendard-SemiBold.ttf?fileID=12800000&guid=7136488b0fb8f924b91754e33f3b5abc&type=3#Pretendard-SemiBold");
+}
+
+.profile-settings-button {
+    width: 64px;
+    height: 64px;
+    border-radius: 32px;
+    align-items: center;
+    justify-content: center;
+}
+
+.profile-settings-icon {
+    width: 42px;
+    height: 42px;
+    -unity-background-scale-mode: scale-to-fit;
+    -unity-background-image-tint-color: rgb(32, 32, 32);
+}
+
+.profile-settings-button:hover:enabled {
+    background-color: rgb(248, 248, 248);
+    border-color: transparent;
+}
+
+.profile-settings-button:active:enabled {
+    background-color: rgb(236, 236, 236);
+    border-color: transparent;
+}
+
+.profile-meta-row {
+    flex-direction: row;
+    align-items: center;
+}
+
+.profile-company-label {
+    font-size: 36px;
+    color: rgb(178, 178, 178);
+}
+
+.profile-meta-divider {
+    width: 3px;
+    height: 48px;
+    margin-left: 28px;
+    margin-right: 28px;
+    background-color: rgb(190, 190, 190);
+}
+
+.profile-role-chip {
+    height: 54px;
+    min-width: 116px;
+    margin-right: 16px;
+    padding-left: 24px;
+    padding-right: 24px;
+    border-radius: 27px;
+    background-color: rgb(86, 99, 142);
+    color: rgb(255, 255, 255);
+    font-size: 30px;
+    -unity-text-align: middle-center;
+    -unity-font-definition: url("project://database/Assets/Plugins/UI%20Toolkit/Fonts/Pretendard-SemiBold.ttf?fileID=12800000&guid=7136488b0fb8f924b91754e33f3b5abc&type=3#Pretendard-SemiBold");
+}
+
+.profile-toggle-row {
+    height: 158px;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.profile-friend-list-card {
+    padding-top: 0;
+    padding-bottom: 0;
+    overflow: hidden;
+}
+
+.profile-friend-list-card.is-selected {
+    padding-bottom: 20px;
+}
+
+.profile-menu-row {
+    height: 158px;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.profile-menu-row:hover:enabled {
+    background-color: rgb(252, 252, 252);
+    border-color: transparent;
+}
+
+.profile-menu-row:active:enabled {
+    background-color: rgb(242, 242, 242);
+    border-color: transparent;
+}
+
+.profile-friend-list-button {
+    margin-left: -62px;
+    margin-right: -62px;
+    padding-left: 62px;
+    padding-right: 62px;
+}
+
+.profile-friend-list-actions {
+    flex-direction: row;
+    align-items: center;
+}
+
+.profile-friend-add-button {
+    width: 78px;
+    height: 78px;
+    margin-right: 24px;
+    border-radius: 39px;
+    align-items: center;
+    justify-content: center;
+    background-color: rgba(0, 0, 0, 0);
+}
+
+.profile-friend-add-button:hover:enabled {
+    background-color: rgb(242, 242, 242);
+    border-color: transparent;
+}
+
+.profile-friend-add-button:active:enabled {
+    background-color: rgb(232, 232, 232);
+    border-color: transparent;
+}
+
+.profile-friend-add-icon {
+    width: 48px;
+    height: 48px;
+    -unity-background-scale-mode: scale-to-fit;
+    -unity-background-image-tint-color: rgb(86, 99, 142);
+    picking-mode: ignore;
+}
+
+.profile-row-title {
+    font-size: 38px;
+    color: rgb(20, 20, 20);
+    -unity-font-definition: url("project://database/Assets/Plugins/UI%20Toolkit/Fonts/Pretendard-SemiBold.ttf?fileID=12800000&guid=7136488b0fb8f924b91754e33f3b5abc&type=3#Pretendard-SemiBold");
+}
+
+.profile-row-chevron {
+    width: 36px;
+    height: 36px;
+    rotate: -90deg;
+    -unity-background-scale-mode: scale-to-fit;
+    -unity-background-image-tint-color: rgb(110, 110, 110);
+    transition-property: rotate;
+    transition-duration: 0.16s;
+    transition-timing-function: ease-out;
+}
+
+.profile-row-chevron.is-selected {
+    rotate: 90deg;
+}
+
+.profile-friend-list {
+    flex-grow: 0;
+    border-top-width: 1px;
+    border-top-color: rgb(232, 232, 232);
+}
+
+.profile-friend-list.is-hidden {
+    display: none;
+}
+
+.profile-friend-items-list {
+    flex-grow: 0;
+}
+
+.profile-friend-row {
+    height: 112px;
+    flex-direction: row;
+    align-items: center;
+    border-bottom-width: 1px;
+    border-bottom-color: rgb(232, 232, 232);
+}
+
+.profile-friend-name {
+    width: 120px;
+    font-size: 30px;
+    color: rgb(32, 32, 32);
+}
+
+.profile-friend-company {
+    flex-grow: 1;
+    min-width: 0;
+    font-size: 28px;
+    color: rgb(174, 174, 174);
+}
+
+.profile-friend-delete-button {
+    width: 78px;
+    height: 78px;
+    border-radius: 39px;
+    background-color: rgb(86, 99, 142);
+    align-items: center;
+    justify-content: center;
+}
+
+.profile-friend-delete-button:hover:enabled {
+    background-color: rgb(76, 90, 133);
+    border-color: transparent;
+}
+
+.profile-friend-delete-button:active:enabled {
+    background-color: rgb(66, 79, 119);
+    border-color: transparent;
+}
+
+.profile-friend-delete-icon {
+    width: 46px;
+    height: 46px;
+    background-image: url("project://database/Assets/00_MemoAnchor/03_Media/Icon/trash.png?fileID=2800000&guid=c2fd465122bc15242b8cf6da00d7bbb1&type=3#trash");
+    -unity-background-scale-mode: scale-to-fit;
+    -unity-background-image-tint-color: rgb(255, 255, 255);
+}
+
+.profile-switch {
+    width: 150px;
+    height: 68px;
+    margin: 0;
+    padding: 6px;
+    border-width: 0;
+    border-radius: 34px;
+    background-color: rgb(218, 218, 218);
+    align-items: flex-start;
+    justify-content: center;
+}
+
+.profile-switch:hover:enabled {
+    background-color: rgb(210, 210, 210);
+    border-color: transparent;
+}
+
+.profile-switch:active:enabled {
+    background-color: rgb(200, 200, 200);
+    border-color: transparent;
+}
+
+.profile-switch-thumb {
+    width: 56px;
+    height: 56px;
+    margin: 0;
+    border-radius: 28px;
+    background-color: rgb(184, 184, 184);
+    align-self: flex-start;
+    translate: 0 0;
+    transition-property: translate, background-color;
+    transition-duration: 0.18s;
+    transition-timing-function: ease-out;
+}
+
+.profile-switch.is-selected {
+    background-color: rgb(218, 218, 218);
+}
+
+.profile-switch.is-selected .profile-switch-thumb {
+    translate: 82px 0;
+    background-color: rgb(86, 99, 142);
+}
+
+.profile-account-settings-page {
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+}
+
+.profile-account-settings-list {
+    background-color: rgba(0, 0, 0, 0);
+}
+
+.profile-account-settings-row {
+    background-color: rgb(255, 255, 255);
+    padding-left: 46px;
+    padding-right: 50px;
+    border-bottom-width: 1px;
+    border-bottom-color: rgb(238, 238, 238);
+}
+
+.profile-account-settings-logout-row {
+    margin-top: 16px;
+}
+
+.profile-account-settings-row:hover:enabled {
+    background-color: rgb(252, 252, 252);
+    border-color: transparent;
+    border-bottom-color: rgb(238, 238, 238);
+}
+
+.profile-account-settings-row:active:enabled {
+    background-color: rgb(242, 242, 242);
+    border-color: transparent;
+    border-bottom-color: rgb(238, 238, 238);
+}
+
+.profile-account-settings-row:disabled {
+    background-color: rgb(255, 255, 255);
+}
+
+.profile-account-settings-row:disabled .profile-account-settings-row-text {
+    color: rgb(42, 42, 42);
+}
+
+.profile-account-settings-row-chevron {
+    rotate: 180deg;
+    -unity-background-image-tint-color: rgb(188, 188, 188);
+}
+
+.profile-account-settings-row:disabled .profile-account-settings-row-chevron {
+    -unity-background-image-tint-color: rgb(205, 205, 205);
+}
+
+.profile-account-settings-logout-text {
+    color: rgb(255, 53, 87);
+}
+
+.common-confirm-popup-overlay {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    align-items: center;
+    justify-content: center;
+    padding-left: 40px;
+    padding-right: 40px;
+    padding-top: 40px;
+    padding-bottom: 40px;
+    background-color: rgba(0, 0, 0, 0.6);
+}
+
+.scan-action-dialog-sheet.common-confirm-popup-sheet {
+    min-height: 0;
+    padding-top: 66px;
+}
+
+.common-confirm-popup-message {
+    padding-right: 25px;
+    padding-left: 25px;
+    font-size: 45px;
+    color: rgb(105, 112, 126);
+    -unity-font-definition: url("project://database/Assets/Plugins/UI%20Toolkit/Fonts/Pretendard-Medium.ttf?fileID=12800000&guid=45ed9c45b09f5f2498d91e1982ab7527&type=3#Pretendard-Medium");
+}
+
+.common-confirm-input-section {
+    padding-left: 0;
+    padding-right: 0;
+    margin-top: 18px;
+    margin-bottom: 30px;
+}
+
+.common-confirm-input-section .memo-search-input-box {
+    margin-left: 0;
+    margin-right: 0;
+}
+
+.common-confirm-status-label {
+    min-height: 38px;
+    margin-left: 25px;
+    margin-right: 25px;
+    margin-bottom: 24px;
+    font-size: 32px;
+    color: rgb(236, 60, 85);
+}
+
+.common-confirm-status-label.is-hidden {
+    display: none;
+}
+
+.scan-action-list.common-confirm-popup-actions {
+    flex-direction: row;
+    margin-top: auto;
+    margin-bottom: 0;
+}
+
+.scan-action-list-item.common-confirm-popup-button {
+    flex-grow: 1;
+    min-height: 118px;
+    margin-bottom: 0;
+    justify-content: center;
+}
+
+.scan-action-list-item.common-confirm-cancel-button {
+    margin-right: 10px;
+}
+
+.scan-action-list-item.common-confirm-submit-button {
+    margin-left: 10px;
+    background-color: rgb(255, 53, 87);
+}
+
+.scan-action-list-item.common-confirm-submit-button:hover:enabled {
+    background-color: rgb(236, 45, 78);
+}
+
+.scan-action-list-item.common-confirm-submit-button:active:enabled {
+    background-color: rgb(210, 38, 68);
+}
+
+.common-confirm-popup-button-label {
+    font-size: 40px;
+    color: rgb(53, 61, 77);
+    -unity-font-definition: url("project://database/Assets/Plugins/UI%20Toolkit/Fonts/Pretendard-SemiBold.ttf?fileID=12800000&guid=7136488b0fb8f924b91754e33f3b5abc&type=3#Pretendard-SemiBold");
+}
+
+.common-confirm-submit-label {
+    color: rgb(255, 255, 255);
 }
 
 .splash-action-button {

@@ -36,5 +36,95 @@
                 </ui:VisualElement>
             </ui:VisualElement>
         </ui:ScrollView>
+        <ui:VisualElement class="memo-filter-page-host">
+            <ui:VisualElement name="memo-filter-page" class="memo-filter-page">
+                <ui:VisualElement class="memo-filter-header">
+                    <ui:Button name="memo-filter-back-button" text="" class="memo-filter-round-icon-button memo-filter-back-button">
+                        <ui:VisualElement class="memo-filter-round-icon memo-filter-back-icon" style="background-image: url(&quot;project://database/Assets/00_MemoAnchor/03_Media/Icon/chevron_forward.png?fileID=2800000&amp;guid=3ca432206e7cabb45abd1dfc722e509d&amp;type=3#chevron_forward&quot;);"/>
+                    </ui:Button>
+                    <ui:Label text="메모 필터" class="page-header-title"/>
+                </ui:VisualElement>
+                <ui:ScrollView name="memo-filter-scroll" mode="Vertical" horizontal-scroller-visibility="Hidden" vertical-scroller-visibility="Hidden" touch-scroll-type="Elastic" class="memo-filter-scroll">
+                    <ui:VisualElement class="memo-filter-section">
+                        <ui:Label text="기간" class="memo-filter-section-title"/>
+                        <ui:VisualElement class="memo-filter-date-row">
+                            <ui:Button name="memo-filter-start-date-button" class="memo-filter-date-button">
+                                <ui:Label name="memo-filter-start-date-label" text="" class="memo-filter-date-text"/>
+                                <ui:VisualElement class="memo-filter-calendar-icon"/>
+                            </ui:Button>
+                            <ui:Label text="-" class="memo-filter-date-dash"/>
+                            <ui:Button name="memo-filter-end-date-button" class="memo-filter-date-button">
+                                <ui:Label name="memo-filter-end-date-label" text="" class="memo-filter-date-text"/>
+                                <ui:VisualElement class="memo-filter-calendar-icon"/>
+                            </ui:Button>
+                            <ui:Button name="memo-filter-date-toggle" class="memo-filter-check-button">
+                                <ui:VisualElement class="memo-filter-check-icon"/>
+                            </ui:Button>
+                        </ui:VisualElement>
+                        <ui:VisualElement name="memo-filter-calendar" class="memo-filter-calendar">
+                            <ui:VisualElement class="memo-filter-calendar-header">
+                                <ui:Button name="memo-filter-calendar-prev" text="&lt;" class="memo-filter-calendar-nav"/>
+                                <ui:Label name="memo-filter-calendar-title" text="" class="memo-filter-calendar-title"/>
+                                <ui:Button name="memo-filter-calendar-next" text="&gt;" class="memo-filter-calendar-nav"/>
+                                <ui:Button name="memo-filter-calendar-close" text="닫기" class="memo-filter-calendar-close"/>
+                            </ui:VisualElement>
+                            <ui:VisualElement name="memo-filter-calendar-grid" class="memo-filter-calendar-grid"/>
+                        </ui:VisualElement>
+                    </ui:VisualElement>
+                    <ui:VisualElement class="memo-filter-divider"/>
+                    <ui:VisualElement class="memo-filter-section">
+                        <ui:Label text="정렬" class="memo-filter-section-title"/>
+                        <ui:VisualElement class="memo-filter-chip-grid">
+                            <ui:Button name="memo-filter-sort-latest" text="최신순" class="memo-filter-chip is-selected"/>
+                            <ui:Button name="memo-filter-sort-deadline" text="미처리 우선순" class="memo-filter-chip"/>
+                            <ui:Button name="memo-filter-sort-address" text="건물 주소순" class="memo-filter-chip"/>
+                            <ui:Button name="memo-filter-sort-deadline-date" text="마감 임박순" class="memo-filter-chip"/>
+                        </ui:VisualElement>
+                    </ui:VisualElement>
+                    <ui:VisualElement class="memo-filter-divider"/>
+                    <ui:VisualElement class="memo-filter-section">
+                        <ui:Label text="맵 필터" class="memo-filter-section-title"/>
+                        <ui:Button name="memo-filter-map-button" class="memo-filter-select-button">
+                            <ui:Label name="memo-filter-map-label" text="건물 선택하기" class="memo-filter-select-text"/>
+                            <ui:Label text="›" class="memo-filter-select-chevron"/>
+                        </ui:Button>
+                        <ui:VisualElement name="memo-filter-map-list" class="memo-filter-map-list">
+                            <ui:Button name="memo-filter-map-1" text="" class="memo-filter-map-item"/>
+                            <ui:Button name="memo-filter-map-2" text="" class="memo-filter-map-item"/>
+                            <ui:Button name="memo-filter-map-3" text="" class="memo-filter-map-item"/>
+                        </ui:VisualElement>
+                    </ui:VisualElement>
+                    <ui:VisualElement class="memo-filter-divider"/>
+                    <ui:VisualElement class="memo-filter-section">
+                        <ui:Label text="긴급 여부" class="memo-filter-section-title"/>
+                        <ui:VisualElement class="memo-filter-urgency-row">
+                            <ui:Button name="memo-filter-urgency-high" text="상" class="memo-filter-urgency-chip"/>
+                            <ui:Button name="memo-filter-urgency-medium" text="중" class="memo-filter-urgency-chip is-selected"/>
+                            <ui:Button name="memo-filter-urgency-low" text="하" class="memo-filter-urgency-chip"/>
+                            <ui:Button name="memo-filter-urgency-toggle" class="memo-filter-check-button is-selected">
+                                <ui:VisualElement class="memo-filter-check-icon"/>
+                            </ui:Button>
+                        </ui:VisualElement>
+                    </ui:VisualElement>
+                </ui:ScrollView>
+            </ui:VisualElement>
+        </ui:VisualElement>
+        <ui:VisualElement name="memo-search-page-host" class="memo-filter-page-host is-hidden">
+            <ui:VisualElement name="memo-search-page" class="memo-filter-page memo-search-page">
+                <ui:VisualElement class="memo-filter-header memo-search-header">
+                    <ui:Button name="memo-search-back-button" text="" class="memo-filter-round-icon-button memo-filter-back-button">
+                        <ui:VisualElement class="memo-filter-round-icon memo-filter-back-icon" style="background-image: url(&quot;project://database/Assets/00_MemoAnchor/03_Media/Icon/chevron_forward.png?fileID=2800000&amp;guid=3ca432206e7cabb45abd1dfc722e509d&amp;type=3#chevron_forward&quot;);"/>
+                    </ui:Button>
+                    <ui:VisualElement class="scan-input-box memo-search-input-box">
+                        <ui:TextField name="memo-search-page-input" label="" placeholder-text="메모 검색" class="scan-input-field"/>
+                    </ui:VisualElement>
+                </ui:VisualElement>
+                <ui:VisualElement class="memo-filter-section memo-search-history-section">
+                    <ui:Label text="최근 검색" class="memo-filter-section-title"/>
+                    <ui:VisualElement name="memo-search-history-list" class="memo-search-history-list"/>
+                    <ui:Label name="memo-search-empty-label" text="최근 검색 결과가 없습니다." class="memo-search-empty-label is-hidden"/>
+                </ui:VisualElement>
+            </ui:VisualElement>
+        </ui:VisualElement>
     </ui:VisualElement>
 </ui:UXML>

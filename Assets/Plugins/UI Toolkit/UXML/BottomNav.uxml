@@ -26,5 +26,9 @@
         <ui:VisualElement name="scan-start-bg" class="scan-start-bg">
             <ui:Button name="nav-scan-start" text="스캔 시작" class="scan-nav-start"/>
         </ui:VisualElement>
+        <ui:VisualElement name="memo-filter-bottom-bar" class="memo-filter-bottom-bar is-hidden">
+            <ui:Button name="memo-filter-reset-button" text="초기화" class="memo-filter-bottom-button memo-filter-reset-button"/>
+            <ui:Button name="memo-filter-apply-button" text="적용하기" class="memo-filter-bottom-button memo-filter-apply-button"/>
+        </ui:VisualElement>
     </ui:VisualElement>
 </ui:UXML>

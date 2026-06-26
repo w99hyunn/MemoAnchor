@@ -94,6 +94,7 @@ namespace MemoAnchor.UI
 
         private void ShowTab(int tabIndex)
         {
+            _view.HideProfileAccountSettings();
             _currentTabIndex = Mathf.Clamp(tabIndex, 0, 4);
             if (_currentTabIndex != 2)
             {

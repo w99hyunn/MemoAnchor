@@ -8,5 +8,10 @@ namespace MemoAnchor
         {
             Profile = profile;
         }
+
+        public static void Clear()
+        {
+            Profile = default;
+        }
     }
 }

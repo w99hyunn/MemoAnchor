@@ -1,4 +1,5 @@
 using System;
+using Unity.Services.Authentication;
 using UnityEngine;
 using UnityEngine.UIElements;
 
@@ -15,9 +16,6 @@ namespace MemoAnchor.UI
         private const string ERROR_CLASS = "is-error";
         private const string HOME_ADMIN_MODE_CLASS = "is-admin-mode";
         private const string HOME_WORK_MODE_CLASS = "is-work-mode";
-        private const string HOME_ADMIN_TITLE = "관리자";
-        private const string HOME_WORK_TITLE = "내 업무";
-        private const string DEFAULT_PLAYER_NAME = "관리자";
         private const float MEMO_SWIPE_INTENT_THRESHOLD = 20f;
         private const float MEMO_SWIPE_OPEN_THRESHOLD = 80f;
 
@@ -25,26 +23,41 @@ namespace MemoAnchor.UI
         [SerializeField] private VisualTreeAsset _alertDialogAsset;
         [SerializeField] private VisualTreeAsset _alertRequestItemAsset;
         [SerializeField] private VisualTreeAsset _alertMapItemAsset;
+        [SerializeField] private string _splashScene = "Splash";
+        [SerializeField] private string _homeAdminTitle = "관리자";
+        [SerializeField] private string _homeWorkTitle = "내 업무";
 
         private Button _homeButton, _menuButton, _scanButton, _mapButton, _profileButton, _scanStartButton, _alertButton, _homeModeToggle, _memoModeToggle;
         private Button _scanActionCreateButton, _scanActionJoinButton;
         private Button _alertBackButton;
         private Button _memoFilterButton;
         private Button _memoSearchBackButton;
+        private Button _profileSettingsButton, _profileAccountSettingsBackButton;
+        private Button _profileLogoutButton;
+        private Button _profileFriendListButton, _profileFriendAddButton;
+        private Button _profilePushToggle, _profileSoundToggle;
 
-        private VisualElement _root, _tabViewport, _tabStrip, _bottomNavWrapper, _bottomNav;
+        private VisualElement _root, _tabViewport, _tabStrip, _bottomNavWrapper, _bottomNav, _memoFilterBottomBar;
         private VisualElement _homeTab, _menuTab, _scanTab, _mapTab, _profileTab;
         private VisualElement _homeModeBack;
         private VisualElement _scanActionDialogOverlay;
         private VisualElement _alertDialogPage, _alertRequestList, _alertMapList;
         private VisualElement _memoSearchPageHost, _memoSearchHistoryList;
+        private VisualElement _profileMainContent, _profileAccountSettingsPage;
+        private VisualElement _profileFriendListCard, _profileFriendList, _profileFriendItemsList, _profileFriendListChevron;
         private TextField _memoSearchSourceInput, _memoSearchPageInput;
         private Label _homeGreetingLabel, _homeModeTitle;
+        private Label _profileNameLabel, _profileCompanyLabel;
         private TemplateContainer _scanActionDialogTree;
         private TemplateContainer _alertDialogTree;
+        private FadeTransition _fadeTransition;
         private Action _onScanActionCreate, _onScanActionJoin;
         private int _scanActionDialogTransitionToken;
         private bool _isHomeWorkMode = true;
+        private bool _profilePushEnabled;
+        private bool _profileSoundEnabled = true;
+        private bool _profileFriendListExpanded;
+        private bool _isLoggingOut;
 
         public Button HomeButton => _homeButton;
         public Button MenuButton => _menuButton;
@@ -56,6 +69,7 @@ namespace MemoAnchor.UI
         private void Awake()
         {
             TryGetComponent<UIDocument>(out var uiDocument);
+            TryGetComponent<FadeTransition>(out _fadeTransition);
             _root = uiDocument.rootVisualElement;
             _homeButton = _root.Q<Button>("nav-home");
             _menuButton = _root.Q<Button>("nav-menu");
@@ -67,28 +81,56 @@ namespace MemoAnchor.UI
             _homeModeToggle = _root.Q<Button>("home-mode-toggle");
             _memoModeToggle = _root.Q<Button>("memo-mode-toggle");
             _memoFilterButton = _root.Q<Button>("memo-filter-button");
+            _profileSettingsButton = _root.Q<Button>("profile-settings-button");
+            _profileAccountSettingsBackButton = _root.Q<Button>("profile-account-settings-back-button");
+            _profileLogoutButton = _root.Q<Button>("profile-logout-button");
+            _profileFriendListButton = _root.Q<Button>("profile-friend-list-button");
+            _profileFriendAddButton = _root.Q<Button>("profile-friend-add-button");
+            _profilePushToggle = _root.Q<Button>("profile-push-toggle");
+            _profileSoundToggle = _root.Q<Button>("profile-sound-toggle");
 
             _tabViewport = _root.Q<VisualElement>("tab-viewport");
             _tabStrip = _root.Q<VisualElement>("tab-strip");
             _bottomNavWrapper = _root.Q<VisualElement>("bottom-nav-wrapper");
             _bottomNav = _root.Q<VisualElement>("bottom-nav");
+            _memoFilterBottomBar = _root.Q<VisualElement>("memo-filter-bottom-bar");
             _homeTab = _root.Q<VisualElement>("tab-home");
             _menuTab = _root.Q<VisualElement>("tab-menu");
             _scanTab = _root.Q<VisualElement>("tab-scan");
             _mapTab = _root.Q<VisualElement>("tab-map");
             _profileTab = _root.Q<VisualElement>("tab-profile");
             _homeModeBack = _root.Q<VisualElement>("mode-back");
+            _profileMainContent = _root.Q<VisualElement>("profile-main-content");
+            _profileAccountSettingsPage = _root.Q<VisualElement>("profile-account-settings-page");
+            _profileFriendListCard = _root.Q<VisualElement>("profile-friend-list-card");
+            _profileFriendList = _root.Q<VisualElement>("profile-friend-list");
+            _profileFriendItemsList = _root.Q<VisualElement>("profile-friend-items-list");
+            _profileFriendListChevron = _root.Q<VisualElement>("profile-friend-list-chevron");
             _homeGreetingLabel = _root.Q<Label>("home-greeting-label");
             _homeModeTitle = _root.Q<Label>("home-mode-title");
+            _profileNameLabel = _root.Q<Label>("profile-name-label");
+            _profileCompanyLabel = _root.Q<Label>("profile-company-label");
 
             ApplyPlayerProfile();
             _alertButton.clicked += ShowAlertDialog;
             _homeModeToggle.clicked += ToggleHomeMode;
             _memoModeToggle.clicked += ToggleHomeMode;
             _memoFilterButton.clicked += ShowMemoFilterPage;
+            _profileSettingsButton.clicked += ShowProfileAccountSettings;
+            _profileAccountSettingsBackButton.clicked += HideProfileAccountSettings;
+            _profileLogoutButton.clicked += ShowProfileLogoutConfirmPopup;
+            _profileFriendListButton.clicked += ToggleProfileFriendList;
+            _profileFriendAddButton.RegisterCallback<ClickEvent>(OnProfileFriendAddClicked);
+            _profilePushToggle.clicked += ToggleProfilePush;
+            _profileSoundToggle.clicked += ToggleProfileSound;
             InitializeMemoFilterDates();
             RegisterMemoFilterPage();
             RegisterMemoSearchPage();
+            HideProfileAccountSettings();
+            RebuildProfileFriendList();
+            ApplyProfileFriendList();
+            _ = InitializeFriendsAsync();
+            ApplyProfileSwitches();
             ApplyHomeMode();
             RegisterMemoSwipeRows();
         }
@@ -99,6 +141,14 @@ namespace MemoAnchor.UI
             _homeModeToggle.clicked -= ToggleHomeMode;
             _memoModeToggle.clicked -= ToggleHomeMode;
             _memoFilterButton.clicked -= ShowMemoFilterPage;
+            _profileSettingsButton.clicked -= ShowProfileAccountSettings;
+            _profileAccountSettingsBackButton.clicked -= HideProfileAccountSettings;
+            _profileLogoutButton.clicked -= ShowProfileLogoutConfirmPopup;
+            _profileFriendListButton.clicked -= ToggleProfileFriendList;
+            _profileFriendAddButton.UnregisterCallback<ClickEvent>(OnProfileFriendAddClicked);
+            _profilePushToggle.clicked -= ToggleProfilePush;
+            _profileSoundToggle.clicked -= ToggleProfileSound;
+            UnregisterFriendsCallbacks();
             UnregisterMemoFilterPage();
             UnregisterMemoSearchPage();
             if (_alertBackButton != null)
@@ -138,7 +188,7 @@ namespace MemoAnchor.UI
 
         private void ApplyHomeMode()
         {
-            _homeModeTitle.text = _isHomeWorkMode ? HOME_WORK_TITLE : HOME_ADMIN_TITLE;
+            _homeModeTitle.text = _isHomeWorkMode ? _homeWorkTitle : _homeAdminTitle;
             _homeModeToggle.EnableInClassList(HOME_WORK_MODE_CLASS, _isHomeWorkMode);
             _memoModeToggle.EnableInClassList(HOME_WORK_MODE_CLASS, _isHomeWorkMode);
             _homeModeBack.EnableInClassList(HOME_ADMIN_MODE_CLASS, !_isHomeWorkMode);
@@ -146,11 +196,89 @@ namespace MemoAnchor.UI
             _memoFilterPage.EnableInClassList(HOME_ADMIN_MODE_CLASS, !_isHomeWorkMode);
         }
 
+        private void ToggleProfilePush()
+        {
+            _profilePushEnabled = !_profilePushEnabled;
+            ApplyProfileSwitches();
+        }
+
+        private void ShowProfileAccountSettings()
+        {
+            PopupManager.HideConfirm();
+            SetVisible(_profileMainContent, false);
+            SetVisible(_profileAccountSettingsPage, true);
+        }
+
+        public void HideProfileAccountSettings()
+        {
+            PopupManager.HideConfirm();
+            SetVisible(_profileMainContent, true);
+            SetVisible(_profileAccountSettingsPage, false);
+        }
+
+        private void ShowProfileLogoutConfirmPopup()
+        {
+            PopupManager.ShowConfirm("로그아웃", "정말 로그아웃할까요?", "취소", "로그아웃", ConfirmProfileLogout);
+        }
+
+        private void ConfirmProfileLogout()
+        {
+            _ = LogoutAsync();
+        }
+
+        private async Awaitable LogoutAsync()
+        {
+            if (_isLoggingOut)
+            {
+                return;
+            }
+
+            _isLoggingOut = true;
+            PopupManager.SetConfirmButtonsEnabled(false);
+            UnregisterFriendsCallbacks();
+            AuthenticationService.Instance.SignOut(true);
+            MemoAnchor.PlayerSession.Clear();
+            await _fadeTransition.FadeOutAndLoadSceneAsync(_splashScene);
+        }
+
+        private void ToggleProfileFriendList()
+        {
+            _profileFriendListExpanded = !_profileFriendListExpanded;
+            ApplyProfileFriendList();
+        }
+
+        private void ApplyProfileFriendList()
+        {
+            SetVisible(_profileFriendList, _profileFriendListExpanded);
+            _profileFriendListCard.EnableInClassList(SELECTED_CLASS, _profileFriendListExpanded);
+            _profileFriendListChevron.EnableInClassList(SELECTED_CLASS, _profileFriendListExpanded);
+        }
+
+        private void ToggleProfileSound()
+        {
+            _profileSoundEnabled = !_profileSoundEnabled;
+            ApplyProfileSwitches();
+        }
+
+        private void ApplyProfileSwitches()
+        {
+            _profilePushToggle.EnableInClassList(SELECTED_CLASS, _profilePushEnabled);
+            _profileSoundToggle.EnableInClassList(SELECTED_CLASS, _profileSoundEnabled);
+        }
+
         private void ApplyPlayerProfile()
         {
             MemoAnchor.PlayerProfile profile = MemoAnchor.PlayerSession.Profile;
-            string playerName = string.IsNullOrWhiteSpace(profile.Name) ? DEFAULT_PLAYER_NAME : profile.Name;
-            _homeGreetingLabel.text = $"{playerName}님, 안녕하세요!";
+            if (!string.IsNullOrWhiteSpace(profile.Name))
+            {
+                _homeGreetingLabel.text = $"{profile.Name}님, 안녕하세요!";
+                _profileNameLabel.text = profile.Name;
+            }
+
+            if (!string.IsNullOrWhiteSpace(profile.CompanyName))
+            {
+                _profileCompanyLabel.text = profile.CompanyName;
+            }
         }
 
         public void ShowScanActionDialog(Action onCreate, Action onJoin)
@@ -280,23 +408,10 @@ namespace MemoAnchor.UI
             _alertRequestList.Clear();
             _alertMapList.Clear();
 
-            AddRequestAlert("김서진 (sj1011)님께서 친구요청을 보내셨습니다.", string.Empty, "5분 전");
-            AddRequestAlert("조우현 (wh9482)님께서 참여요청을 보내셨습니다.", "외우산로 159 - 1층 - 화장실", "10분 전");
-            AddRequestAlert("조우현 (wh9482)님께서 참여요청을 보내셨습니다.", "외우산로 159 - 1층 - 화장실", "10분 전");
+            AddFriendRequestAlerts();
 
             AddMapAlert("전기실", "3일 뒤 마감알림", "10분 전", false);
             AddMapAlert("전기실", "3일 뒤 마감알림", "10분 전", true);
-        }
-
-        private void AddRequestAlert(string title, string description, string time)
-        {
-            TemplateContainer item = _alertRequestItemAsset.Instantiate();
-            item.Q<Label>("alert-primary-text").text = title;
-            Label secondaryText = item.Q<Label>("alert-secondary-text");
-            secondaryText.text = description;
-            secondaryText.style.display = description.Length == 0 ? DisplayStyle.None : DisplayStyle.Flex;
-            item.Q<Label>("alert-time-text").text = time;
-            _alertRequestList.Add(item);
         }
 
         private void AddMapAlert(string title, string description, string time, bool showsActions)
