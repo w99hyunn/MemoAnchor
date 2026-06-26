@@ -30,12 +30,15 @@ namespace MemoAnchor.UI
         private Button _scanActionCreateButton, _scanActionJoinButton;
         private Button _alertBackButton;
         private Button _memoFilterButton;
+        private Button _memoSearchBackButton;
 
         private VisualElement _root, _tabViewport, _tabStrip, _bottomNavWrapper, _bottomNav;
         private VisualElement _homeTab, _menuTab, _scanTab, _mapTab, _profileTab;
         private VisualElement _homeModeBack;
         private VisualElement _scanActionDialogOverlay;
         private VisualElement _alertDialogPage, _alertRequestList, _alertMapList;
+        private VisualElement _memoSearchPageHost, _memoSearchHistoryList;
+        private TextField _memoSearchSourceInput, _memoSearchPageInput;
         private Label _homeGreetingLabel, _homeModeTitle;
         private TemplateContainer _scanActionDialogTree;
         private TemplateContainer _alertDialogTree;
@@ -85,6 +88,7 @@ namespace MemoAnchor.UI
             _memoFilterButton.clicked += ShowMemoFilterPage;
             InitializeMemoFilterDates();
             RegisterMemoFilterPage();
+            RegisterMemoSearchPage();
             ApplyHomeMode();
             RegisterMemoSwipeRows();
         }
@@ -96,6 +100,7 @@ namespace MemoAnchor.UI
             _memoModeToggle.clicked -= ToggleHomeMode;
             _memoFilterButton.clicked -= ShowMemoFilterPage;
             UnregisterMemoFilterPage();
+            UnregisterMemoSearchPage();
             if (_alertBackButton != null)
             {
                 _alertBackButton.clicked -= HideAlertDialog;

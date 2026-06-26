@@ -1592,6 +1592,138 @@
     background-color: rgb(136, 20, 52);
 }
 
+.memo-search-page {
+    background-color: rgb(255, 255, 255);
+    padding-left: 60px;
+    padding-right: 60px;
+}
+
+.memo-search-header {
+    height: 110px;
+    border-bottom-width: 0;
+    justify-content: flex-start;
+}
+
+.memo-search-header .memo-filter-back-button {
+    position: relative;
+    left: 0;
+    width: 65px;
+    height: 65px;
+    margin-right: 22px;
+    flex-shrink: 0;
+}
+
+.memo-search-header .memo-filter-back-icon {
+    width: 42px;
+    height: 42px;
+}
+
+.memo-search-page .memo-search-input-box {
+    flex-grow: 1;
+    height: 110px;
+    border-radius: 55px;
+    background-color: rgb(246, 246, 246);
+    margin-left: 0;
+    padding-left: 38px;
+    padding-right: 38px;
+}
+
+.memo-search-history-section {
+    padding-top: 92px;
+    padding-bottom: 0;
+}
+
+.memo-search-history-row {
+    height: 86px;
+    flex-direction: row;
+    align-items: center;
+}
+
+.memo-search-history-content {
+    flex-grow: 1;
+    min-width: 0;
+    height: 100%;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    padding-left: 18px;
+    padding-right: 18px;
+    border-radius: 28px;
+}
+
+.memo-search-history-content:hover:enabled {
+    background-color: rgb(248, 248, 248);
+    border-color: transparent;
+}
+
+.memo-search-history-content:active:enabled {
+    background-color: rgb(236, 236, 236);
+    border-color: transparent;
+}
+
+.memo-search-history-icon {
+    width: 38px;
+    height: 38px;
+    margin-right: 26px;
+    background-image: url("project://database/Assets/00_MemoAnchor/03_Media/Icon/tabler_clock.png?fileID=2800000&guid=9f748a7700dd0f74da95ba8e51f28b73&type=3#tabler_clock");
+    -unity-background-scale-mode: scale-to-fit;
+    -unity-background-image-tint-color: rgb(124, 124, 124);
+}
+
+.memo-search-history-query {
+    flex-grow: 1;
+    min-width: 0;
+    font-size: 42px;
+    color: rgb(28, 28, 28);
+    -unity-text-align: middle-left;
+    overflow: hidden;
+    -unity-text-overflow-position: end;
+}
+
+.memo-search-history-date {
+    width: 105px;
+    font-size: 32px;
+    color: rgb(178, 178, 178);
+    -unity-text-align: middle-right;
+}
+
+.memo-search-history-remove {
+    width: 76px;
+    height: 76px;
+    margin-left: 18px;
+    border-radius: 38px;
+    align-items: center;
+    justify-content: center;
+}
+
+.memo-search-history-remove:hover:enabled {
+    background-color: rgb(248, 248, 248);
+    border-color: transparent;
+}
+
+.memo-search-history-remove:active:enabled {
+    background-color: rgb(236, 236, 236);
+    border-color: transparent;
+}
+
+.memo-search-history-remove-icon {
+    width: 50px;
+    height: 50px;
+    background-image: url("project://database/Assets/00_MemoAnchor/03_Media/Icon/xbutton.png?fileID=2800000&guid=ec503318264761140bef84a89627b643&type=3#xbutton");
+    -unity-background-scale-mode: scale-to-fit;
+    -unity-background-image-tint-color: rgb(118, 118, 118);
+}
+
+.memo-search-empty-label {
+    margin-top: 4px;
+    font-size: 34px;
+    color: rgb(168, 168, 168);
+}
+
+.memo-search-empty-label.is-hidden {
+    display: none;
+}
+
 .splash-action-button {
     width: 100%;
     flex-grow: 0;
