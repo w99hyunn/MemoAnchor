@@ -12,6 +12,7 @@ namespace MemoAnchor.UI
         [SerializeField] private VisualTreeAsset _confirmPopupAsset;
 
         private VisualElement _root;
+        private VisualElement _confirmActions;
         private VisualElement _confirmInputBox;
         private TextField _confirmInput;
         private Button _confirmCancelButton, _confirmSubmitButton;
@@ -37,7 +38,12 @@ namespace MemoAnchor.UI
 
         public static void ShowConfirm(string title, string message, string cancelText, string submitText, Action onSubmit)
         {
-            Instance.ShowConfirmInternal(title, message, cancelText, submitText, onSubmit);
+            Instance.ShowConfirmInternal(title, message, cancelText, submitText, true, onSubmit);
+        }
+
+        public static void ShowMessage(string title, string message, string submitText)
+        {
+            Instance.ShowConfirmInternal(title, message, string.Empty, submitText, false, null);
         }
 
         public static void ShowTextInput(string title, string message, string value, string cancelText, string submitText, Action<string> onSubmit)
@@ -60,7 +66,7 @@ namespace MemoAnchor.UI
             Instance.SetConfirmButtonsEnabledInternal(enabled);
         }
 
-        private void ShowConfirmInternal(string title, string message, string cancelText, string submitText, Action onSubmit)
+        private void ShowConfirmInternal(string title, string message, string cancelText, string submitText, bool showCancelButton, Action onSubmit)
         {
             EnsureConfirmPopup();
             _confirmTitleLabel.text = title;
@@ -73,6 +79,8 @@ namespace MemoAnchor.UI
             _confirmInputBox.style.display = DisplayStyle.None;
             _confirmStatusLabel.AddToClassList("is-hidden");
             _confirmStatusLabel.text = string.Empty;
+            _confirmActions.EnableInClassList("is-single-action", !showCancelButton);
+            _confirmCancelButton.style.display = showCancelButton ? DisplayStyle.Flex : DisplayStyle.None;
             SetConfirmButtonsEnabledInternal(true);
 
             if (_confirmTree.parent == null)
@@ -97,6 +105,8 @@ namespace MemoAnchor.UI
             _confirmInputBox.style.display = DisplayStyle.Flex;
             _confirmStatusLabel.AddToClassList("is-hidden");
             _confirmStatusLabel.text = string.Empty;
+            _confirmActions.RemoveFromClassList("is-single-action");
+            _confirmCancelButton.style.display = DisplayStyle.Flex;
             SetConfirmButtonsEnabledInternal(true);
 
             if (_confirmTree.parent == null)
@@ -171,6 +181,7 @@ namespace MemoAnchor.UI
             _confirmInputBox = _confirmTree.Q<VisualElement>("common-confirm-input-box");
             _confirmInput = _confirmTree.Q<TextField>("common-confirm-input");
             _confirmStatusLabel = _confirmTree.Q<Label>("common-confirm-status-label");
+            _confirmActions = _confirmTree.Q<VisualElement>(className: "common-confirm-popup-actions");
             _confirmCancelLabel = _confirmTree.Q<Label>("common-confirm-cancel-label");
             _confirmSubmitLabel = _confirmTree.Q<Label>("common-confirm-submit-label");
             _confirmCancelButton = _confirmTree.Q<Button>("common-confirm-cancel-button");

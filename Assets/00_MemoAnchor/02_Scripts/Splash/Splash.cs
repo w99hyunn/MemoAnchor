@@ -16,7 +16,6 @@ namespace MemoAnchor
         private static readonly Regex EmailRegex = new("^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$", RegexOptions.Compiled);
 
         [SerializeField] private string mainScene = "Main";
-        [SerializeField] private float minimumSplashTime = 3f;
         [SerializeField] private string serverBaseUrl = "https://localhost:7001";
         [SerializeField] private string kakaoProviderName = "oidc-kakao";
         [SerializeField] private string googleProviderName = "oidc-google";
@@ -35,10 +34,6 @@ namespace MemoAnchor
         private Button kakaoLoginButton;
         private Button googleLoginButton;
         private Button signupSubmitButton;
-        private VisualElement authMessagePopup;
-        private Label authMessageTitleLabel;
-        private Label authMessageLabel;
-        private Button authMessageCloseButton;
         private Label signupStatusLabel;
         private bool isLoggingIn;
         private bool isCompletingLogin;
@@ -69,19 +64,18 @@ namespace MemoAnchor
 
         private async Awaitable ShowLoginAsync()
         {
-            float elapsed = 0f;
-            while (elapsed < minimumSplashTime)
-            {
-                elapsed += Time.deltaTime;
-                await Awaitable.NextFrameAsync();
-            }
-
             if (isCompletingLogin)
             {
                 return;
             }
 
             if (await TryEnterMainSceneWithCachedLoginAsync())
+            {
+                return;
+            }
+
+            await Awaitable.NextFrameAsync();
+            if (isCompletingLogin)
             {
                 return;
             }
@@ -97,7 +91,7 @@ namespace MemoAnchor
                 SplashAuthCompletion completion = await authService.TryCompleteCachedLoginAsync();
                 if (completion.IsExistingMember)
                 {
-                    await EnterMainSceneAsync();
+                    SceneManager.LoadScene(mainScene);
                     return true;
                 }
             }
@@ -125,17 +119,12 @@ namespace MemoAnchor
             kakaoLoginButton = root.Q<Button>("kakao-login-button");
             googleLoginButton = root.Q<Button>("google-login-button");
             signupSubmitButton = root.Q<Button>("signup-submit-button");
-            authMessagePopup = root.Q<VisualElement>("auth-message-popup");
-            authMessageTitleLabel = root.Q<Label>("auth-message-title-label");
-            authMessageLabel = root.Q<Label>("auth-message-label");
-            authMessageCloseButton = root.Q<Button>("auth-message-close-button");
             signupStatusLabel = root.Q<Label>("signup-status-label");
 
             PrepareRuntimeVisibility();
             kakaoLoginButton.clicked += () => BeginProviderLogin("kakao");
             googleLoginButton.clicked += () => BeginProviderLogin("google");
             signupSubmitButton.clicked += () => _ = SubmitSignupAsync();
-            authMessageCloseButton.clicked += HideAuthMessagePopup;
             signupCompanyInput.RegisterValueChangedCallback(_ => ClearSignupInputError(signupCompanyInputBox));
             signupNameInput.RegisterValueChangedCallback(_ => ClearSignupInputError(signupNameInputBox));
             signupEmailInput.RegisterValueChangedCallback(_ => ClearSignupInputError(signupEmailInputBox));
@@ -145,7 +134,6 @@ namespace MemoAnchor
         {
             SetVisible(loginPanel, false);
             SetVisible(signupPanel, false);
-            SetVisible(authMessagePopup, false);
         }
 
         private static void SetVisible(VisualElement element, bool visible)
@@ -162,7 +150,7 @@ namespace MemoAnchor
 
             isLoggingIn = true;
             SetLoginButtonsEnabled(false);
-            ShowAuthMessagePopup("로그인 진행 중", "브라우저에서 로그인을 완료해주세요.");
+            MemoAnchor.UI.PopupManager.ShowMessage("로그인 진행 중", "브라우저에서 로그인을 완료해주세요.", "확인");
             string sessionId = authService.BeginProviderLogin(provider);
             _ = CompleteLoginSessionAsync(sessionId);
         }
@@ -260,7 +248,7 @@ namespace MemoAnchor
         private void RecoverLogin(System.Exception exception)
         {
             Debug.LogException(exception);
-            ShowAuthMessagePopup("로그인 실패", "로그인에 실패했습니다. 다시 시도해주세요.");
+            MemoAnchor.UI.PopupManager.ShowMessage("로그인 실패", "로그인에 실패했습니다. 다시 시도해주세요.", "확인");
             isLoggingIn = false;
             isCompletingLogin = false;
             SetLoginButtonsEnabled(true);
@@ -275,7 +263,7 @@ namespace MemoAnchor
         private void ShowSignupPanel(SplashAuthCompletion completion)
         {
             SetVisible(loginPanel, false);
-            HideAuthMessagePopup();
+            MemoAnchor.UI.PopupManager.HideConfirm();
             SetVisible(signupPanel, true);
             signupNameInput.value = completion.Profile.Name;
             signupEmailInput.value = completion.Profile.Email;
@@ -367,7 +355,7 @@ namespace MemoAnchor
 
         private async Awaitable EnterMainSceneAsync()
         {
-            HideAuthMessagePopup();
+            MemoAnchor.UI.PopupManager.HideConfirm();
             SetSignupStatus("메인 화면으로 이동합니다.");
             await fadeTransition.FadeOutAsync();
             SceneManager.LoadScene(mainScene);
@@ -382,18 +370,6 @@ namespace MemoAnchor
         private void SetSignupButtonEnabled(bool enabled)
         {
             signupSubmitButton.SetEnabled(enabled);
-        }
-
-        private void ShowAuthMessagePopup(string title, string message)
-        {
-            authMessageTitleLabel.text = title;
-            authMessageLabel.text = message;
-            SetVisible(authMessagePopup, true);
-        }
-
-        private void HideAuthMessagePopup()
-        {
-            SetVisible(authMessagePopup, false);
         }
 
         private void SetSignupStatus(string message)

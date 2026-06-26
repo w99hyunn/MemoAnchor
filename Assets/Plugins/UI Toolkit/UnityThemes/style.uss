@@ -1,7 +1,10 @@
 :root {
     --nav-bg: rgb(30, 30, 34);
     --nav-icon-inactive: rgb(243, 243, 244);
-    --nav-icon-active: rgb(255, 53, 87);
+    --brand-pink: rgb(161, 31, 63);
+    --brand-pink-hover: rgb(143, 27, 56);
+    --brand-pink-active: rgb(126, 24, 49);
+    --nav-icon-active: var(--brand-pink);
 }
 
 .unity-label {
@@ -33,13 +36,45 @@
 .splash-root {
     flex-grow: 1;
     justify-content: center;
+    background-color: var(--brand-pink);
+}
+
+.splash-brand {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 500px;
+    align-items: center;
+}
+
+.splash-symbol {
+    width: 300px;
+    height: 250px;
+    margin-bottom: 34px;
+    background-image: url("project://database/Assets/00_MemoAnchor/03_Media/Icon/system/icon_white.png?fileID=2800000&guid=a90bf743c20b64942a4a68d0465a7c3e&type=3#icon_white");
+    -unity-background-scale-mode: scale-to-fit;
+}
+
+.splash-logo {
+    width: 680px;
+    height: 220px;
+    background-image: url("project://database/Assets/00_MemoAnchor/03_Media/logo.png?fileID=2800000&guid=a402c67bcb520e24fa718d51047c61ed&type=3#logo");
+    -unity-background-scale-mode: scale-to-fit;
+}
+
+.splash-tagline {
+    margin-top: 30px;
+    color: rgb(255, 255, 255);
+    font-size: 52px;
+    -unity-text-align: middle-center;
+    -unity-font-definition: url("project://database/Assets/Plugins/UI%20Toolkit/Fonts/Pretendard-Regular.ttf?fileID=12800000&guid=c19593ccf51a3b643a58d19da7851c10&type=3#Pretendard-Regular");
 }
 
 .splash-panel {
     position: absolute;
-    left: 72px;
-    right: 72px;
-    bottom: 86px;
+    left: 110px;
+    right: 110px;
+    bottom: 220px;
     display: flex;
 }
 
@@ -180,7 +215,7 @@
 }
 
 .memo-tab-mode-page.is-admin-mode {
-    background-color: rgb(177, 28, 68);
+    background-color: var(--brand-pink);
 }
 
 .memo-tab-mode-page .home-right-icon-button {
@@ -300,7 +335,7 @@
 }
 
 #mode-back.is-admin-mode {
-    background-color: rgb(177, 28, 68);
+    background-color: var(--brand-pink);
 }
 
 .memo-section-content {
@@ -350,7 +385,7 @@
     width: 64px;
     height: 64px;
     border-radius: 32px;
-    background-color: rgb(177, 28, 68);
+    background-color: var(--brand-pink);
     background-image: url("project://database/Assets/00_MemoAnchor/03_Media/Icon/admin.png?fileID=2800000&guid=5b0fcf6366924744cb2f0df276925867&type=3#admin");
     -unity-background-scale-mode: scale-to-fit;
     -unity-background-image-tint-color: rgb(255, 255, 255);
@@ -963,20 +998,6 @@
     background-color: rgb(236, 60, 85);
 }
 
-.memo-filter-page-host {
-    position: absolute;
-    left: 0;
-    right: 0;
-    top: 0;
-    bottom: 0;
-    flex-grow: 0;
-    display: flex;
-}
-
-.memo-filter-page-host.is-hidden {
-    display: none;
-}
-
 .memo-filter-page {
     position: absolute;
     left: 0;
@@ -1096,17 +1117,17 @@
 }
 
 .memo-filter-page.is-admin-mode .memo-filter-date-button.is-selected {
-    border-color: rgb(177, 28, 68);
+    border-color: var(--brand-pink);
 }
 
 .memo-filter-page.is-admin-mode .memo-filter-date-button.is-selected:hover:enabled {
     background-color: rgb(255, 246, 249);
-    border-color: rgb(158, 24, 61);
+    border-color: var(--brand-pink-hover);
 }
 
 .memo-filter-page.is-admin-mode .memo-filter-date-button.is-selected:active:enabled {
     background-color: rgb(255, 235, 241);
-    border-color: rgb(136, 20, 52);
+    border-color: var(--brand-pink-active);
 }
 
 .memo-filter-date-button.is-error {
@@ -1150,7 +1171,7 @@
 }
 
 .memo-filter-page.is-admin-mode .memo-filter-date-button.is-selected .memo-filter-calendar-icon {
-    -unity-background-image-tint-color: rgb(177, 28, 68);
+    -unity-background-image-tint-color: var(--brand-pink);
 }
 
 .memo-filter-date-button.is-error .memo-filter-calendar-icon {
@@ -1198,15 +1219,15 @@
 }
 
 .memo-filter-page.is-admin-mode .memo-filter-check-button.is-selected {
-    background-color: rgb(177, 28, 68);
+    background-color: var(--brand-pink);
 }
 
 .memo-filter-page.is-admin-mode .memo-filter-check-button.is-selected:hover:enabled {
-    background-color: rgb(158, 24, 61);
+    background-color: var(--brand-pink-hover);
 }
 
 .memo-filter-page.is-admin-mode .memo-filter-check-button.is-selected:active:enabled {
-    background-color: rgb(136, 20, 52);
+    background-color: var(--brand-pink-active);
 }
 
 .memo-filter-check-icon {
@@ -1239,7 +1260,7 @@
 }
 
 .memo-filter-page.is-admin-mode .memo-filter-calendar {
-    border-color: rgb(177, 28, 68);
+    border-color: var(--brand-pink);
 }
 
 .memo-filter-page.is-admin-mode .memo-filter-calendar.is-error {
@@ -1355,15 +1376,15 @@
 }
 
 .memo-filter-page.is-admin-mode .memo-filter-calendar-cell.is-selected {
-    background-color: rgb(177, 28, 68);
+    background-color: var(--brand-pink);
 }
 
 .memo-filter-page.is-admin-mode .memo-filter-calendar-cell.is-selected:hover:enabled {
-    background-color: rgb(158, 24, 61);
+    background-color: var(--brand-pink-hover);
 }
 
 .memo-filter-page.is-admin-mode .memo-filter-calendar-cell.is-selected:active:enabled {
-    background-color: rgb(136, 20, 52);
+    background-color: var(--brand-pink-active);
 }
 
 .memo-filter-calendar.is-error .memo-filter-calendar-cell.is-selected {
@@ -1428,20 +1449,20 @@
 
 .memo-filter-page.is-admin-mode .memo-filter-chip.is-selected,
 .memo-filter-page.is-admin-mode .memo-filter-urgency-chip.is-selected {
-    background-color: rgb(177, 28, 68);
-    border-color: rgb(177, 28, 68);
+    background-color: var(--brand-pink);
+    border-color: var(--brand-pink);
 }
 
 .memo-filter-page.is-admin-mode .memo-filter-chip.is-selected:hover:enabled,
 .memo-filter-page.is-admin-mode .memo-filter-urgency-chip.is-selected:hover:enabled {
-    background-color: rgb(158, 24, 61);
-    border-color: rgb(158, 24, 61);
+    background-color: var(--brand-pink-hover);
+    border-color: var(--brand-pink-hover);
 }
 
 .memo-filter-page.is-admin-mode .memo-filter-chip.is-selected:active:enabled,
 .memo-filter-page.is-admin-mode .memo-filter-urgency-chip.is-selected:active:enabled {
-    background-color: rgb(136, 20, 52);
-    border-color: rgb(136, 20, 52);
+    background-color: var(--brand-pink-active);
+    border-color: var(--brand-pink-active);
 }
 
 .memo-filter-select-button {
@@ -1513,7 +1534,7 @@
 }
 
 .memo-filter-page.is-admin-mode .memo-filter-map-item.is-selected {
-    color: rgb(177, 28, 68);
+    color: var(--brand-pink);
 }
 
 .memo-filter-urgency-row {
@@ -1596,15 +1617,15 @@
 }
 
 .memo-filter-page.is-admin-mode .memo-filter-apply-button {
-    background-color: rgb(177, 28, 68);
+    background-color: var(--brand-pink);
 }
 
 .memo-filter-page.is-admin-mode .memo-filter-apply-button:hover:enabled {
-    background-color: rgb(158, 24, 61);
+    background-color: var(--brand-pink-hover);
 }
 
 .memo-filter-page.is-admin-mode .memo-filter-apply-button:active:enabled {
-    background-color: rgb(136, 20, 52);
+    background-color: var(--brand-pink-active);
 }
 
 .memo-search-page {
@@ -2112,24 +2133,44 @@
     bottom: 0;
     align-items: center;
     justify-content: center;
-    padding-left: 40px;
-    padding-right: 40px;
-    padding-top: 40px;
-    padding-bottom: 40px;
-    background-color: rgba(0, 0, 0, 0.6);
+    padding-left: 50px;
+    padding-right: 50px;
+    background-color: rgba(0, 0, 0, 0.48);
 }
 
-.scan-action-dialog-sheet.common-confirm-popup-sheet {
-    min-height: 0;
-    padding-top: 66px;
+.common-confirm-popup-sheet {
+    width: 88%;
+    min-height: 420px;
+    border-top-left-radius: 90px;
+    border-top-right-radius: 90px;
+    border-bottom-right-radius: 90px;
+    border-bottom-left-radius: 90px;
+    background-color: rgb(255, 255, 255);
+    padding-top: 68px;
+    padding-right: 58px;
+    padding-bottom: 58px;
+    padding-left: 58px;
+}
+
+.common-confirm-popup-title {
+    font-size: 60px;
+    color: rgb(49, 57, 73);
+    margin-bottom: 34px;
+    padding-left: 18px;
+    padding-right: 18px;
+    -unity-text-align: upper-left;
+    -unity-font-definition: url("project://database/Assets/Plugins/UI%20Toolkit/Fonts/Pretendard-SemiBold.ttf?fileID=12800000&guid=7136488b0fb8f924b91754e33f3b5abc&type=3#Pretendard-SemiBold");
 }
 
 .common-confirm-popup-message {
-    padding-right: 25px;
-    padding-left: 25px;
-    font-size: 45px;
-    color: rgb(105, 112, 126);
-    -unity-font-definition: url("project://database/Assets/Plugins/UI%20Toolkit/Fonts/Pretendard-Medium.ttf?fileID=12800000&guid=45ed9c45b09f5f2498d91e1982ab7527&type=3#Pretendard-Medium");
+    color: rgb(72, 82, 99);
+    -unity-text-align: upper-left;
+    white-space: normal;
+    margin-bottom: 54px;
+    padding-left: 18px;
+    padding-right: 18px;
+    font-size: 50px;
+    -unity-font-definition: url("project://database/Assets/Plugins/UI%20Toolkit/Fonts/Pretendard-Light.ttf?fileID=12800000&guid=8c634880071f83d4da7be3c9ff6f0be8&type=3#Pretendard-Light");
 }
 
 .common-confirm-input-section {
@@ -2157,38 +2198,57 @@
     display: none;
 }
 
-.scan-action-list.common-confirm-popup-actions {
+.common-confirm-popup-actions {
+    width: 100%;
     flex-direction: row;
     margin-top: auto;
     margin-bottom: 0;
 }
 
-.scan-action-list-item.common-confirm-popup-button {
+.common-confirm-popup-button {
     flex-grow: 1;
-    min-height: 118px;
+    height: 136px;
     margin-bottom: 0;
     justify-content: center;
+    border-width: 0;
+    border-radius: 40px;
+    transition-property: background-color;
+    transition-duration: 0.18s;
+    transition-timing-function: ease-out;
 }
 
-.scan-action-list-item.common-confirm-cancel-button {
+.common-confirm-cancel-button {
     margin-right: 10px;
+    background-color: rgb(244, 246, 249);
 }
 
-.scan-action-list-item.common-confirm-submit-button {
+.common-confirm-cancel-button:hover:enabled {
+    background-color: rgb(237, 240, 245);
+}
+
+.common-confirm-cancel-button:active:enabled {
+    background-color: rgb(228, 233, 241);
+}
+
+.common-confirm-submit-button {
     margin-left: 10px;
-    background-color: rgb(255, 53, 87);
+    background-color: var(--brand-pink);
 }
 
-.scan-action-list-item.common-confirm-submit-button:hover:enabled {
-    background-color: rgb(236, 45, 78);
+.common-confirm-popup-actions.is-single-action .common-confirm-submit-button {
+    margin-left: 0;
 }
 
-.scan-action-list-item.common-confirm-submit-button:active:enabled {
-    background-color: rgb(210, 38, 68);
+.common-confirm-submit-button:hover:enabled {
+    background-color: var(--brand-pink-hover);
+}
+
+.common-confirm-submit-button:active:enabled {
+    background-color: var(--brand-pink-active);
 }
 
 .common-confirm-popup-button-label {
-    font-size: 40px;
+    font-size: 44px;
     color: rgb(53, 61, 77);
     -unity-font-definition: url("project://database/Assets/Plugins/UI%20Toolkit/Fonts/Pretendard-SemiBold.ttf?fileID=12800000&guid=7136488b0fb8f924b91754e33f3b5abc&type=3#Pretendard-SemiBold");
 }
@@ -2485,39 +2545,11 @@
 }
 
 .alert-dialog-page {
-    flex-grow: 1;
-    background-color: rgb(246, 246, 246);
-    padding-top: 175px;
-}
-
-.alert-dialog-header {
-    height: 170px;
-    flex-direction: row;
-    align-items: center;
-    justify-content: space-between;
-    padding-left: 36px;
-    padding-right: 36px;
-    background-color: rgb(246, 246, 246);
-}
-
-.alert-back-button {
-    width: 92px;
-    height: 92px;
-    color: rgb(44, 44, 44);
-    font-size: 86px;
-    -unity-text-align: middle-center;
-    -unity-font-definition: url("project://database/Assets/Plugins/UI%20Toolkit/Fonts/Pretendard-Regular.ttf?fileID=12800000&guid=c19593ccf51a3b643a58d19da7851c10&type=3#Pretendard-Regular");
-}
-
-.alert-dialog-title {
-    font-size: 50px;
-    color: rgb(24, 24, 24);
-    -unity-font-definition: url("project://database/Assets/Plugins/UI%20Toolkit/Fonts/Pretendard-SemiBold.ttf?fileID=12800000&guid=7136488b0fb8f924b91754e33f3b5abc&type=3#Pretendard-SemiBold");
-}
-
-.alert-header-spacer {
-    width: 92px;
-    height: 92px;
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
 }
 
 .alert-scroll {
@@ -2699,6 +2731,22 @@
     color: rgb(25, 22, 0);
 }
 
+#google-login-button {
+    background-color: rgb(255, 255, 255);
+}
+
+#google-login-button:hover:enabled {
+    background-color: rgb(245, 245, 245);
+}
+
+#google-login-button:active:enabled {
+    background-color: rgb(232, 232, 232);
+}
+
+#google-login-button .splash-login-label {
+    color: rgb(43, 43, 43);
+}
+
 .splash-root .splash-login-icon-kakao {
     background-image: url("project://database/Assets/00_MemoAnchor/03_Media/kakao.png?fileID=2800000&guid=ced5c007636d4164e8a3ccfbc2205ad8&type=3#kakao");
 }
@@ -2708,77 +2756,15 @@
 }
 
 .splash-root .splash-primary-button {
-    background-color: rgb(177, 28, 68);
+    background-color: var(--brand-pink);
     color: rgb(255, 255, 255);
     font-size: 44px;
 }
 
 .splash-root .splash-primary-button:hover:enabled {
-    background-color: rgb(158, 24, 61);
+    background-color: var(--brand-pink-hover);
 }
 
 .splash-root .splash-primary-button:active:enabled {
-    background-color: rgb(136, 20, 52);
-}
-
-.splash-root .splash-auth-popup {
-    position: absolute;
-    left: 0;
-    right: 0;
-    top: 0;
-    bottom: 0;
-    align-items: center;
-    justify-content: center;
-    padding-left: 50px;
-    padding-right: 50px;
-    background-color: rgba(0, 0, 0, 0.48);
-    visibility: visible;
-    opacity: 1;
-    transition-property: opacity;
-    transition-duration: 0.18s;
-    transition-timing-function: ease-out;
-}
-
-.splash-root .splash-auth-popup.is-hidden {
-    visibility: hidden;
-    opacity: 0;
-}
-
-.splash-root .splash-auth-popup-sheet {
-    width: 88%;
-    min-height: 420px;
-    border-top-left-radius: 90px;
-    border-top-right-radius: 90px;
-    border-bottom-right-radius: 90px;
-    border-bottom-left-radius: 90px;
-    background-color: rgb(255, 255, 255);
-    padding-top: 68px;
-    padding-right: 58px;
-    padding-bottom: 58px;
-    padding-left: 58px;
-}
-
-.splash-root .splash-auth-popup-title {
-    color: rgb(49, 57, 73);
-    margin-bottom: 34px;
-    padding-left: 18px;
-    padding-right: 18px;
-    -unity-text-align: upper-left;
-}
-
-.splash-root .splash-auth-popup-message {
-    color: rgb(72, 82, 99);
-    -unity-text-align: upper-left;
-    white-space: normal;
-    margin-bottom: 54px;
-    padding-left: 18px;
-    padding-right: 18px;
-    -unity-font-definition: url("project://database/Assets/Plugins/UI%20Toolkit/Fonts/Pretendard-Light.ttf?fileID=12800000&guid=8c634880071f83d4da7be3c9ff6f0be8&type=3#Pretendard-Light");
-}
-
-.splash-root .splash-auth-popup-button {
-    width: 100%;
-    flex-grow: 0;
-    height: 136px;
-    border-radius: 40px;
+    background-color: var(--brand-pink-active);
 }

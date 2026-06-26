@@ -16,13 +16,13 @@ namespace MemoAnchor.UI
         private void RegisterMemoSearchPage()
         {
             _memoSearchSourceInput = _root.Q<TextField>("memo-search-input");
-            _memoSearchPageHost = _root.Q<VisualElement>("memo-search-page-host");
+            _memoSearchPage = _root.Q<VisualElement>("memo-search-page");
             _memoSearchPageInput = _root.Q<TextField>("memo-search-page-input");
             _memoSearchHistoryList = _root.Q<VisualElement>("memo-search-history-list");
             _memoSearchEmptyLabel = _root.Q<Label>("memo-search-empty-label");
             _memoSearchBackButton = _root.Q<Button>("memo-search-back-button");
 
-            SetVisible(_memoSearchPageHost, false);
+            SetVisible(_memoSearchPage, false);
             LoadMemoSearchHistory();
             RebuildMemoSearchHistory();
 
@@ -52,14 +52,14 @@ namespace MemoAnchor.UI
 
         private void ShowMemoSearchPage()
         {
-            SetVisible(_memoSearchPageHost, true);
+            SetVisible(_memoSearchPage, true);
             _memoSearchPageInput.value = _memoSearchSourceInput.value;
             _memoSearchPageInput.schedule.Execute(() => _memoSearchPageInput.Focus()).ExecuteLater(16);
         }
 
         private void HideMemoSearchPage()
         {
-            SetVisible(_memoSearchPageHost, false);
+            SetVisible(_memoSearchPage, false);
             _memoSearchPageInput.Blur();
         }
 

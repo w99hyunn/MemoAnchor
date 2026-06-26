@@ -219,10 +219,7 @@ namespace MemoAnchor.UI
 
         private void RebuildOpenAlertFriendRequests()
         {
-            if (_alertDialogPage != null)
-            {
-                RebuildAlertItems();
-            }
+            RebuildAlertItems();
         }
 
         private void AddFriendRequestAlerts()

@@ -95,7 +95,13 @@ namespace MemoAnchor.UI
         private void ShowTab(int tabIndex)
         {
             _view.HideProfileAccountSettings();
-            _currentTabIndex = Mathf.Clamp(tabIndex, 0, 4);
+            int nextTabIndex = Mathf.Clamp(tabIndex, 0, 4);
+            if (_currentTabIndex != nextTabIndex)
+            {
+                _view.HideMemoOverlayPages();
+            }
+
+            _currentTabIndex = nextTabIndex;
             if (_currentTabIndex != 2)
             {
                 _isScanNavModeActive = false;

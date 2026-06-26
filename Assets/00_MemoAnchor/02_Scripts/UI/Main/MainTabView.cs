@@ -20,7 +20,6 @@ namespace MemoAnchor.UI
         private const float MEMO_SWIPE_OPEN_THRESHOLD = 80f;
 
         [SerializeField] private VisualTreeAsset _scanActionDialogAsset;
-        [SerializeField] private VisualTreeAsset _alertDialogAsset;
         [SerializeField] private VisualTreeAsset _alertRequestItemAsset;
         [SerializeField] private VisualTreeAsset _alertMapItemAsset;
         [SerializeField] private string _splashScene = "Splash";
@@ -42,14 +41,13 @@ namespace MemoAnchor.UI
         private VisualElement _homeModeBack;
         private VisualElement _scanActionDialogOverlay;
         private VisualElement _alertDialogPage, _alertRequestList, _alertMapList;
-        private VisualElement _memoSearchPageHost, _memoSearchHistoryList;
+        private VisualElement _memoSearchPage, _memoSearchHistoryList;
         private VisualElement _profileMainContent, _profileAccountSettingsPage;
         private VisualElement _profileFriendListCard, _profileFriendList, _profileFriendItemsList, _profileFriendListChevron;
         private TextField _memoSearchSourceInput, _memoSearchPageInput;
         private Label _homeGreetingLabel, _homeModeTitle;
         private Label _profileNameLabel, _profileCompanyLabel;
         private TemplateContainer _scanActionDialogTree;
-        private TemplateContainer _alertDialogTree;
         private FadeTransition _fadeTransition;
         private Action _onScanActionCreate, _onScanActionJoin;
         private int _scanActionDialogTransitionToken;
@@ -100,6 +98,9 @@ namespace MemoAnchor.UI
             _mapTab = _root.Q<VisualElement>("tab-map");
             _profileTab = _root.Q<VisualElement>("tab-profile");
             _homeModeBack = _root.Q<VisualElement>("mode-back");
+            _alertDialogPage = _root.Q<VisualElement>("alert-dialog-page");
+            _alertRequestList = _root.Q<VisualElement>("alert-request-list");
+            _alertMapList = _root.Q<VisualElement>("alert-map-list");
             _profileMainContent = _root.Q<VisualElement>("profile-main-content");
             _profileAccountSettingsPage = _root.Q<VisualElement>("profile-account-settings-page");
             _profileFriendListCard = _root.Q<VisualElement>("profile-friend-list-card");
@@ -110,9 +111,11 @@ namespace MemoAnchor.UI
             _homeModeTitle = _root.Q<Label>("home-mode-title");
             _profileNameLabel = _root.Q<Label>("profile-name-label");
             _profileCompanyLabel = _root.Q<Label>("profile-company-label");
+            _alertBackButton = _root.Q<Button>("alert-back-button");
 
             ApplyPlayerProfile();
             _alertButton.clicked += ShowAlertDialog;
+            _alertBackButton.clicked += HideAlertDialog;
             _homeModeToggle.clicked += ToggleHomeMode;
             _memoModeToggle.clicked += ToggleHomeMode;
             _memoFilterButton.clicked += ShowMemoFilterPage;
@@ -127,6 +130,7 @@ namespace MemoAnchor.UI
             RegisterMemoFilterPage();
             RegisterMemoSearchPage();
             HideProfileAccountSettings();
+            HideAlertDialog();
             RebuildProfileFriendList();
             ApplyProfileFriendList();
             _ = InitializeFriendsAsync();
@@ -138,6 +142,7 @@ namespace MemoAnchor.UI
         private void OnDisable()
         {
             _alertButton.clicked -= ShowAlertDialog;
+            _alertBackButton.clicked -= HideAlertDialog;
             _homeModeToggle.clicked -= ToggleHomeMode;
             _memoModeToggle.clicked -= ToggleHomeMode;
             _memoFilterButton.clicked -= ShowMemoFilterPage;
@@ -151,11 +156,6 @@ namespace MemoAnchor.UI
             UnregisterFriendsCallbacks();
             UnregisterMemoFilterPage();
             UnregisterMemoSearchPage();
-            if (_alertBackButton != null)
-            {
-                _alertBackButton.clicked -= HideAlertDialog;
-            }
-
         }
 
         public void SetScanNavMode(bool enabled)
@@ -331,17 +331,14 @@ namespace MemoAnchor.UI
 
         private void ShowAlertDialog()
         {
-            EnsureAlertDialog();
-
-            if (_alertDialogTree.parent == null)
-            {
-                _root.Add(_alertDialogTree);
-            }
+            RebuildAlertItems();
+            SetVisible(_alertDialogPage, true);
+            _alertDialogPage.BringToFront();
         }
 
         private void HideAlertDialog()
         {
-            _alertDialogTree.RemoveFromHierarchy();
+            SetVisible(_alertDialogPage, false);
         }
 
         private void EnsureScanActionDialog()
@@ -378,29 +375,6 @@ namespace MemoAnchor.UI
                 _onScanActionJoin?.Invoke();
             };
 
-        }
-
-        private void EnsureAlertDialog()
-        {
-            if (_alertDialogPage != null)
-            {
-                return;
-            }
-
-            _alertDialogTree = _alertDialogAsset.Instantiate();
-            _alertDialogTree.style.position = Position.Absolute;
-            _alertDialogTree.style.left = 0;
-            _alertDialogTree.style.right = 0;
-            _alertDialogTree.style.top = 0;
-            _alertDialogTree.style.bottom = 0;
-
-            _alertDialogPage = _alertDialogTree.Q<VisualElement>("alert-dialog-page");
-            _alertRequestList = _alertDialogTree.Q<VisualElement>("alert-request-list");
-            _alertMapList = _alertDialogTree.Q<VisualElement>("alert-map-list");
-            _alertBackButton = _alertDialogTree.Q<Button>("alert-back-button");
-            _alertBackButton.clicked += HideAlertDialog;
-
-            RebuildAlertItems();
         }
 
         private void RebuildAlertItems()

@@ -44,5 +44,18 @@
                 </ui:VisualElement>
             </ui:VisualElement>
         </ui:ScrollView>
+        <ui:VisualElement name="alert-dialog-page" class="memo-filter-page alert-dialog-page is-hidden">
+            <ui:VisualElement class="memo-filter-header">
+                <ui:Label text="알림" class="page-header-title" style="width: 100%; -unity-text-align: upper-center;"/>
+                <ui:Button name="alert-back-button" text="" class="memo-filter-round-icon-button memo-filter-back-button">
+                    <ui:VisualElement class="memo-filter-round-icon memo-filter-back-icon" style="background-image: url(&quot;project://database/Assets/00_MemoAnchor/03_Media/Icon/chevron_forward.png?fileID=2800000&amp;guid=3ca432206e7cabb45abd1dfc722e509d&amp;type=3#chevron_forward&quot;);"/>
+                </ui:Button>
+            </ui:VisualElement>
+            <ui:ScrollView name="alert-scroll" mode="Vertical" horizontal-scroller-visibility="Hidden" vertical-scroller-visibility="Hidden" touch-scroll-type="Elastic" class="alert-scroll">
+                <ui:VisualElement name="alert-request-list" class="alert-section"/>
+                <ui:VisualElement class="alert-gap"/>
+                <ui:VisualElement name="alert-map-list" class="alert-section"/>
+            </ui:ScrollView>
+        </ui:VisualElement>
     </ui:VisualElement>
 </ui:UXML>

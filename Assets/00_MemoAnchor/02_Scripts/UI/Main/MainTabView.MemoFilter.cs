@@ -17,7 +17,7 @@ namespace MemoAnchor.UI
         private Button _memoFilterUrgencyHighButton, _memoFilterUrgencyMediumButton, _memoFilterUrgencyLowButton, _memoFilterUrgencyToggle;
         private Button _memoFilterCalendarPrevButton, _memoFilterCalendarNextButton, _memoFilterCalendarCloseButton, _memoFilterResetButton, _memoFilterApplyButton;
 
-        private VisualElement _memoFilterPageHost, _memoFilterPage, _memoFilterCalendar, _memoFilterCalendarGrid, _memoFilterMapList;
+        private VisualElement _memoFilterPage, _memoFilterCalendar, _memoFilterCalendarGrid, _memoFilterMapList;
         private Label _memoFilterStartDateLabel, _memoFilterEndDateLabel, _memoFilterMapLabel, _memoFilterCalendarTitle;
         private readonly List<MemoFilterRow> _memoFilterRows = new();
         private readonly List<string> _memoFilterMapOptions = new();
@@ -42,7 +42,6 @@ namespace MemoAnchor.UI
         private void RegisterMemoFilterPage()
         {
             _memoFilterPage = _root.Q<VisualElement>("memo-filter-page");
-            _memoFilterPageHost = _memoFilterPage.parent;
             _memoFilterCalendar = _root.Q<VisualElement>("memo-filter-calendar");
             _memoFilterCalendarGrid = _root.Q<VisualElement>("memo-filter-calendar-grid");
             _memoFilterMapList = _root.Q<VisualElement>("memo-filter-map-list");
@@ -102,7 +101,6 @@ namespace MemoAnchor.UI
 
         private void PrepareMemoFilterRuntimeVisibility()
         {
-            SetVisible(_memoFilterPageHost, false);
             SetVisible(_memoFilterPage, false);
             SetVisible(_memoFilterBottomBar, false);
             SetVisible(_memoFilterCalendar, false);
@@ -187,7 +185,6 @@ namespace MemoAnchor.UI
 
         private void ShowMemoFilterPage()
         {
-            SetVisible(_memoFilterPageHost, true);
             SetVisible(_memoFilterPage, true);
             SetVisible(_bottomNav, false);
             SetVisible(_memoFilterBottomBar, true);
@@ -195,12 +192,17 @@ namespace MemoAnchor.UI
 
         private void HideMemoFilterPage()
         {
-            SetVisible(_memoFilterPageHost, false);
             SetVisible(_memoFilterPage, false);
             SetVisible(_bottomNav, true);
             SetVisible(_memoFilterBottomBar, false);
             HideMemoFilterCalendar();
             SetVisible(_memoFilterMapList, false);
+        }
+
+        public void HideMemoOverlayPages()
+        {
+            HideMemoFilterPage();
+            HideMemoSearchPage();
         }
 
         private void ShowMemoFilterStartCalendar()

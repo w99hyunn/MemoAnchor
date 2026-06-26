@@ -422,7 +422,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::MemoAnchor.UI.MainTabView
   _scanActionDialogAsset: {fileID: 9197481963319205126, guid: c089c196f57e6c34e9cca09e94a770fd, type: 3}
-  _alertDialogAsset: {fileID: 9197481963319205126, guid: 02e6d7dc83cc43ed87e7b64916661516, type: 3}
   _alertRequestItemAsset: {fileID: 9197481963319205126, guid: 947d4cfd7f6a40b8aa63af803cd4219c, type: 3}
   _alertMapItemAsset: {fileID: 9197481963319205126, guid: d5f9982459534f41b893bf1fe14a792f, type: 3}
   _splashScene: Splash
