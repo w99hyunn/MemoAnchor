@@ -6,6 +6,15 @@ EditorBuildSettings:
   serializedVersion: 2
   m_Scenes:
   - enabled: 1
+    path: Assets/00_MemoAnchor/01_Scenes/Splash.unity
+    guid: 2307d7c2570ec5048bc4fe7f14e5d9d6
+  - enabled: 1
+    path: Assets/00_MemoAnchor/01_Scenes/Main.unity
+    guid: 618db0579942fbd48ba52f41a123c4ea
+  - enabled: 1
+    path: Assets/00_MemoAnchor/01_Scenes/ServicesManager.unity
+    guid: f5f38629e2de4a0a8184e33b28668624
+  - enabled: 1
     path: Assets/Scenes/Home.unity
     guid: 736de04af02fc574b83919c83e49bec2
   - enabled: 1
@@ -53,3 +62,4 @@ EditorBuildSettings:
     com.unity.xr.arfoundation.simulation_settings: {fileID: 11400000, guid: aae537177c585d043a90fc891f8c9971, type: 2}
     com.unity.xr.management.loader_settings: {fileID: 11400000, guid: a851f8e839ecc3f41ada5d3020ac8fa8, type: 2}
     com.unity.xr.openxr.settings4: {fileID: 11400000, guid: 5a5493244193d32498dafc4901f38651, type: 2}
+  m_UseUCBPForAssetBundles: 0

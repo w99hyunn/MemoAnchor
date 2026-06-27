@@ -31,7 +31,6 @@ namespace MemoAnchor.UI
             }
 
             Instance = this;
-            DontDestroyOnLoad(gameObject);
             TryGetComponent<UIDocument>(out var uiDocument);
             _root = uiDocument.rootVisualElement;
         }

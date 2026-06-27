@@ -17,13 +17,10 @@ namespace MemoAnchor
         private static readonly HashSet<string> HandledLoginResultIds = new();
 
         [SerializeField] private string mainScene = "Main";
-        [SerializeField] private string serverBaseUrl = "https://memoanchorserver.bindgames.kr";
-        [SerializeField] private string kakaoProviderName = "oidc-kakao";
-        [SerializeField] private string googleProviderName = "oidc-google";
 
         private FadeTransition fadeTransition;
         private UIDocument uiDocument;
-        private SplashAuthService authService;
+        private AuthService authService;
         private VisualElement loginPanel;
         private VisualElement signupPanel;
         private VisualElement signupCompanyInputBox;
@@ -43,7 +40,7 @@ namespace MemoAnchor
         {
             TryGetComponent<FadeTransition>(out fadeTransition);
             TryGetComponent<UIDocument>(out uiDocument);
-            authService = new SplashAuthService(serverBaseUrl, kakaoProviderName, googleProviderName);
+            authService = new AuthService();
             ConfigureFrameRate();
             BindLoginUi();
             Application.deepLinkActivated += HandleDeepLink;
@@ -88,7 +85,7 @@ namespace MemoAnchor
             isCompletingLogin = true;
             try
             {
-                SplashAuthCompletion completion = await authService.TryCompleteCachedLoginAsync();
+                AuthCompletion completion = await authService.TryCompleteCachedLoginAsync();
                 if (completion.IsExistingMember)
                 {
                     SceneManager.LoadScene(mainScene);
@@ -162,7 +159,7 @@ namespace MemoAnchor
 
         private bool TryHandleDeepLink(string url)
         {
-            string resultId = SplashAuthService.GetResultIdFromDeepLink(url);
+            string resultId = AuthService.GetResultIdFromDeepLink(url);
             if (string.IsNullOrEmpty(resultId))
             {
                 return false;
@@ -190,7 +187,7 @@ namespace MemoAnchor
             SetLoginButtonsEnabled(false);
             try
             {
-                SplashAuthCompletion completion = await authService.CompleteLoginAsync(resultId);
+                AuthCompletion completion = await authService.CompleteLoginAsync(resultId);
                 await CompleteLoginAsync(completion);
             }
             catch (System.Exception exception)
@@ -209,7 +206,7 @@ namespace MemoAnchor
             isCompletingLogin = true;
             try
             {
-                SplashAuthCompletion completion = await authService.CompleteLoginSessionAsync(sessionId);
+                AuthCompletion completion = await authService.CompleteLoginSessionAsync(sessionId);
                 await CompleteLoginAsync(completion);
             }
             catch (System.Exception exception)
@@ -218,7 +215,7 @@ namespace MemoAnchor
             }
         }
 
-        private async Awaitable CompleteLoginAsync(SplashAuthCompletion completion)
+        private async Awaitable CompleteLoginAsync(AuthCompletion completion)
         {
             if (completion.IsExistingMember)
             {
@@ -271,7 +268,7 @@ namespace MemoAnchor
             SetVisible(loginPanel, true);
         }
 
-        private void ShowSignupPanel(SplashAuthCompletion completion)
+        private void ShowSignupPanel(AuthCompletion completion)
         {
             SetVisible(loginPanel, false);
             MemoAnchor.UI.PopupManager.HideConfirm();

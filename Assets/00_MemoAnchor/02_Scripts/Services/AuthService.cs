@@ -1,5 +1,4 @@
 using System;
-using System.Text;
 using Unity.Services.Authentication;
 using Unity.Services.Core;
 using UnityEngine;
@@ -7,33 +6,38 @@ using UnityEngine.Networking;
 
 namespace MemoAnchor
 {
-    public sealed class SplashAuthService
+    public readonly struct AuthCompletion
     {
-        private readonly string serverBaseUrl;
-        private readonly string kakaoProviderName;
-        private readonly string googleProviderName;
-        private AuthResultResponse pendingAuthResult;
+        public readonly bool IsExistingMember;
+        public readonly PlayerProfile Profile;
 
-        public SplashAuthService(string serverBaseUrl, string kakaoProviderName, string googleProviderName)
+        public AuthCompletion(bool isExistingMember, PlayerProfile profile)
         {
-            this.serverBaseUrl = serverBaseUrl.TrimEnd('/');
-            this.kakaoProviderName = kakaoProviderName;
-            this.googleProviderName = googleProviderName;
+            IsExistingMember = isExistingMember;
+            Profile = profile;
         }
+    }
+
+    public sealed class AuthService
+    {
+        private const string KAKAO_PROVIDER_NAME = "oidc-kakao";
+        private const string GOOGLE_PROVIDER_NAME = "oidc-google";
+
+        private AuthResultResponse pendingAuthResult;
 
         public string BeginProviderLogin(string provider)
         {
             string sessionId = Guid.NewGuid().ToString("N");
-            Application.OpenURL($"{serverBaseUrl}/api/auth/start/{provider}?sessionId={sessionId}");
+            Application.OpenURL(ServicesManager.BuildServerUrl($"/api/auth/start/{provider}?sessionId={sessionId}"));
             return sessionId;
         }
 
-        public async Awaitable<SplashAuthCompletion> TryCompleteCachedLoginAsync()
+        public async Awaitable<AuthCompletion> TryCompleteCachedLoginAsync()
         {
             await UnityServices.InitializeAsync();
             if (!AuthenticationService.Instance.SessionTokenExists)
             {
-                return new SplashAuthCompletion(false, default);
+                return new AuthCompletion(false, default);
             }
 
             if (!AuthenticationService.Instance.IsSignedIn)
@@ -49,21 +53,21 @@ namespace MemoAnchor
             {
                 AuthenticationService.Instance.SignOut(true);
                 AuthenticationService.Instance.ClearSessionToken();
-                return new SplashAuthCompletion(false, default);
+                return new AuthCompletion(false, default);
             }
 
             PlayerProfile profile = BuildPlayerProfile(profileStatus);
             PlayerSession.SetProfile(profile);
-            return new SplashAuthCompletion(true, profile);
+            return new AuthCompletion(true, profile);
         }
 
-        public async Awaitable<SplashAuthCompletion> CompleteLoginAsync(string resultId)
+        public async Awaitable<AuthCompletion> CompleteLoginAsync(string resultId)
         {
             AuthResultResponse authResult = await FetchAuthResultAsync(resultId);
             return await CompleteLoginAsync(authResult);
         }
 
-        public async Awaitable<SplashAuthCompletion> CompleteLoginSessionAsync(string sessionId)
+        public async Awaitable<AuthCompletion> CompleteLoginSessionAsync(string sessionId)
         {
             const float TIMEOUT_SECONDS = 180f;
             float elapsed = 0f;
@@ -88,7 +92,7 @@ namespace MemoAnchor
             throw new TimeoutException("Login callback timed out.");
         }
 
-        private async Awaitable<SplashAuthCompletion> CompleteLoginAsync(AuthResultResponse authResult)
+        private async Awaitable<AuthCompletion> CompleteLoginAsync(AuthResultResponse authResult)
         {
             pendingAuthResult = authResult;
             await UnityServices.InitializeAsync();
@@ -101,7 +105,7 @@ namespace MemoAnchor
                 PlayerSession.SetProfile(profile);
             }
 
-            return new SplashAuthCompletion(profileStatus.exists, profile);
+            return new AuthCompletion(profileStatus.exists, profile);
         }
 
         public async Awaitable SaveSignupProfileAsync(string name, string email, string companyName)
@@ -115,13 +119,8 @@ namespace MemoAnchor
             };
 
             string json = JsonUtility.ToJson(payload);
-            using UnityWebRequest request = new($"{serverBaseUrl}/api/profile", UnityWebRequest.kHttpVerbPOST);
-            byte[] bodyRaw = Encoding.UTF8.GetBytes(json);
-            request.uploadHandler = new UploadHandlerRaw(bodyRaw);
-            request.downloadHandler = new DownloadHandlerBuffer();
-            request.SetRequestHeader("Content-Type", "application/json");
-            request.SetRequestHeader("Authorization", $"Bearer {AuthenticationService.Instance.AccessToken}");
-            await SendRequestAsync(request);
+            using UnityWebRequest request = ServicesManager.CreateAuthorizedJsonPostRequest("/api/profile", json);
+            await ServicesManager.SendRequestAsync(request);
 
             if (request.result != UnityWebRequest.Result.Success)
             {
@@ -155,7 +154,7 @@ namespace MemoAnchor
 
         private string GetUnityProviderName(string provider)
         {
-            return provider == "kakao" ? kakaoProviderName : googleProviderName;
+            return provider == "kakao" ? KAKAO_PROVIDER_NAME : GOOGLE_PROVIDER_NAME;
         }
 
         private PlayerProfile BuildPlayerProfile(ProfileStatusResponse profileStatus)
@@ -169,9 +168,8 @@ namespace MemoAnchor
 
         private async Awaitable<AuthResultResponse> FetchAuthResultAsync(string resultId)
         {
-            string url = $"{serverBaseUrl}/api/auth/result/{UnityWebRequest.EscapeURL(resultId)}";
-            using UnityWebRequest request = UnityWebRequest.Get(url);
-            await SendRequestAsync(request);
+            using UnityWebRequest request = ServicesManager.CreateGetRequest($"/api/auth/result/{UnityWebRequest.EscapeURL(resultId)}");
+            await ServicesManager.SendRequestAsync(request);
 
             if (request.result != UnityWebRequest.Result.Success)
             {
@@ -183,9 +181,8 @@ namespace MemoAnchor
 
         private async Awaitable<AuthResultResponse> TryFetchSessionAuthResultAsync(string sessionId)
         {
-            string url = $"{serverBaseUrl}/api/auth/session/{UnityWebRequest.EscapeURL(sessionId)}";
-            using UnityWebRequest request = UnityWebRequest.Get(url);
-            await SendRequestAsync(request);
+            using UnityWebRequest request = ServicesManager.CreateGetRequest($"/api/auth/session/{UnityWebRequest.EscapeURL(sessionId)}");
+            await ServicesManager.SendRequestAsync(request);
 
             if (request.responseCode == 202)
             {
@@ -202,9 +199,8 @@ namespace MemoAnchor
 
         private async Awaitable<ProfileStatusResponse> FetchProfileStatusAsync()
         {
-            using UnityWebRequest request = UnityWebRequest.Get($"{serverBaseUrl}/api/profile/me");
-            request.SetRequestHeader("Authorization", $"Bearer {AuthenticationService.Instance.AccessToken}");
-            await SendRequestAsync(request);
+            using UnityWebRequest request = ServicesManager.CreateAuthorizedGetRequest("/api/profile/me");
+            await ServicesManager.SendRequestAsync(request);
 
             if (request.result != UnityWebRequest.Result.Success)
             {
@@ -212,15 +208,6 @@ namespace MemoAnchor
             }
 
             return JsonUtility.FromJson<ProfileStatusResponse>(request.downloadHandler.text);
-        }
-
-        private static async Awaitable SendRequestAsync(UnityWebRequest request)
-        {
-            UnityWebRequestAsyncOperation operation = request.SendWebRequest();
-            while (!operation.isDone)
-            {
-                await Awaitable.NextFrameAsync();
-            }
         }
 
         [Serializable]
