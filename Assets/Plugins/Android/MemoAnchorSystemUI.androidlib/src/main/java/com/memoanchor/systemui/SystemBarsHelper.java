@@ -42,10 +42,14 @@ public final class SystemBarsHelper {
             WindowInsetsController controller = window.getInsetsController();
             controller.show(WindowInsets.Type.statusBars() | WindowInsets.Type.navigationBars());
             controller.setSystemBarsAppearance(
-                    WindowInsetsController.APPEARANCE_LIGHT_NAVIGATION_BARS,
+                    WindowInsetsController.APPEARANCE_LIGHT_STATUS_BARS
+                            | WindowInsetsController.APPEARANCE_LIGHT_NAVIGATION_BARS,
                     WindowInsetsController.APPEARANCE_LIGHT_STATUS_BARS
                             | WindowInsetsController.APPEARANCE_LIGHT_NAVIGATION_BARS);
         } else {
+            if (sdk >= Build.VERSION_CODES.M) {
+                visibility |= View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR;
+            }
             if (sdk >= Build.VERSION_CODES.O) {
                 visibility |= View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR;
             }

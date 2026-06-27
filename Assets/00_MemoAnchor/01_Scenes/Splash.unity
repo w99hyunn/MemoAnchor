@@ -201,7 +201,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::MemoAnchor.Splash
   mainScene: Main
-  serverBaseUrl: https://localhost:7001
+  serverBaseUrl: https://memoanchorserver.bindgames.kr
   kakaoProviderName: oidc-kakao
   googleProviderName: oidc-google
 --- !u!1 &1987654300

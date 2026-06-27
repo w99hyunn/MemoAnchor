@@ -48,6 +48,7 @@ namespace MemoAnchor
             if (!profileStatus.exists)
             {
                 AuthenticationService.Instance.SignOut(true);
+                AuthenticationService.Instance.ClearSessionToken();
                 return new SplashAuthCompletion(false, default);
             }
 

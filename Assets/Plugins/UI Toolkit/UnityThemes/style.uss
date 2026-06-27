@@ -2084,8 +2084,6 @@
     background-color: rgb(255, 255, 255);
     padding-left: 46px;
     padding-right: 50px;
-    border-bottom-width: 1px;
-    border-bottom-color: rgb(238, 238, 238);
 }
 
 .profile-account-settings-logout-row {
@@ -2094,14 +2092,10 @@
 
 .profile-account-settings-row:hover:enabled {
     background-color: rgb(252, 252, 252);
-    border-color: transparent;
-    border-bottom-color: rgb(238, 238, 238);
 }
 
 .profile-account-settings-row:active:enabled {
     background-color: rgb(242, 242, 242);
-    border-color: transparent;
-    border-bottom-color: rgb(238, 238, 238);
 }
 
 .profile-account-settings-row:disabled {

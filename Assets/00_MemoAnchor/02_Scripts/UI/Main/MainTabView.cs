@@ -237,6 +237,7 @@ namespace MemoAnchor.UI
             PopupManager.SetConfirmButtonsEnabled(false);
             UnregisterFriendsCallbacks();
             AuthenticationService.Instance.SignOut(true);
+            AuthenticationService.Instance.ClearSessionToken();
             MemoAnchor.PlayerSession.Clear();
             await _fadeTransition.FadeOutAndLoadSceneAsync(_splashScene);
         }

@@ -14,9 +14,10 @@ namespace MemoAnchor
         private const int SHAKE_FRAME_COUNT = 12;
         private const float SHAKE_OFFSET = 24f;
         private static readonly Regex EmailRegex = new("^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$", RegexOptions.Compiled);
+        private static readonly HashSet<string> HandledLoginResultIds = new();
 
         [SerializeField] private string mainScene = "Main";
-        [SerializeField] private string serverBaseUrl = "https://localhost:7001";
+        [SerializeField] private string serverBaseUrl = "https://memoanchorserver.bindgames.kr";
         [SerializeField] private string kakaoProviderName = "oidc-kakao";
         [SerializeField] private string googleProviderName = "oidc-google";
 
@@ -50,10 +51,9 @@ namespace MemoAnchor
 
         private void Start()
         {
-            _ = ShowLoginAsync();
-            if (!string.IsNullOrEmpty(Application.absoluteURL))
+            if (!TryHandleDeepLink(Application.absoluteURL))
             {
-                HandleDeepLink(Application.absoluteURL);
+                _ = ShowLoginAsync();
             }
         }
 
@@ -157,14 +157,25 @@ namespace MemoAnchor
 
         private void HandleDeepLink(string url)
         {
+            TryHandleDeepLink(url);
+        }
+
+        private bool TryHandleDeepLink(string url)
+        {
             string resultId = SplashAuthService.GetResultIdFromDeepLink(url);
             if (string.IsNullOrEmpty(resultId))
             {
-                return;
+                return false;
+            }
+
+            if (!HandledLoginResultIds.Add(resultId))
+            {
+                return false;
             }
 
             ShowLoginPanel();
             _ = CompleteLoginAsync(resultId);
+            return true;
         }
 
         private async Awaitable CompleteLoginAsync(string resultId)
