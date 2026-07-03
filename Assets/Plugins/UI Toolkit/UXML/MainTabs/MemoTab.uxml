@@ -116,11 +116,15 @@
                         <ui:TextField name="memo-search-page-input" label="" placeholder-text="메모 검색" class="scan-input-field"/>
                     </ui:VisualElement>
                 </ui:VisualElement>
-                <ui:VisualElement class="memo-filter-section memo-search-history-section">
+                <ui:VisualElement name="memo-search-history-section" class="memo-filter-section memo-search-history-section">
                     <ui:Label text="최근 검색" class="memo-filter-section-title"/>
                     <ui:VisualElement name="memo-search-history-list" class="memo-search-history-list"/>
                     <ui:Label name="memo-search-empty-label" text="최근 검색 결과가 없습니다." class="memo-search-empty-label is-hidden"/>
                 </ui:VisualElement>
+                <ui:ScrollView name="memo-search-result-section" mode="Vertical" horizontal-scroller-visibility="Hidden" vertical-scroller-visibility="Hidden" touch-scroll-type="Elastic" class="memo-search-result-section is-hidden">
+                    <ui:VisualElement name="memo-search-result-list" class="memo-search-result-list"/>
+                    <ui:Label name="memo-search-no-result-label" text="검색 결과가 없습니다." class="memo-search-empty-label memo-search-no-result-label is-hidden"/>
+                </ui:ScrollView>
         </ui:VisualElement>
     </ui:VisualElement>
 </ui:UXML>

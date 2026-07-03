@@ -11,6 +11,10 @@ namespace MemoAnchor.UI
         private const int MEMO_SEARCH_HISTORY_LIMIT = 20;
 
         private Label _memoSearchEmptyLabel;
+        private Label _memoSearchNoResultLabel;
+        private VisualElement _memoSearchHistorySection;
+        private VisualElement _memoSearchResultSection;
+        private VisualElement _memoSearchResultList;
         private readonly List<MemoSearchHistoryItem> _memoSearchHistory = new();
 
         private void RegisterMemoSearchPage()
@@ -18,16 +22,22 @@ namespace MemoAnchor.UI
             _memoSearchSourceInput = _root.Q<TextField>("memo-search-input");
             _memoSearchPage = _root.Q<VisualElement>("memo-search-page");
             _memoSearchPageInput = _root.Q<TextField>("memo-search-page-input");
+            _memoSearchHistorySection = _root.Q<VisualElement>("memo-search-history-section");
             _memoSearchHistoryList = _root.Q<VisualElement>("memo-search-history-list");
             _memoSearchEmptyLabel = _root.Q<Label>("memo-search-empty-label");
+            _memoSearchResultSection = _root.Q<VisualElement>("memo-search-result-section");
+            _memoSearchResultList = _root.Q<VisualElement>("memo-search-result-list");
+            _memoSearchNoResultLabel = _root.Q<Label>("memo-search-no-result-label");
             _memoSearchBackButton = _root.Q<Button>("memo-search-back-button");
 
             SetVisible(_memoSearchPage, false);
             LoadMemoSearchHistory();
             RebuildMemoSearchHistory();
+            RefreshMemoSearchPageState(_memoSearchPageInput.value);
 
             _memoSearchSourceInput.RegisterCallback<FocusInEvent>(ShowMemoSearchPage);
             _memoSearchSourceInput.RegisterCallback<ClickEvent>(ShowMemoSearchPage);
+            _memoSearchPageInput.RegisterValueChangedCallback(OnMemoSearchInputChanged);
             _memoSearchPageInput.RegisterCallback<KeyDownEvent>(OnMemoSearchKeyDown, TrickleDown.TrickleDown);
             _memoSearchBackButton.clicked += HideMemoSearchPage;
         }
@@ -36,6 +46,7 @@ namespace MemoAnchor.UI
         {
             _memoSearchSourceInput.UnregisterCallback<FocusInEvent>(ShowMemoSearchPage);
             _memoSearchSourceInput.UnregisterCallback<ClickEvent>(ShowMemoSearchPage);
+            _memoSearchPageInput.UnregisterValueChangedCallback(OnMemoSearchInputChanged);
             _memoSearchPageInput.UnregisterCallback<KeyDownEvent>(OnMemoSearchKeyDown, TrickleDown.TrickleDown);
             _memoSearchBackButton.clicked -= HideMemoSearchPage;
         }
@@ -53,7 +64,8 @@ namespace MemoAnchor.UI
         private void ShowMemoSearchPage()
         {
             SetVisible(_memoSearchPage, true);
-            _memoSearchPageInput.value = _memoSearchSourceInput.value;
+            _memoSearchPageInput.SetValueWithoutNotify(_memoSearchSourceInput.value);
+            RefreshMemoSearchPageState(_memoSearchPageInput.value);
             _memoSearchPageInput.schedule.Execute(() => _memoSearchPageInput.Focus()).ExecuteLater(16);
         }
 
@@ -61,6 +73,11 @@ namespace MemoAnchor.UI
         {
             SetVisible(_memoSearchPage, false);
             _memoSearchPageInput.Blur();
+        }
+
+        private void OnMemoSearchInputChanged(ChangeEvent<string> evt)
+        {
+            RefreshMemoSearchPageState(evt.newValue);
         }
 
         private void OnMemoSearchKeyDown(KeyDownEvent evt)
@@ -77,13 +94,33 @@ namespace MemoAnchor.UI
         private void SubmitMemoSearch(string query)
         {
             string normalizedQuery = query.Trim();
-            _memoSearchSourceInput.value = normalizedQuery;
-            _memoSearchPageInput.value = normalizedQuery;
-            ApplyMemoSearch(normalizedQuery);
+            _memoSearchSourceInput.SetValueWithoutNotify(normalizedQuery);
+            _memoSearchPageInput.SetValueWithoutNotify(normalizedQuery);
+            RefreshMemoSearchPageState(normalizedQuery);
 
             if (normalizedQuery.Length > 0)
             {
                 AddMemoSearchHistory(normalizedQuery);
+            }
+        }
+
+        private void RefreshMemoSearchPageState(string query)
+        {
+            string normalizedQuery = query.Trim();
+            bool hasQuery = normalizedQuery.Length > 0;
+            _memoSearchSourceInput.SetValueWithoutNotify(normalizedQuery);
+            SetVisible(_memoSearchHistorySection, !hasQuery);
+            SetVisible(_memoSearchResultSection, hasQuery);
+            ApplyMemoSearch(normalizedQuery);
+
+            if (hasQuery)
+            {
+                RebuildMemoSearchResults(normalizedQuery);
+            }
+            else
+            {
+                _memoSearchResultList.Clear();
+                SetVisible(_memoSearchNoResultLabel, false);
             }
         }
 
@@ -92,10 +129,110 @@ namespace MemoAnchor.UI
             string normalizedQuery = query.Trim();
             _root.Query<VisualElement>(className: "memo-list-swipe-row").ForEach(row =>
             {
-                Label title = row.Q<Label>(className: "memo-list-item-title");
-                bool visible = normalizedQuery.Length == 0 || title.text.IndexOf(normalizedQuery, StringComparison.OrdinalIgnoreCase) >= 0;
+                bool visible = normalizedQuery.Length == 0 || MemoSearchRowMatches(row, normalizedQuery);
                 row.style.display = visible ? DisplayStyle.Flex : DisplayStyle.None;
             });
+        }
+
+        private void RebuildMemoSearchResults(string query)
+        {
+            _memoSearchResultList.Clear();
+            int resultCount = 0;
+
+            _root.Query<VisualElement>(className: "memo-list-swipe-row").ForEach(row =>
+            {
+                if (!MemoSearchRowMatches(row, query))
+                {
+                    return;
+                }
+
+                _memoSearchResultList.Add(CreateMemoSearchResultRow(row));
+                resultCount++;
+            });
+
+            SetVisible(_memoSearchNoResultLabel, resultCount == 0);
+        }
+
+        private static bool MemoSearchRowMatches(VisualElement row, string query)
+        {
+            bool matches = false;
+            row.Query<Label>().ForEach(label =>
+            {
+                if (label.text.IndexOf(query, StringComparison.OrdinalIgnoreCase) >= 0)
+                {
+                    matches = true;
+                }
+            });
+
+            return matches;
+        }
+
+        private static VisualElement CreateMemoSearchResultRow(VisualElement sourceRow)
+        {
+            VisualElement row = new();
+            row.AddToClassList("memo-search-result-row");
+
+            VisualElement item = new();
+            item.AddToClassList("memo-list-item");
+            item.AddToClassList("memo-search-result-item");
+
+            VisualElement body = new();
+            body.AddToClassList("memo-list-item-body");
+
+            VisualElement titleRow = new();
+            titleRow.AddToClassList("memo-search-result-title-row");
+
+            VisualElement titleWrap = new();
+            titleWrap.AddToClassList("memo-search-result-title-wrap");
+
+            VisualElement icon = new();
+            icon.AddToClassList("memo-list-item-icon");
+
+            Label sourceTitle = sourceRow.Q<Label>(className: "memo-list-item-title");
+            Label title = new(sourceTitle.text);
+            title.AddToClassList("memo-list-item-title");
+            title.style.unityTextAlign = TextAnchor.MiddleLeft;
+
+            VisualElement dot = new();
+            dot.AddToClassList("memo-list-item-dot");
+
+            titleWrap.Add(icon);
+            titleWrap.Add(title);
+            titleRow.Add(titleWrap);
+            titleRow.Add(dot);
+            body.Add(titleRow);
+
+            AddMemoSearchResultMetaRows(sourceRow, body);
+            item.Add(body);
+            row.Add(item);
+            return row;
+        }
+
+        private static void AddMemoSearchResultMetaRows(VisualElement sourceRow, VisualElement body)
+        {
+            List<Label> sourceMetaLabels = new();
+            sourceRow.Query<Label>(className: "memo-list-item-meta").ForEach(sourceMetaLabels.Add);
+
+            for (int i = 0; i < sourceMetaLabels.Count; i += 2)
+            {
+                VisualElement metaRow = new();
+                metaRow.AddToClassList("memo-list-item-meta-row");
+
+                AddMemoSearchResultMetaLabel(metaRow, sourceMetaLabels[i].text);
+                if (i + 1 < sourceMetaLabels.Count)
+                {
+                    AddMemoSearchResultMetaLabel(metaRow, sourceMetaLabels[i + 1].text);
+                }
+
+                body.Add(metaRow);
+            }
+        }
+
+        private static void AddMemoSearchResultMetaLabel(VisualElement row, string text)
+        {
+            Label metaLabel = new(text);
+            metaLabel.AddToClassList("memo-list-item-meta");
+            row.Add(metaLabel);
         }
 
         private void AddMemoSearchHistory(string query)

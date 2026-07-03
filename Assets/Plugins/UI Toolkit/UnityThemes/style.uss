@@ -1687,6 +1687,10 @@
     padding-bottom: 0;
 }
 
+.memo-search-history-section.is-hidden {
+    display: none;
+}
+
 .memo-search-history-row {
     height: 86px;
     flex-direction: row;
@@ -1776,6 +1780,54 @@
 
 .memo-search-empty-label.is-hidden {
     display: none;
+}
+
+.memo-search-no-result-label {
+    height: 96px;
+    margin-top: 92px;
+    margin-left: 60px;
+    margin-right: 60px;
+    -unity-text-align: middle-center;
+}
+
+.memo-search-result-section {
+    flex-grow: 1;
+    margin-top: 42px;
+    margin-left: -60px;
+    margin-right: -60px;
+}
+
+.memo-search-result-section.is-hidden {
+    display: none;
+}
+
+.memo-search-result-list {
+    flex-grow: 0;
+}
+
+.memo-search-result-row {
+    height: 350px;
+    position: relative;
+    overflow: hidden;
+    background-color: rgb(255, 255, 255);
+}
+
+.memo-search-result-item {
+    translate: 0 0;
+}
+
+.memo-search-result-title-row {
+    flex-grow: 1;
+    flex-direction: row;
+    align-items: center;
+    margin-bottom: 50px;
+}
+
+.memo-search-result-title-wrap {
+    flex-grow: 1;
+    flex-direction: row;
+    align-items: center;
+    min-width: 0;
 }
 
 .profile-tab-page {
