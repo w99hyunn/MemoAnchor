@@ -9,29 +9,37 @@
                 <ui:Label text="①  스캔 전 설정" class="scan-step-title"/>
                 <ui:VisualElement class="scan-field-group">
                     <ui:Label text="주소 선택" class="scan-field-label"/>
-                    <ui:VisualElement class="scan-input-box">
+                    <ui:VisualElement name="scan-address-input-box" class="scan-input-box">
                         <ui:Button name="scan-address-field" class="scan-select-button">
                             <ui:TextField name="scan-address-field-text" label="" placeholder-text="속해있는 건물 주소를 선택해주세요." focusable="true" readonly="true" enabled="true" class="scan-input-field scan-select-button-text-field"/>
+                            <ui:Label text="›" class="scan-select-button-arrow"/>
+                        </ui:Button>
+                        <ui:VisualElement picking-mode="Ignore" class="signup-input-border"/>
+                    </ui:VisualElement>
+                </ui:VisualElement>
+                <ui:VisualElement class="scan-field-group">
+                    <ui:Label text="공간명" class="scan-field-label"/>
+                    <ui:VisualElement name="scan-space-name-input-box" class="scan-input-box">
+                        <ui:TextField name="scan-space-name-field" label="" placeholder-text="ex. 화장실" class="scan-input-field"/>
+                        <ui:VisualElement picking-mode="Ignore" class="signup-input-border"/>
+                    </ui:VisualElement>
+                </ui:VisualElement>
+                <ui:VisualElement class="scan-field-group">
+                    <ui:Label text="수리자 선택하기" class="scan-field-label"/>
+                    <ui:VisualElement class="scan-input-box">
+                        <ui:Button name="scan-repairer-field" class="scan-select-button">
+                            <ui:TextField name="scan-repairer-field-text" label="" placeholder-text="수리자를 선택해주세요." focusable="true" readonly="true" enabled="true" class="scan-input-field scan-select-button-text-field"/>
                             <ui:Label text="›" class="scan-select-button-arrow"/>
                         </ui:Button>
                     </ui:VisualElement>
                 </ui:VisualElement>
                 <ui:VisualElement class="scan-field-group">
-                    <ui:Label text="공간명" class="scan-field-label"/>
+                    <ui:Label text="관리자 추가하기" class="scan-field-label"/>
                     <ui:VisualElement class="scan-input-box">
-                        <ui:TextField name="scan-space-name-field" label="" placeholder-text="ex. 화장실" class="scan-input-field"/>
-                    </ui:VisualElement>
-                </ui:VisualElement>
-                <ui:VisualElement class="scan-field-group">
-                    <ui:Label text="수리자 참여코드 (6자리)" class="scan-field-label"/>
-                    <ui:VisualElement class="scan-input-box">
-                        <ui:TextField name="scan-participation-code-field" label="" placeholder-text="영어, 숫자 포함 6자리" class="scan-input-field"/>
-                    </ui:VisualElement>
-                </ui:VisualElement>
-                <ui:VisualElement class="scan-field-group">
-                    <ui:Label text="수리자 초대하기" class="scan-field-label"/>
-                    <ui:VisualElement class="scan-input-box scan-input-row">
-                        <ui:TextField name="scan-invite-field" label="" placeholder-text="수리자에게 참여코드가 발송됩니다." class="scan-input-field"/>
+                        <ui:Button name="scan-manager-field" class="scan-select-button">
+                            <ui:TextField name="scan-manager-field-text" label="" placeholder-text="관리자를 선택해주세요." focusable="true" readonly="true" enabled="true" class="scan-input-field scan-select-button-text-field"/>
+                            <ui:Label text="›" class="scan-select-button-arrow"/>
+                        </ui:Button>
                     </ui:VisualElement>
                 </ui:VisualElement>
                 <ui:Label text="②  스캔하기" class="scan-step-title" style="margin-top: 100px;"/>
@@ -47,6 +55,14 @@
                         <ui:Label text="주소 추가하기" class="scan-address-list-text"/>
                     </ui:Button>
                     <ui:VisualElement name="scan-address-items-list" class="scan-address-items-list"/>
+                </ui:VisualElement>
+            </ui:VisualElement>
+        </ui:VisualElement>
+        <ui:VisualElement name="scan-friend-dialog-overlay" class="scan-action-dialog-overlay scan-address-dialog-overlay scan-friend-dialog-overlay is-hidden">
+            <ui:VisualElement name="scan-friend-dialog-sheet" class="scan-action-dialog-sheet scan-address-dialog-sheet scan-friend-dialog-sheet">
+                <ui:VisualElement class="scan-action-dialog-handle scan-address-dialog-handle"/>
+                <ui:VisualElement class="scan-address-list scan-friend-list">
+                    <ui:VisualElement name="scan-friend-items-list" class="scan-address-items-list scan-friend-items-list"/>
                 </ui:VisualElement>
             </ui:VisualElement>
         </ui:VisualElement>

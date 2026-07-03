@@ -16,6 +16,7 @@ namespace MemoAnchor.UI
         private bool _friendsCallbacksRegistered;
         private bool _isFriendsInitializing;
         private bool _isFriendsRefreshing;
+        private bool _friendsRefreshQueued;
         private bool _isFriendRequestSubmitting;
 
         private async Awaitable InitializeFriendsAsync()
@@ -79,11 +80,15 @@ namespace MemoAnchor.UI
 
         private void HandleRelationshipAdded(IRelationshipAddedEvent relationshipEvent)
         {
+            RebuildProfileFriendList();
+            RebuildOpenAlertFriendRequests();
             _ = RefreshFriendsAsync();
         }
 
         private void HandleRelationshipDeleted(IRelationshipDeletedEvent relationshipEvent)
         {
+            RebuildProfileFriendList();
+            RebuildOpenAlertFriendRequests();
             _ = RefreshFriendsAsync();
         }
 
@@ -94,27 +99,37 @@ namespace MemoAnchor.UI
 
         private async Awaitable RefreshFriendsAsync()
         {
-            if (!_friendsInitialized || _isFriendsRefreshing)
+            if (!_friendsInitialized)
             {
                 return;
             }
 
-            _isFriendsRefreshing = true;
+            if (_isFriendsRefreshing)
+            {
+                _friendsRefreshQueued = true;
+                return;
+            }
 
-            try
+            do
             {
-                await FriendsService.Instance.ForceRelationshipsRefreshAsync();
-                RebuildProfileFriendList();
-                RebuildOpenAlertFriendRequests();
-            }
-            catch (Exception exception) when (IsFriendsRecoverableException(exception))
-            {
-                Debug.LogWarning($"UGS Friends refresh failed: {exception.Message}");
-            }
-            finally
-            {
-                _isFriendsRefreshing = false;
-            }
+                _friendsRefreshQueued = false;
+                _isFriendsRefreshing = true;
+
+                try
+                {
+                    await FriendsService.Instance.ForceRelationshipsRefreshAsync();
+                    RebuildProfileFriendList();
+                    RebuildOpenAlertFriendRequests();
+                }
+                catch (Exception exception) when (IsFriendsRecoverableException(exception))
+                {
+                    Debug.LogWarning($"UGS Friends refresh failed: {exception.Message}");
+                }
+                finally
+                {
+                    _isFriendsRefreshing = false;
+                }
+            } while (_friendsRefreshQueued);
         }
 
         private async Awaitable EnsurePlayerNameAsync()
@@ -174,10 +189,6 @@ namespace MemoAnchor.UI
             nameLabel.AddToClassList("profile-friend-name");
             row.Add(nameLabel);
 
-            Label companyLabel = new("UGS Friends");
-            companyLabel.AddToClassList("profile-friend-company");
-            row.Add(companyLabel);
-
             Button deleteButton = new();
             deleteButton.AddToClassList("profile-friend-delete-button");
 
@@ -186,7 +197,8 @@ namespace MemoAnchor.UI
             deleteButton.Add(deleteIcon);
 
             string memberId = relationship.Member.Id;
-            deleteButton.clicked += () => _ = DeleteFriendAsync(memberId);
+            string memberName = GetMemberDisplayName(relationship.Member);
+            deleteButton.clicked += () => ShowFriendDeleteConfirm(memberId, memberName);
             row.Add(deleteButton);
 
             _profileFriendItemsList.Add(row);
@@ -202,6 +214,17 @@ namespace MemoAnchor.UI
             row.Add(label);
 
             _profileFriendItemsList.Add(row);
+        }
+
+        private void ShowFriendDeleteConfirm(string memberId, string memberName)
+        {
+            PopupManager.ShowConfirm("친구 삭제", $"{memberName}님을 친구 목록에서 삭제할까요?", "취소", "삭제", () => ConfirmFriendDelete(memberId));
+        }
+
+        private void ConfirmFriendDelete(string memberId)
+        {
+            PopupManager.HideConfirm();
+            _ = DeleteFriendAsync(memberId);
         }
 
         private async Awaitable DeleteFriendAsync(string memberId)

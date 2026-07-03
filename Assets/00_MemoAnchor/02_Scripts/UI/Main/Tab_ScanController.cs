@@ -1,4 +1,10 @@
-using System.Runtime.InteropServices;
+using System;
+using System.Collections.Generic;
+using Unity.Services.Authentication;
+using Unity.Services.Core;
+using Unity.Services.Friends;
+using Unity.Services.Friends.Exceptions;
+using Unity.Services.Friends.Models;
 using UnityEngine;
 
 namespace MemoAnchor.UI
@@ -6,25 +12,24 @@ namespace MemoAnchor.UI
     [RequireComponent(typeof(Tab_ScanView))]
     public class Tab_ScanController : MonoBehaviour
     {
-        private const string ANDROID_BRIDGE_CLASS = "com.memoanchor.systemui.AddressSearchBridge";
-
         private Tab_ScanView _view;
+        private KakaoPostcodeWebView _postcodeWebView;
         private readonly ScanAddressService _scanAddressService = new();
-
-#if UNITY_IOS && !UNITY_EDITOR
-        [DllImport("__Internal")]
-        private static extern void MemoAnchor_OpenKakaoPostcodeSearch(string unityGameObjectName);
-#endif
+        private FriendSelectionTarget _friendSelectionTarget;
+        private int _friendSelectionRequestToken;
 
         private void Awake()
         {
             TryGetComponent<Tab_ScanView>(out _view);
+            _postcodeWebView = new KakaoPostcodeWebView(OnAddressSearchResult);
         }
 
         private void Start()
         {
             _view.AddressButton.clicked += OnClickAddressButton;
             _view.AddressAddButton.clicked += OnClickAddressAddButton;
+            _view.RepairerButton.clicked += OnClickRepairerButton;
+            _view.ManagerButton.clicked += OnClickManagerButton;
             _ = LoadAddressesAsync();
         }
 
@@ -32,6 +37,9 @@ namespace MemoAnchor.UI
         {
             _view.AddressButton.clicked -= OnClickAddressButton;
             _view.AddressAddButton.clicked -= OnClickAddressAddButton;
+            _view.RepairerButton.clicked -= OnClickRepairerButton;
+            _view.ManagerButton.clicked -= OnClickManagerButton;
+            _postcodeWebView.Close();
         }
 
         private void OnClickAddressButton()
@@ -42,7 +50,6 @@ namespace MemoAnchor.UI
 
         private void OnClickAddressAddButton()
         {
-            _view.HideAddressDialog();
             OpenAddressSearch();
         }
 
@@ -52,27 +59,54 @@ namespace MemoAnchor.UI
             _view.HideAddressDialog();
         }
 
+        private void OnClickRepairerButton()
+        {
+            _ = OpenFriendSelectionAsync(FriendSelectionTarget.Repairer);
+        }
+
+        private void OnClickManagerButton()
+        {
+            _ = OpenFriendSelectionAsync(FriendSelectionTarget.Manager);
+        }
+
+        private void SelectFriend(ScanFriendOption friend)
+        {
+            if (_friendSelectionTarget == FriendSelectionTarget.Repairer)
+            {
+                _view.SetSelectedRepairer(friend);
+            }
+            else
+            {
+                _view.SetSelectedManager(friend);
+            }
+
+            _view.HideFriendDialog();
+        }
+
         private void OpenAddressSearch()
         {
-#if UNITY_ANDROID && !UNITY_EDITOR
-            using var unityPlayer = new AndroidJavaClass("com.unity3d.player.UnityPlayer");
-            using var activity = unityPlayer.GetStatic<AndroidJavaObject>("currentActivity");
-            using var bridge = new AndroidJavaClass(ANDROID_BRIDGE_CLASS);
-            bridge.CallStatic("open", activity, gameObject.name);
-#elif UNITY_IOS && !UNITY_EDITOR
-            MemoAnchor_OpenKakaoPostcodeSearch(gameObject.name);
-#endif
+            _postcodeWebView.Open();
         }
 
         public void OnAddressSearchResult(string payloadJson)
         {
-            if (payloadJson.Length == 0)
+            if (string.IsNullOrWhiteSpace(payloadJson))
             {
                 return;
             }
 
-            ScanAddressSaveRequest result = JsonUtility.FromJson<ScanAddressSaveRequest>(payloadJson);
-            if (result == null || result.address.Length == 0)
+            ScanAddressSaveRequest result;
+            try
+            {
+                result = JsonUtility.FromJson<ScanAddressSaveRequest>(payloadJson);
+            }
+            catch
+            {
+                Debug.LogWarning($"Address search returned invalid payload: {payloadJson}");
+                return;
+            }
+
+            if (result == null || string.IsNullOrWhiteSpace(result.address))
             {
                 return;
             }
@@ -90,10 +124,81 @@ namespace MemoAnchor.UI
         {
             ScanAddressSaveResult saveResult = await _scanAddressService.SaveAddressAsync(result);
             _view.RebuildAddressItems(saveResult.AddressList.addresses, SelectAddress);
+            _view.ShowAddressDialog();
             if (saveResult.IsSuccess)
             {
                 _view.SetSelectedAddress(result.address);
             }
+        }
+
+        private async Awaitable OpenFriendSelectionAsync(FriendSelectionTarget target)
+        {
+            _friendSelectionTarget = target;
+            _friendSelectionRequestToken++;
+            int token = _friendSelectionRequestToken;
+
+            _view.RebuildFriendStatus("친구 정보를 불러오는 중입니다.");
+            _view.ShowFriendDialog();
+
+            try
+            {
+                if (!AuthenticationService.Instance.IsSignedIn)
+                {
+                    _view.RebuildFriendStatus("로그인 후 친구를 선택할 수 있습니다.");
+                    return;
+                }
+
+                await FriendsService.Instance.InitializeAsync();
+                await FriendsService.Instance.ForceRelationshipsRefreshAsync();
+
+                if (token != _friendSelectionRequestToken)
+                {
+                    return;
+                }
+
+                if (FriendsService.Instance.Friends.Count == 0)
+                {
+                    _view.RebuildFriendStatus("등록된 친구가 없습니다.");
+                    return;
+                }
+
+                List<ScanFriendOption> friends = new();
+                foreach (Relationship relationship in FriendsService.Instance.Friends)
+                {
+                    friends.Add(new ScanFriendOption(
+                        relationship.Member.Id,
+                        GetMemberDisplayName(relationship.Member),
+                        string.Empty));
+                }
+
+                _view.RebuildFriendItems(friends, SelectFriend);
+            }
+            catch (Exception exception) when (IsFriendsRecoverableException(exception))
+            {
+                Debug.LogWarning($"Scan friend selection load failed: {exception.Message}");
+                if (token != _friendSelectionRequestToken)
+                {
+                    return;
+                }
+
+                _view.RebuildFriendStatus("친구 정보를 불러오지 못했습니다.");
+            }
+        }
+
+        private static string GetMemberDisplayName(Member member)
+        {
+            return string.IsNullOrWhiteSpace(member.Profile.Name) ? member.Id : member.Profile.Name;
+        }
+
+        private static bool IsFriendsRecoverableException(Exception exception)
+        {
+            return exception is FriendsServiceException or InvalidOperationException or AuthenticationException or RequestFailedException;
+        }
+
+        private enum FriendSelectionTarget
+        {
+            Repairer,
+            Manager
         }
     }
 }

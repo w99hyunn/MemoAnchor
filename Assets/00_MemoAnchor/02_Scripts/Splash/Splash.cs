@@ -12,7 +12,7 @@ namespace MemoAnchor
         private const string HIDDEN_CLASS = "is-hidden";
         private const string INPUT_ERROR_CLASS = "is-error";
         private const int SHAKE_FRAME_COUNT = 12;
-        private const float SHAKE_OFFSET = 24f;
+        private const float SHAKE_OFFSET = 40f;
         private static readonly Regex EmailRegex = new("^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$", RegexOptions.Compiled);
         private static readonly HashSet<string> HandledLoginResultIds = new();
 

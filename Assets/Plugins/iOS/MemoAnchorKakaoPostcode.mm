@@ -7,6 +7,7 @@ extern "C" void UnitySendMessage(const char *obj, const char *method, const char
 static NSString * const MemoAnchorBaseUrl = @"https://postcode.map.kakao.com/";
 static NSString * const MemoAnchorCallbackMethod = @"OnAddressSearchResult";
 static NSString * const MemoAnchorScriptHandlerName = @"MemoAnchorAddressBridge";
+static NSInteger const MemoAnchorPostcodeOverlayTag = 5108001;
 
 static NSString *MemoAnchorPostcodeHtml(void)
 {
@@ -33,27 +34,28 @@ static NSString *MemoAnchorPostcodeHtml(void)
            "</script></body></html>";
 }
 
-@interface MemoAnchorKakaoPostcodeViewController : UIViewController <WKScriptMessageHandler>
+@interface MemoAnchorKakaoPostcodeOverlayView : UIView <WKScriptMessageHandler>
 @property (nonatomic, copy) NSString *unityGameObjectName;
 @property (nonatomic, strong) WKWebView *webView;
+@property (nonatomic, assign) BOOL scriptHandlerRegistered;
+- (void)dismiss;
 @end
 
-@implementation MemoAnchorKakaoPostcodeViewController
+@implementation MemoAnchorKakaoPostcodeOverlayView
 
-- (void)viewDidLoad
+- (instancetype)initWithUnityGameObjectName:(NSString *)unityGameObjectName
 {
-    [super viewDidLoad];
+    self = [super initWithFrame:CGRectZero];
+    if (self == nil) {
+        return nil;
+    }
 
-    self.view.backgroundColor = UIColor.whiteColor;
-    self.title = @"Address";
-
-    UIBarButtonItem *closeButton = [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemClose
-                                                                                  target:self
-                                                                                  action:@selector(onTapClose)];
-    self.navigationItem.leftBarButtonItem = closeButton;
+    self.unityGameObjectName = unityGameObjectName;
+    self.backgroundColor = UIColor.whiteColor;
 
     WKUserContentController *contentController = [[WKUserContentController alloc] init];
     [contentController addScriptMessageHandler:self name:MemoAnchorScriptHandlerName];
+    self.scriptHandlerRegistered = YES;
 
     WKWebViewConfiguration *configuration = [[WKWebViewConfiguration alloc] init];
     configuration.userContentController = contentController;
@@ -62,35 +64,70 @@ static NSString *MemoAnchorPostcodeHtml(void)
     self.webView.backgroundColor = UIColor.whiteColor;
     self.webView.opaque = YES;
     self.webView.translatesAutoresizingMaskIntoConstraints = NO;
-    [self.view addSubview:self.webView];
 
-    UILayoutGuide *safeArea = self.view.safeAreaLayoutGuide;
+    UIView *topBar = [[UIView alloc] initWithFrame:CGRectZero];
+    topBar.backgroundColor = UIColor.whiteColor;
+    topBar.translatesAutoresizingMaskIntoConstraints = NO;
+
+    UIButton *closeButton = [UIButton buttonWithType:UIButtonTypeSystem];
+    [closeButton setTitle:@"닫기" forState:UIControlStateNormal];
+    [closeButton setTitleColor:[UIColor colorWithRed:0.16 green:0.16 blue:0.16 alpha:1.0] forState:UIControlStateNormal];
+    closeButton.titleLabel.font = [UIFont systemFontOfSize:16.0 weight:UIFontWeightRegular];
+    closeButton.translatesAutoresizingMaskIntoConstraints = NO;
+    [closeButton addTarget:self action:@selector(onTapClose) forControlEvents:UIControlEventTouchUpInside];
+
+    [self addSubview:topBar];
+    [self addSubview:self.webView];
+    [topBar addSubview:closeButton];
+
+    UILayoutGuide *safeArea = self.safeAreaLayoutGuide;
     [NSLayoutConstraint activateConstraints:@[
-        [self.webView.leadingAnchor constraintEqualToAnchor:safeArea.leadingAnchor],
-        [self.webView.trailingAnchor constraintEqualToAnchor:safeArea.trailingAnchor],
-        [self.webView.topAnchor constraintEqualToAnchor:safeArea.topAnchor],
-        [self.webView.bottomAnchor constraintEqualToAnchor:safeArea.bottomAnchor]
+        [topBar.leadingAnchor constraintEqualToAnchor:self.leadingAnchor],
+        [topBar.trailingAnchor constraintEqualToAnchor:self.trailingAnchor],
+        [topBar.topAnchor constraintEqualToAnchor:safeArea.topAnchor],
+        [topBar.heightAnchor constraintEqualToConstant:52.0],
+
+        [closeButton.trailingAnchor constraintEqualToAnchor:topBar.trailingAnchor constant:-12.0],
+        [closeButton.topAnchor constraintEqualToAnchor:topBar.topAnchor],
+        [closeButton.bottomAnchor constraintEqualToAnchor:topBar.bottomAnchor],
+        [closeButton.widthAnchor constraintEqualToConstant:72.0],
+
+        [self.webView.leadingAnchor constraintEqualToAnchor:self.leadingAnchor],
+        [self.webView.trailingAnchor constraintEqualToAnchor:self.trailingAnchor],
+        [self.webView.topAnchor constraintEqualToAnchor:topBar.bottomAnchor],
+        [self.webView.bottomAnchor constraintEqualToAnchor:self.bottomAnchor]
     ]];
 
     [self.webView loadHTMLString:MemoAnchorPostcodeHtml()
                          baseURL:[NSURL URLWithString:MemoAnchorBaseUrl]];
 
-    UINavigationBarAppearance *appearance = [[UINavigationBarAppearance alloc] init];
-    [appearance configureWithOpaqueBackground];
-    appearance.backgroundColor = UIColor.whiteColor;
-    appearance.shadowColor = UIColor.clearColor;
-    self.navigationController.navigationBar.standardAppearance = appearance;
-    self.navigationController.navigationBar.scrollEdgeAppearance = appearance;
+    return self;
 }
 
 - (void)dealloc
 {
-    [self.webView.configuration.userContentController removeScriptMessageHandlerForName:MemoAnchorScriptHandlerName];
+    [self removeScriptMessageHandler];
 }
 
 - (void)onTapClose
 {
-    [self dismissViewControllerAnimated:YES completion:nil];
+    [self dismiss];
+}
+
+- (void)dismiss
+{
+    [self removeScriptMessageHandler];
+    [self removeFromSuperview];
+}
+
+- (void)removeScriptMessageHandler
+{
+    if (!self.scriptHandlerRegistered) {
+        return;
+    }
+
+    [self.webView.configuration.userContentController removeScriptMessageHandlerForName:MemoAnchorScriptHandlerName];
+    self.scriptHandlerRegistered = NO;
 }
 
 - (void)userContentController:(WKUserContentController *)userContentController
@@ -106,7 +143,7 @@ static NSString *MemoAnchorPostcodeHtml(void)
 
     NSString *payload = (NSString *)message.body;
     UnitySendMessage(self.unityGameObjectName.UTF8String, MemoAnchorCallbackMethod.UTF8String, payload.UTF8String);
-    [self dismissViewControllerAnimated:YES completion:nil];
+    [self dismiss];
 }
 
 @end
@@ -161,13 +198,24 @@ extern "C" void MemoAnchor_OpenKakaoPostcodeSearch(const char *unityGameObjectNa
             return;
         }
 
-        MemoAnchorKakaoPostcodeViewController *viewController = [[MemoAnchorKakaoPostcodeViewController alloc] init];
-        viewController.unityGameObjectName = [NSString stringWithUTF8String:unityGameObjectName];
-
-        UINavigationController *navigationController = [[UINavigationController alloc] initWithRootViewController:viewController];
-        navigationController.modalPresentationStyle = UIModalPresentationFullScreen;
+        UIView *existingOverlay = [topViewController.view viewWithTag:MemoAnchorPostcodeOverlayTag];
+        if ([existingOverlay isKindOfClass:MemoAnchorKakaoPostcodeOverlayView.class]) {
+            [(MemoAnchorKakaoPostcodeOverlayView *)existingOverlay dismiss];
+        } else {
+            [existingOverlay removeFromSuperview];
+        }
 
         [topViewController.view endEditing:YES];
-        [topViewController presentViewController:navigationController animated:YES completion:nil];
+
+        MemoAnchorKakaoPostcodeOverlayView *overlay = [[MemoAnchorKakaoPostcodeOverlayView alloc] initWithUnityGameObjectName:[NSString stringWithUTF8String:unityGameObjectName]];
+        overlay.tag = MemoAnchorPostcodeOverlayTag;
+        overlay.translatesAutoresizingMaskIntoConstraints = NO;
+        [topViewController.view addSubview:overlay];
+        [NSLayoutConstraint activateConstraints:@[
+            [overlay.leadingAnchor constraintEqualToAnchor:topViewController.view.leadingAnchor],
+            [overlay.trailingAnchor constraintEqualToAnchor:topViewController.view.trailingAnchor],
+            [overlay.topAnchor constraintEqualToAnchor:topViewController.view.topAnchor],
+            [overlay.bottomAnchor constraintEqualToAnchor:topViewController.view.bottomAnchor]
+        ]];
     });
 }

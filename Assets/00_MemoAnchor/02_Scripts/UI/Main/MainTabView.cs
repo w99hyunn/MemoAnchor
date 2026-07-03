@@ -62,6 +62,7 @@ namespace MemoAnchor.UI
         public Button ScanButton => _scanButton;
         public Button MapButton => _mapButton;
         public Button ProfileButton => _profileButton;
+        public Button ScanStartButton => _scanStartButton;
         public VisualElement TabViewport => _tabViewport;
 
         private void Awake()
@@ -163,6 +164,11 @@ namespace MemoAnchor.UI
             _bottomNavWrapper.EnableInClassList("is-scan-mode", enabled);
             _bottomNav.EnableInClassList("is-scan-mode", enabled);
             _scanStartButton.pickingMode = enabled ? PickingMode.Position : PickingMode.Ignore;
+        }
+
+        public void SetScanStartAvailable(bool available)
+        {
+            _scanStartButton.EnableInClassList("is-disabled", !available);
         }
 
         public void SetTabStripOffset(float x)

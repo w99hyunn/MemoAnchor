@@ -684,23 +684,41 @@
     border-right-width: 0;
     border-top-width: 0;
     border-bottom-width: 0;
-    background-color: rgb(194, 150, 163);
+    background-color: var(--brand-pink);
     opacity: 0;
     justify-content: center;
     align-items: center;
     translate: 16px 0;
     transition-duration: 0.2s;
     transition-timing-function: ease-out;
-    transition-property: opacity, translate;
+    transition-property: background-color, opacity, translate;
     transition-delay: 0.06s;
     visibility: hidden;
     border-top-left-radius: 60px;
     border-top-right-radius: 60px;
     border-bottom-right-radius: 60px;
     border-bottom-left-radius: 60px;
-    color: rgb(255, 244, 248);
-    font-size: 40px;
-    -unity-font-definition: url("project://database/Assets/Plugins/UI%20Toolkit/Fonts/Pretendard-Medium.ttf?fileID=12800000&guid=45ed9c45b09f5f2498d91e1982ab7527&type=3#Pretendard-Medium");
+    color: rgb(255, 255, 255);
+    font-size: 44px;
+    -unity-font-definition: url("project://database/Assets/Plugins/UI%20Toolkit/Fonts/Pretendard-SemiBold.ttf?fileID=12800000&guid=7136488b0fb8f924b91754e33f3b5abc&type=3#Pretendard-SemiBold");
+}
+
+.scan-nav-start:hover:enabled {
+    background-color: var(--brand-pink-hover);
+}
+
+.scan-nav-start:active:enabled {
+    background-color: var(--brand-pink-active);
+}
+
+.scan-nav-start.is-disabled {
+    background-color: rgb(170, 130, 140);
+    color: rgb(255, 255, 255);
+}
+
+.scan-nav-start.is-disabled:hover:enabled,
+.scan-nav-start.is-disabled:active:enabled {
+    background-color: rgb(170, 130, 140);
 }
 
 .bottom-nav.is-scan-mode #nav-home,
@@ -1986,8 +2004,9 @@
 }
 
 .profile-friend-name {
-    width: 120px;
-    font-size: 30px;
+    flex-grow: 1;
+    min-width: 0;
+    font-size: 36px;
     color: rgb(32, 32, 32);
 }
 
@@ -2358,6 +2377,45 @@
     -unity-font-definition: url("project://database/Assets/Plugins/UI%20Toolkit/Fonts/Pretendard-Regular.ttf?fileID=12800000&guid=c19593ccf51a3b643a58d19da7851c10&type=3#Pretendard-Regular");
 }
 
+#scan-address-input-box,
+#scan-space-name-input-box {
+    position: relative;
+}
+
+#scan-address-input-box.is-error,
+#scan-space-name-input-box.is-error {
+    background-color: rgb(255, 247, 249);
+}
+
+#scan-address-input-box .signup-input-border,
+#scan-space-name-input-box .signup-input-border {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    border-top-left-radius: 28px;
+    border-top-right-radius: 28px;
+    border-bottom-right-radius: 28px;
+    border-bottom-left-radius: 28px;
+    border-left-width: 4px;
+    border-right-width: 4px;
+    border-top-width: 4px;
+    border-bottom-width: 4px;
+    border-left-color: rgba(0, 0, 0, 0);
+    border-right-color: rgba(0, 0, 0, 0);
+    border-top-color: rgba(0, 0, 0, 0);
+    border-bottom-color: rgba(0, 0, 0, 0);
+}
+
+#scan-address-input-box.is-error .signup-input-border,
+#scan-space-name-input-box.is-error .signup-input-border {
+    border-left-color: rgb(248, 128, 148);
+    border-right-color: rgb(248, 128, 148);
+    border-top-color: rgb(248, 128, 148);
+    border-bottom-color: rgb(248, 128, 148);
+}
+
 .scan-action-dialog-overlay {
     position: absolute;
     left: 0;
@@ -2543,21 +2601,21 @@
 }
 
 .scan-address-dialog-overlay {
-    padding-left: 40px;
-    padding-right: 40px;
-    padding-bottom: 40px;
+    padding-left: 34px;
+    padding-right: 34px;
+    padding-bottom: 34px;
 }
 
 .scan-address-dialog-sheet {
-    min-height: 610px;
-    padding-top: 22px;
-    padding-right: 14px;
-    padding-bottom: 30px;
-    padding-left: 14px;
+    min-height: 620px;
+    padding-top: 20px;
+    padding-right: 18px;
+    padding-bottom: 34px;
+    padding-left: 18px;
 }
 
 .scan-address-dialog-handle {
-    margin-bottom: 56px;
+    margin-bottom: 34px;
 }
 
 .scan-address-list {
@@ -2569,14 +2627,14 @@
 }
 
 .scan-address-list-item {
-    min-height: 108px;
+    min-height: 104px;
     flex-direction: row;
     align-items: center;
     margin: 0;
-    padding-left: 34px;
-    padding-right: 30px;
+    padding-left: 32px;
+    padding-right: 28px;
     border-width: 0;
-    border-radius: 0;
+    border-radius: 12px;
     background-color: rgb(255, 255, 255);
     transition-property: background-color;
     transition-duration: 0.14s;
@@ -2584,44 +2642,94 @@
 }
 
 .scan-address-list-item:hover:enabled {
-    background-color: rgb(238, 238, 238);
+    background-color: rgb(245, 245, 245);
 }
 
 .scan-address-list-item:active:enabled {
-    background-color: rgb(226, 226, 226);
+    background-color: rgb(235, 235, 235);
 }
 
 .scan-address-building-item {
-    background-color: rgb(236, 236, 236);
+    min-height: 112px;
+    margin-top: 8px;
+    background-color: rgb(247, 247, 247);
 }
 
 .scan-address-add-button {
-    margin-bottom: 18px;
+    margin-bottom: 14px;
+    background-color: rgb(255, 255, 255);
 }
 
 .scan-address-add-icon {
-    width: 44px;
+    width: 36px;
+    height: 42px;
     margin-right: 18px;
-    font-size: 46px;
-    color: rgb(42, 42, 42);
+    font-size: 40px;
+    color: rgb(40, 40, 40);
     -unity-text-align: middle-center;
     -unity-font-definition: url("project://database/Assets/Plugins/UI%20Toolkit/Fonts/Pretendard-Medium.ttf?fileID=12800000&guid=45ed9c45b09f5f2498d91e1982ab7527&type=3#Pretendard-Medium");
+}
+
+.scan-address-add-button .scan-address-list-text {
+    height: 42px;
 }
 
 .scan-address-list-text {
     flex-grow: 1;
     min-width: 0;
-    font-size: 36px;
+    font-size: 40px;
+    white-space: normal;
     color: rgb(31, 31, 31);
     -unity-text-align: middle-left;
     -unity-font-definition: url("project://database/Assets/Plugins/UI%20Toolkit/Fonts/Pretendard-Medium.ttf?fileID=12800000&guid=45ed9c45b09f5f2498d91e1982ab7527&type=3#Pretendard-Medium");
 }
 
 .scan-address-list-chevron {
-    font-size: 48px;
-    color: rgb(22, 22, 22);
-    rotate: 180deg;
+    width: 36px;
+    margin-left: 22px;
+    font-size: 42px;
+    color: rgb(70, 70, 70);
+    -unity-text-align: middle-center;
     -unity-font-definition: url("project://database/Assets/Plugins/UI%20Toolkit/Fonts/Pretendard-Regular.ttf?fileID=12800000&guid=c19593ccf51a3b643a58d19da7851c10&type=3#Pretendard-Regular");
+}
+
+.scan-friend-dialog-sheet {
+    min-height: 560px;
+}
+
+.scan-friend-items-list {
+    width: 100%;
+}
+
+.scan-friend-list-item {
+    min-height: 96px;
+    justify-content: flex-start;
+    background-color: rgb(255, 255, 255);
+}
+
+.scan-friend-name {
+    flex-grow: 1;
+    min-width: 0;
+    font-size: 40px;
+    color: rgb(31, 31, 31);
+    margin-right: 28px;
+    -unity-text-align: middle-left;
+    -unity-font-definition: url("project://database/Assets/Plugins/UI%20Toolkit/Fonts/Pretendard-SemiBold.ttf?fileID=12800000&guid=7136488b0fb8f924b91754e33f3b5abc&type=3#Pretendard-SemiBold");
+}
+
+.scan-friend-company {
+    font-size: 32px;
+    color: rgb(157, 157, 157);
+    -unity-text-align: middle-left;
+    -unity-font-definition: url("project://database/Assets/Plugins/UI%20Toolkit/Fonts/Pretendard-Regular.ttf?fileID=12800000&guid=c19593ccf51a3b643a58d19da7851c10&type=3#Pretendard-Regular");
+}
+
+.scan-friend-status-row {
+    min-height: 96px;
+    flex-direction: row;
+    align-items: center;
+    padding-left: 32px;
+    padding-right: 28px;
 }
 
 .alert-dialog-page {

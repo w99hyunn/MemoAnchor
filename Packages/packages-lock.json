@@ -450,6 +450,13 @@
       },
       "url": "https://packages.unity.com"
     },
+    "net.gree.unity-webview": {
+      "version": "https://github.com/gree/unity-webview.git?path=/dist/package-nofragment",
+      "depth": 0,
+      "source": "git",
+      "dependencies": {},
+      "hash": "090a3380d9554c2c06ca51ec291faa04a0eaf492"
+    },
     "com.unity.modules.accessibility": {
       "version": "1.0.0",
       "depth": 0,

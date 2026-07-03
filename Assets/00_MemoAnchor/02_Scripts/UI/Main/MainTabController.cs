@@ -10,6 +10,7 @@ namespace MemoAnchor.UI
         private const int NavTapDownDurationMs = 105;
 
         private MainTabView _view;
+        private Tab_ScanView _scanView;
         private int _currentTabIndex;
         private bool _isScanNavModeActive;
         private bool _isRegistered;
@@ -17,6 +18,7 @@ namespace MemoAnchor.UI
         private void Awake()
         {
             TryGetComponent<MainTabView>(out _view);
+            TryGetComponent<Tab_ScanView>(out _scanView);
         }
 
         private void Start()
@@ -26,9 +28,12 @@ namespace MemoAnchor.UI
             _view.ScanButton.clicked += OnClickScan;
             _view.MapButton.clicked += OnClickMap;
             _view.ProfileButton.clicked += OnClickProfile;
+            _view.ScanStartButton.clicked += OnClickScanStart;
+            _scanView.ScanStartReadinessChanged += UpdateScanStartAvailability;
             _view.TabViewport.RegisterCallback<GeometryChangedEvent>(OnViewportGeometryChanged);
             _isRegistered = true;
             ShowTab(0);
+            UpdateScanStartAvailability();
         }
 
         private void OnDisable()
@@ -43,6 +48,8 @@ namespace MemoAnchor.UI
             _view.ScanButton.clicked -= OnClickScan;
             _view.MapButton.clicked -= OnClickMap;
             _view.ProfileButton.clicked -= OnClickProfile;
+            _view.ScanStartButton.clicked -= OnClickScanStart;
+            _scanView.ScanStartReadinessChanged -= UpdateScanStartAvailability;
             _view.TabViewport.UnregisterCallback<GeometryChangedEvent>(OnViewportGeometryChanged);
             _isRegistered = false;
         }
@@ -92,6 +99,24 @@ namespace MemoAnchor.UI
             ShowTab(4);
         }
 
+        private void OnClickScanStart()
+        {
+            if (_scanView.IsScanStartReady())
+            {
+                return;
+            }
+
+            if (!_scanView.HasSpaceName())
+            {
+                _scanView.HighlightSpaceNameError();
+            }
+
+            if (!_scanView.HasSelectedAddress())
+            {
+                _scanView.HighlightAddressError();
+            }
+        }
+
         private void ShowTab(int tabIndex)
         {
             _view.HideProfileAccountSettings();
@@ -114,7 +139,13 @@ namespace MemoAnchor.UI
             SetState(_view.MapButton, _currentTabIndex == 3);
             SetState(_view.ProfileButton, _currentTabIndex == 4);
             _view.SetScanNavMode(_isScanNavModeActive);
+            UpdateScanStartAvailability();
             UpdateTabStripOffset();
+        }
+
+        private void UpdateScanStartAvailability()
+        {
+            _view.SetScanStartAvailable(_scanView.IsScanStartReady());
         }
 
         private void OnClickScanActionCreate()
