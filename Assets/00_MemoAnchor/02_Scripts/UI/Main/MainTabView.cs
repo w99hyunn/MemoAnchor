@@ -29,13 +29,15 @@ namespace MemoAnchor.UI
         private Button _scanActionCreateButton, _scanActionJoinButton;
         private Button _alertBackButton;
         private Button _memoFilterButton;
-        private Button _memoSearchBackButton;
+        private Button _memoSearchBackButton, _memoSearchClearButton, _memoSearchPageClearButton;
+        private Button _memoCreateBackButton, _memoCreateResetButton, _memoCreateSubmitButton, _memoCreateRepairerButton;
         private Button _profileSettingsButton, _profileAccountSettingsBackButton;
         private Button _profileLogoutButton;
         private Button _profileFriendListButton, _profileFriendAddButton;
         private Button _profilePushToggle, _profileSoundToggle;
 
-        private VisualElement _root, _tabViewport, _tabStrip, _bottomNavWrapper, _bottomNav, _memoFilterBottomBar;
+        private VisualElement _root, _tabViewport, _tabStrip, _bottomNavWrapper, _bottomNav, _memoFilterBottomBar, _memoDetailBottomBar, _memoCreateBottomBar;
+        private VisualElement _memoCreateRepairerCard, _memoCreateRepairerList, _memoCreateRepairerItemsList, _memoCreateRepairerChevron;
         private VisualElement _homeTab, _menuTab, _scanTab, _mapTab, _profileTab;
         private VisualElement _homeModeBack;
         private VisualElement _scanActionDialogOverlay;
@@ -43,8 +45,8 @@ namespace MemoAnchor.UI
         private VisualElement _memoSearchPage, _memoSearchHistoryList;
         private VisualElement _profileMainContent, _profileAccountSettingsPage;
         private VisualElement _profileFriendListCard, _profileFriendList, _profileFriendItemsList, _profileFriendListChevron;
-        private TextField _memoSearchSourceInput, _memoSearchPageInput;
-        private Label _homeGreetingLabel, _homeModeTitle;
+        private TextField _memoSearchSourceInput, _memoSearchPageInput, _memoCreateTitleInput, _memoCreateBodyInput;
+        private Label _homeGreetingLabel, _homeModeTitle, _memoCreateRepairerLabel;
         private Label _profileNameLabel, _profileCompanyLabel;
         private TemplateContainer _scanActionDialogTree;
         private FadeTransition _fadeTransition;
@@ -55,6 +57,8 @@ namespace MemoAnchor.UI
         private bool _profileSoundEnabled = true;
         private bool _profileFriendListExpanded;
         private bool _isLoggingOut;
+
+        public event Action<int> TabSwitchRequested;
 
         public Button HomeButton => _homeButton;
         public Button MenuButton => _menuButton;
@@ -92,6 +96,8 @@ namespace MemoAnchor.UI
             _bottomNavWrapper = _root.Q<VisualElement>("bottom-nav-wrapper");
             _bottomNav = _root.Q<VisualElement>("bottom-nav");
             _memoFilterBottomBar = _root.Q<VisualElement>("memo-filter-bottom-bar");
+            _memoDetailBottomBar = _root.Q<VisualElement>("memo-detail-bottom-bar");
+            _memoCreateBottomBar = _root.Q<VisualElement>("memo-create-bottom-bar");
             _homeTab = _root.Q<VisualElement>("tab-home");
             _menuTab = _root.Q<VisualElement>("tab-menu");
             _scanTab = _root.Q<VisualElement>("tab-scan");
@@ -127,6 +133,8 @@ namespace MemoAnchor.UI
             _profilePushToggle.clicked += ToggleProfilePush;
             _profileSoundToggle.clicked += ToggleProfileSound;
             InitializeMemoFilterDates();
+            RegisterMemoDetailPage();
+            RegisterMemoCreatePage();
             RegisterMemoFilterPage();
             RegisterMemoSearchPage();
             RegisterMapPage();
@@ -155,6 +163,8 @@ namespace MemoAnchor.UI
             _profilePushToggle.clicked -= ToggleProfilePush;
             _profileSoundToggle.clicked -= ToggleProfileSound;
             UnregisterFriendsCallbacks();
+            UnregisterMemoDetailPage();
+            UnregisterMemoCreatePage();
             UnregisterMemoFilterPage();
             UnregisterMemoSearchPage();
             UnregisterMapPage();
@@ -165,6 +175,29 @@ namespace MemoAnchor.UI
             _bottomNavWrapper.EnableInClassList("is-scan-mode", enabled);
             _bottomNav.EnableInClassList("is-scan-mode", enabled);
             _scanStartButton.pickingMode = enabled ? PickingMode.Position : PickingMode.Ignore;
+        }
+
+        private void SetMemoDetailNavMode(bool enabled)
+        {
+            _bottomNavWrapper.EnableInClassList("is-memo-detail-mode", enabled);
+            SetVisible(_memoDetailBottomBar, enabled);
+        }
+
+        private void SetMemoFilterNavMode(bool enabled)
+        {
+            _bottomNavWrapper.EnableInClassList("is-memo-filter-mode", enabled);
+            SetVisible(_memoFilterBottomBar, enabled);
+        }
+
+        private void SetMemoCreateNavMode(bool enabled)
+        {
+            _bottomNavWrapper.EnableInClassList("is-memo-create-mode", enabled);
+            SetVisible(_memoCreateBottomBar, enabled);
+        }
+
+        private void RequestTabSwitch(int tabIndex)
+        {
+            TabSwitchRequested?.Invoke(tabIndex);
         }
 
         public void SetScanStartAvailable(bool available)

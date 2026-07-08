@@ -546,51 +546,37 @@
 
 .map-tab-page {
     background-color: rgb(244, 244, 244);
-    padding-top: 72px;
 }
 
 .map-top-bar {
-    height: 208px;
     position: relative;
-    flex-direction: column;
-    align-items: flex-start;
-    justify-content: flex-start;
-    padding-left: 58px;
-    padding-right: 46px;
+    margin-bottom: 0;
 }
 
 .map-title-group {
-    height: 126px;
     width: 100%;
     flex-direction: row;
     align-items: center;
     min-width: 0;
 }
 
-.map-current-space-label {
-    font-size: 50px;
-    color: rgb(18, 18, 18);
-    -unity-font-definition: url("project://database/Assets/Plugins/UI%20Toolkit/Fonts/Pretendard-SemiBold.ttf?fileID=12800000&guid=7136488b0fb8f924b91754e33f3b5abc&type=3#Pretendard-SemiBold");
-}
-
 .map-current-address-label {
     margin-left: 18px;
-    font-size: 25px;
+    font-size: 30px;
     color: rgb(84, 84, 84);
     -unity-text-align: lower-left;
 }
 
 .map-list-button {
-    position: absolute;
-    top: 19px;
-    right: 46px;
     background-image: none;
 }
 
 .map-read-mode-label {
     height: 82px;
+    flex-grow: 0;
+    flex-shrink: 0;
     width: 100%;
-    font-size: 28px;
+    font-size: 32px;
     color: rgb(96, 96, 96);
     -unity-text-align: middle-left;
 }
@@ -604,6 +590,8 @@
     flex-grow: 1;
     min-height: 0;
     position: relative;
+    margin-left: -50px;
+    margin-right: -50px;
     background-color: rgb(172, 172, 172);
     overflow: hidden;
 }
@@ -621,6 +609,33 @@
     font-size: 44px;
     color: rgb(66, 66, 66);
     -unity-text-align: middle-center;
+}
+
+.map-create-memo-button {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 280px;
+    height: 96px;
+    margin-left: -140px;
+    margin-top: -48px;
+    border-radius: 48px;
+    background-color: rgb(30, 30, 34);
+    color: rgb(255, 255, 255);
+    font-size: 34px;
+    -unity-font-definition: url("project://database/Assets/Plugins/UI%20Toolkit/Fonts/Pretendard-SemiBold.ttf?fileID=12800000&guid=7136488b0fb8f924b91754e33f3b5abc&type=3#Pretendard-SemiBold");
+}
+
+.map-create-memo-button:hover:enabled {
+    background-color: rgb(50, 50, 55);
+}
+
+.map-create-memo-button:active:enabled {
+    background-color: rgb(16, 16, 20);
+}
+
+.map-create-memo-button.is-hidden {
+    display: none;
 }
 
 .map-scan-time-label {
@@ -894,6 +909,20 @@
     visibility: visible;
 }
 
+.bottom-nav-wrapper.is-memo-filter-mode .bottom-nav,
+.bottom-nav-wrapper.is-memo-detail-mode .bottom-nav,
+.bottom-nav-wrapper.is-memo-create-mode .bottom-nav {
+    display: none;
+}
+
+.bottom-nav-wrapper.is-memo-detail-mode .memo-filter-reset-button {
+    background-color: rgb(90, 90, 90);
+}
+
+.bottom-nav-wrapper.is-memo-detail-mode .memo-filter-apply-button {
+    background-color: rgb(184, 29, 62);
+}
+
 .nav-press-bg {
     position: absolute;
     left: -10px;
@@ -999,6 +1028,7 @@
     background-color: transparent;
     border-radius: 55px;
     padding-left: 120px;
+    padding-right: 112px;
     border-color: rgb(178, 178, 178);
     height: 110px;
     border-width: 2px;
@@ -1006,6 +1036,24 @@
 
 .memo-search-input .unity-base-text-field__input--placeholder {
     color: rgb(222, 222, 226);
+}
+
+.memo-search-clear-button {
+    position: absolute;
+    right: 66px;
+    top: 11px;
+    width: 88px;
+    height: 88px;
+}
+
+.memo-search-clear-icon {
+    width: 48px;
+    height: 48px;
+    background-image: url("project://database/Assets/00_MemoAnchor/03_Media/Icon/xbutton.png?fileID=2800000&guid=ec503318264761140bef84a89627b643&type=3#xbutton");
+}
+
+.memo-search-clear-button.is-hidden {
+    display: none;
 }
 
 .unity-base-text-field__input {
@@ -1086,14 +1134,42 @@
     width: 50px;
     height: 50px;
     margin-right: 20px;
-    background-image: url("project://database/Assets/00_MemoAnchor/03_Media/Icon/memo-list/gallery.png?fileID=2800000&guid=805e5b39866ef38418d58c22145056e8&type=3#gallery");
     -unity-background-scale-mode: scale-to-fit;
+}
+
+.memo-list-item-icon-text {
+    background-image: url("project://database/Assets/00_MemoAnchor/03_Media/Icon/memo-list/text.png?fileID=2800000&guid=752a8307a9bc73241969cd007b9086cc&type=3#text");
+}
+
+.memo-list-item-icon-check {
+    background-image: url("project://database/Assets/00_MemoAnchor/03_Media/Icon/memo-list/check.png?fileID=2800000&guid=71f1b779579d32a459db45885a17b209&type=3#check");
+}
+
+.memo-list-item-icon-mic {
+    background-image: url("project://database/Assets/00_MemoAnchor/03_Media/Icon/memo-list/mic.png?fileID=2800000&guid=e1f4d2312692f9349895fec4b29840df&type=3#mic");
+}
+
+.memo-list-item-icon-gallery {
+    background-image: url("project://database/Assets/00_MemoAnchor/03_Media/Icon/memo-list/gallery.png?fileID=2800000&guid=805e5b39866ef38418d58c22145056e8&type=3#gallery");
 }
 
 .memo-list-item-body {
     flex-grow: 1;
     min-width: 0;
     height: 100%;
+}
+
+.memo-list-item-title-row {
+    flex-grow: 1;
+    flex-direction: row;
+    align-items: center;
+    margin-bottom: 50px;
+}
+
+.memo-list-item-title-wrap {
+    flex-grow: 1;
+    flex-direction: row;
+    align-items: center;
 }
 
 .memo-list-item-title {
@@ -1122,6 +1198,268 @@
     background-color: rgb(236, 60, 85);
 }
 
+.memo-list-divider {
+    flex-grow: 0;
+    background-color: rgb(224, 230, 236);
+    position: relative;
+    height: 2px;
+    width: 90%;
+    align-self: center;
+}
+
+.memo-detail-menu-button {
+    position: absolute;
+    right: 40px;
+    top: 28px;
+    width: 88px;
+    height: 88px;
+}
+
+.memo-detail-menu {
+    position: absolute;
+    top: 242px;
+    right: 40px;
+    width: 362px;
+    background-color: rgb(255, 255, 255);
+    border-radius: 32px;
+    overflow: hidden;
+    border-width: 2px;
+    border-color: rgb(214, 214, 214);
+}
+
+.memo-detail-menu.is-hidden {
+    display: none;
+}
+
+.memo-detail-menu-item {
+    height: 124px;
+    border-width: 0;
+    border-radius: 0;
+    margin: 0;
+    padding-left: 40px;
+    padding-right: 28px;
+    flex-direction: row;
+    align-items: center;
+    justify-content: flex-start;
+    background-color: rgb(255, 255, 255);
+}
+
+.memo-detail-menu-item:hover:enabled {
+    background-color: rgb(244, 244, 244);
+}
+
+.memo-detail-menu-icon {
+    width: 60px;
+    height: 60px;
+    margin-right: 46px;
+    -unity-background-scale-mode: scale-to-fit;
+    -unity-background-image-tint-color: rgb(44, 44, 44);
+    flex-shrink: 0;
+}
+
+.memo-detail-menu-label {
+    font-size: 40px;
+    color: rgb(44, 44, 44);
+    -unity-font-definition: url("project://database/Assets/Plugins/UI%20Toolkit/Fonts/Pretendard-Regular.ttf?fileID=12800000&guid=c19593ccf51a3b643a58d19da7851c10&type=3#Pretendard-Regular");
+}
+
+.memo-detail-menu-divider {
+    height: 2px;
+    margin-left: 14px;
+    margin-right: 14px;
+    background-color: rgb(236, 236, 236);
+}
+
+.memo-detail-scroll {
+    flex-grow: 1;
+    min-height: 0;
+}
+
+.memo-detail-content {
+    padding-top: 40px;
+    padding-left: 40px;
+    padding-right: 40px;
+    padding-bottom: 218px;
+}
+
+.memo-preview-box {
+    height: 760px;
+    border-radius: 28px;
+    background-color: rgb(220, 220, 220);
+    margin-bottom: 26px;
+}
+
+.memo-detail-page .memo-card {
+    width: auto;
+    min-width: 0;
+    height: auto;
+    margin-right: 0;
+    padding-top: 0;
+    padding-right: 0;
+    padding-bottom: 0;
+    padding-left: 0;
+    background-color: rgb(231, 231, 231);
+    border-radius: 28px;
+    border-width: 1px;
+    border-color: rgb(210, 210, 210);
+}
+
+.memo-detail-page .memo-title-card {
+    min-height: 150px;
+    padding-left: 44px;
+    padding-right: 28px;
+    margin-bottom: 26px;
+    flex-direction: row;
+    align-items: center;
+}
+
+.memo-card-title {
+    flex-grow: 1;
+    min-width: 0;
+    font-size: 42px;
+    color: rgb(20, 20, 20);
+    -unity-font-definition: url("project://database/Assets/Plugins/UI%20Toolkit/Fonts/Pretendard-SemiBold.ttf?fileID=12800000&guid=7136488b0fb8f924b91754e33f3b5abc&type=3#Pretendard-SemiBold");
+}
+
+.memo-badge {
+    width: 76px;
+    height: 76px;
+    -unity-background-scale-mode: scale-to-fit;
+}
+
+.memo-badge-high {
+    background-image: url("project://database/Assets/00_MemoAnchor/03_Media/Icon/memo_badge_high.png?fileID=2800000&guid=8d6bfabd29b7e394b9c477df3fff0aee&type=3#memo_badge_high");
+}
+
+.memo-badge-middle {
+    background-image: url("project://database/Assets/00_MemoAnchor/03_Media/Icon/memo_badge_middle.png?fileID=2800000&guid=5280fc007957f7b428c61fa7b020dd05&type=3#memo_badge_middle");
+}
+
+.memo-badge-low {
+    background-image: url("project://database/Assets/00_MemoAnchor/03_Media/Icon/memo_badge_low.png?fileID=2800000&guid=4f633977c82ba0049b0c396bf2cfdf6c&type=3#memo_badge_low");
+}
+
+.memo-detail-page .memo-body-card {
+    min-height: 760px;
+    padding-top: 44px;
+    padding-right: 44px;
+    padding-bottom: 34px;
+    padding-left: 44px;
+}
+
+.memo-detail-page .memo-body-checklist {
+    min-height: 520px;
+}
+
+.memo-body-text {
+    flex-grow: 1;
+    font-size: 42px;
+    line-height: 58px;
+    color: rgb(20, 20, 20);
+    white-space: normal;
+}
+
+.memo-detail-page .memo-check-row {
+    height: 108px;
+    margin-bottom: 22px;
+    padding-left: 38px;
+    padding-right: 34px;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    background-color: rgb(255, 255, 255);
+    border-radius: 20px;
+}
+
+.memo-detail-page .memo-check-text {
+    flex-grow: 1;
+    font-size: 36px;
+    color: rgb(20, 20, 20);
+    -unity-font-definition: url("project://database/Assets/Plugins/UI%20Toolkit/Fonts/Pretendard-Medium.ttf?fileID=12800000&guid=45ed9c45b09f5f2498d91e1982ab7527&type=3#Pretendard-Medium");
+}
+
+.memo-detail-page .memo-check-toggle .unity-toggle__input {
+    width: 54px;
+    height: 54px;
+    border-width: 3px;
+    border-color: rgb(184, 184, 184);
+    background-color: rgb(255, 255, 255);
+    border-radius: 8px;
+}
+
+.memo-detail-page .memo-check-toggle .unity-toggle__checkmark {
+    width: 36px;
+    height: 36px;
+}
+
+.memo-detail-page .memo-check-toggle:checked .unity-toggle__input {
+    border-color: rgb(90, 90, 90);
+    background-color: rgb(90, 90, 90);
+}
+
+.memo-detail-page .memo-check-toggle:checked .unity-toggle__checkmark {
+    opacity: 1;
+    -unity-background-image-tint-color: rgb(255, 255, 255);
+}
+
+.memo-voice-row {
+    height: 88px;
+    margin-bottom: 28px;
+    padding-left: 48px;
+    padding-right: 30px;
+    flex-direction: row;
+    align-items: center;
+    background-color: rgb(255, 255, 255);
+    border-radius: 36px;
+}
+
+.memo-voice-label {
+    flex-grow: 1;
+    font-size: 34px;
+    color: rgb(20, 20, 20);
+    -unity-font-definition: url("project://database/Assets/Plugins/UI%20Toolkit/Fonts/Pretendard-SemiBold.ttf?fileID=12800000&guid=7136488b0fb8f924b91754e33f3b5abc&type=3#Pretendard-SemiBold");
+}
+
+.memo-voice-icon {
+    width: 44px;
+    height: 44px;
+    background-image: url("project://database/Assets/00_MemoAnchor/03_Media/Icon/memo-list/mic.png?fileID=2800000&guid=e1f4d2312692f9349895fec4b29840df&type=3#mic");
+    -unity-background-scale-mode: scale-to-fit;
+    -unity-background-image-tint-color: rgb(150, 150, 150);
+}
+
+.memo-image-grid {
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: space-between;
+}
+
+.memo-image-thumb {
+    width: 184px;
+    height: 184px;
+    margin-bottom: 20px;
+    border-radius: 4px;
+    background-color: rgb(185, 151, 105);
+    background-image: url("project://database/Assets/00_MemoAnchor/03_Media/Icon/memo-list/gallery.png?fileID=2800000&guid=805e5b39866ef38418d58c22145056e8&type=3#gallery");
+    -unity-background-scale-mode: scale-to-fit;
+    -unity-background-image-tint-color: rgba(255, 255, 255, 0.42);
+}
+
+.memo-card-footer {
+    margin-top: auto;
+    height: 58px;
+    flex-direction: row;
+    justify-content: center;
+    align-items: flex-end;
+}
+
+.memo-card-footer-label {
+    margin-left: 18px;
+    margin-right: 18px;
+    font-size: 26px;
+    color: rgb(160, 160, 160);
+}
+
 .memo-filter-page {
     position: absolute;
     left: 0;
@@ -1143,8 +1481,7 @@
     flex-direction: row;
     align-items: center;
     justify-content: center;
-    border-bottom-width: 1px;
-    border-bottom-color: rgb(224, 224, 224);
+    border-bottom-width: 0;
 }
 
 .memo-filter-back-button {
@@ -1296,10 +1633,14 @@
 }
 
 .memo-filter-date-dash {
-    width: 85px;
+    width: 72px;
+    height: 2px;
+    margin-left: 22px;
+    margin-right: 22px;
+    background-color: rgb(190, 190, 190);
     -unity-text-align: middle-center;
-    font-size: 38px;
-    color: rgb(190, 190, 190);
+    font-size: 0;
+    color: rgba(0, 0, 0, 0);
 }
 
 .memo-filter-check-button {
@@ -1404,9 +1745,15 @@
 .memo-filter-calendar-close {
     width: 64px;
     height: 64px;
-    font-size: 42px;
     color: rgb(86, 86, 86);
     border-radius: 32px;
+    align-items: center;
+    justify-content: center;
+    -unity-text-align: middle-center;
+    padding-left: 0;
+    padding-right: 0;
+    padding-top: 0;
+    padding-bottom: 0;
     transition-property: background-color, color;
     transition-duration: 0.14s;
     transition-timing-function: ease-out;
@@ -1427,10 +1774,52 @@
 
 .memo-filter-calendar-close {
     position: absolute;
+    top: 0;
     right: 0;
-    width: 96px;
-    font-size: 30px;
+    width: 64px;
+    height: 64px;
     color: rgb(170, 170, 170);
+}
+
+.memo-calendar-header-button-label {
+    width: 64px;
+    height: 64px;
+    font-size: 42px;
+    color: inherit;
+    -unity-text-align: middle-center;
+    align-self: center;
+}
+
+.memo-calendar-close-icon {
+    width: 44px;
+    height: 44px;
+    background-image: url("project://database/Assets/00_MemoAnchor/03_Media/Icon/xbutton.png?fileID=2800000&guid=ec503318264761140bef84a89627b643&type=3#xbutton");
+    -unity-background-scale-mode: scale-to-fit;
+    -unity-background-image-tint-color: rgb(170, 170, 170);
+}
+
+.memo-filter-calendar-close:active:enabled .memo-calendar-close-icon {
+    -unity-background-image-tint-color: rgb(36, 36, 36);
+}
+
+.memo-calendar-chevron {
+    width: 34px;
+    height: 34px;
+    background-image: url("project://database/Assets/00_MemoAnchor/03_Media/Icon/chevron_forward.png?fileID=2800000&guid=3ca432206e7cabb45abd1dfc722e509d&type=3#chevron_forward");
+    -unity-background-scale-mode: scale-to-fit;
+    -unity-background-image-tint-color: rgb(86, 86, 86);
+}
+
+.memo-calendar-chevron.is-prev {
+    rotate: 0deg;
+}
+
+.memo-calendar-chevron.is-next {
+    rotate: 180deg;
+}
+
+.memo-filter-calendar-nav:active:enabled .memo-calendar-chevron {
+    -unity-background-image-tint-color: rgb(36, 36, 36);
 }
 
 .memo-filter-calendar-grid {
@@ -1771,7 +2160,19 @@
     background-color: rgb(246, 246, 246);
     margin-left: 0;
     padding-left: 38px;
-    padding-right: 38px;
+    padding-right: 112px;
+}
+
+.memo-search-page-clear-button {
+    position: absolute;
+    right: 11px;
+    top: 11px;
+    width: 88px;
+    height: 88px;
+}
+
+.memo-search-page-clear-button.is-hidden {
+    display: none;
 }
 
 .memo-search-history-section {
@@ -1901,6 +2302,137 @@
     flex-direction: row;
     align-items: center;
     min-width: 0;
+}
+
+.memo-create-scroll {
+    flex-grow: 1;
+    min-height: 0;
+    padding-left: 50px;
+    padding-right: 50px;
+    padding-bottom: 218px;
+}
+
+.memo-create-section {
+    padding-top: 34px;
+    padding-bottom: 34px;
+}
+
+.memo-create-repairer-card {
+    margin-top: 18px;
+    margin-bottom: 0;
+}
+
+.memo-create-repairer-card .profile-row-title {
+    flex-grow: 1;
+    -unity-text-align: middle-left;
+}
+
+.memo-create-repairer-card .profile-friend-name {
+    -unity-text-align: middle-left;
+}
+
+.memo-create-repairer-card .profile-friend-list {
+    border-top-width: 0;
+}
+
+.memo-create-repairer-card .profile-friend-row.is-first {
+    border-top-width: 0;
+}
+
+.memo-create-title-box {
+    margin-top: 18px;
+}
+
+.memo-create-calendar {
+    margin-top: 20px;
+}
+
+.memo-create-time-picker {
+    height: 360px;
+    margin-top: 20px;
+    overflow: hidden;
+}
+
+.memo-create-time-picker.is-hidden {
+    display: none;
+}
+
+.memo-create-time-header-spacer {
+    visibility: hidden;
+}
+
+.memo-create-time-selected-band {
+    position: absolute;
+    left: 40px;
+    right: 40px;
+    top: 142px;
+    height: 70px;
+    background-color: rgb(240, 240, 240);
+}
+
+.memo-create-time-columns {
+    height: 292px;
+    flex-direction: row;
+}
+
+.memo-create-time-column {
+    flex-grow: 1;
+    flex-basis: 0;
+    height: 292px;
+}
+
+.memo-create-time-column .unity-scroll-view__content-container {
+    padding-top: 36px;
+    padding-bottom: 186px;
+}
+
+.memo-create-time-option {
+    height: 70px;
+    font-size: 36px;
+    color: rgb(178, 178, 178);
+    border-radius: 0;
+    background-color: rgba(0, 0, 0, 0);
+    align-items: center;
+    justify-content: center;
+    -unity-text-align: middle-center;
+}
+
+.memo-create-time-option:hover:enabled {
+    background-color: rgba(0, 0, 0, 0);
+    border-color: transparent;
+    color: rgb(80, 80, 80);
+}
+
+.memo-create-time-option:active:enabled {
+    background-color: rgba(0, 0, 0, 0);
+    border-color: transparent;
+    color: rgb(20, 20, 20);
+}
+
+.memo-create-time-option.is-selected {
+    color: rgb(20, 20, 20);
+    -unity-font-definition: url("project://database/Assets/Plugins/UI%20Toolkit/Fonts/Pretendard-SemiBold.ttf?fileID=12800000&guid=7136488b0fb8f924b91754e33f3b5abc&type=3#Pretendard-SemiBold");
+}
+
+.memo-create-urgency-grid {
+    margin-top: 22px;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    justify-content: space-between;
+}
+
+.memo-create-urgency-grid .memo-filter-chip {
+    width: 30%;
+    margin-right: 0;
+}
+
+.memo-create-time-icon {
+    width: 34px;
+    height: 34px;
+    margin-left: 16px;
+    background-image: url("project://database/Assets/00_MemoAnchor/03_Media/Icon/tabler_clock.png?fileID=2800000&guid=9f748a7700dd0f74da95ba8e51f28b73&type=3#tabler_clock");
+    -unity-background-scale-mode: scale-to-fit;
+    -unity-background-image-tint-color: rgb(35, 35, 35);
 }
 
 .profile-tab-page {
@@ -2428,6 +2960,35 @@
 .scan-input-field .unity-base-text-field__input--placeholder {
     color: rgb(186, 186, 186);
     -unity-font-definition: url("project://database/Assets/Plugins/UI%20Toolkit/Fonts/Pretendard-Medium.ttf?fileID=12800000&guid=45ed9c45b09f5f2498d91e1982ab7527&type=3#Pretendard-Medium");
+}
+
+.memo-create-body-box.scan-input-box {
+    height: 380px;
+    margin-top: 22px;
+    align-items: stretch;
+    justify-content: flex-start;
+    padding-top: 28px;
+    padding-bottom: 28px;
+}
+
+.memo-create-body-input.scan-input-field {
+    flex-grow: 1;
+    height: 100%;
+    min-height: 324px;
+    white-space: normal;
+}
+
+.memo-create-body-input.scan-input-field .unity-base-field__input,
+.memo-create-body-input.scan-input-field .unity-base-text-field__input {
+    height: 100%;
+    min-height: 324px;
+    white-space: normal;
+    -unity-text-align: upper-left;
+}
+
+.memo-create-body-input.scan-input-field .unity-text-element {
+    white-space: normal;
+    -unity-text-align: upper-left;
 }
 
 .scan-select-button {

@@ -31,10 +31,12 @@ namespace MemoAnchor.UI
             _view.MapButton.clicked += OnClickMap;
             _view.ProfileButton.clicked += OnClickProfile;
             _view.ScanStartButton.clicked += OnClickScanStart;
+            _view.TabSwitchRequested += ShowTab;
             _scanView.ScanStartReadinessChanged += UpdateScanStartAvailability;
             _view.TabViewport.RegisterCallback<GeometryChangedEvent>(OnViewportGeometryChanged);
             _isRegistered = true;
             ShowTab(0);
+            _ = _view.RefreshMapListAsync();
             UpdateScanStartAvailability();
         }
 
@@ -51,6 +53,7 @@ namespace MemoAnchor.UI
             _view.MapButton.clicked -= OnClickMap;
             _view.ProfileButton.clicked -= OnClickProfile;
             _view.ScanStartButton.clicked -= OnClickScanStart;
+            _view.TabSwitchRequested -= ShowTab;
             _scanView.ScanStartReadinessChanged -= UpdateScanStartAvailability;
             _view.TabViewport.UnregisterCallback<GeometryChangedEvent>(OnViewportGeometryChanged);
             _isRegistered = false;
@@ -161,6 +164,10 @@ namespace MemoAnchor.UI
             if (_currentTabIndex == 3)
             {
                 _ = _view.RefreshMapListAsync();
+            }
+            else if (_currentTabIndex == 1)
+            {
+                _ = _view.RefreshMemoListAsync();
             }
         }
 

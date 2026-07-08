@@ -23,19 +23,14 @@
                 <ui:TextField name="memo-search-input" label="" placeholder-text="메모 검색..." class="memo-search-input" style="align-items: center; -unity-font-definition: url(&quot;project://database/Assets/Plugins/UI%20Toolkit/Fonts/Pretendard-Light.ttf?fileID=12800000&amp;guid=8c634880071f83d4da7be3c9ff6f0be8&amp;type=3#Pretendard-Light&quot;);">
                     <ui:VisualElement style="flex-grow: 1; position: absolute; width: 50px; height: 50px; background-image: url(&quot;project://database/Assets/00_MemoAnchor/03_Media/Icon/search.png?fileID=2800000&amp;guid=273a16649170cad4087f1c15c86ae7ea&amp;type=3#search&quot;); margin-left: 50px; -unity-background-image-tint-color: rgb(28, 28, 28);"/>
                 </ui:TextField>
+                <ui:Button name="memo-search-clear-button" text="" class="memo-search-clear-button common-icon-button is-hidden">
+                    <ui:VisualElement class="common-icon-button-icon memo-search-clear-icon"/>
+                </ui:Button>
             </ui:VisualElement>
         </ui:VisualElement>
         <ui:ScrollView name="memo-content-scroll" mode="Vertical" horizontal-scroller-visibility="Hidden" vertical-scroller-visibility="Hidden" touch-scroll-type="Elastic" class="tab-content-scroll" style="background-color: rgb(255, 255, 255); border-top-left-radius: 100px; border-top-right-radius: 100px; overflow: hidden;">
             <ui:VisualElement class="tab-content-inner">
-                <ui:VisualElement class="memo-list-container">
-                    <ui:Instance template="MemoListItem"/>
-                    <ui:Instance template="MemoListItem"/>
-                    <ui:Instance template="MemoListItem"/>
-                    <ui:Instance template="MemoListItem"/>
-                    <ui:Instance template="MemoListItem"/>
-                    <ui:Instance template="MemoListItem"/>
-                    <ui:Instance template="MemoListItem"/>
-                </ui:VisualElement>
+                <ui:VisualElement name="memo-list-container" class="memo-list-container"/>
             </ui:VisualElement>
         </ui:ScrollView>
         <ui:VisualElement name="memo-filter-page" class="memo-filter-page is-hidden">
@@ -64,10 +59,16 @@
                         </ui:VisualElement>
                         <ui:VisualElement name="memo-filter-calendar" class="memo-filter-calendar">
                             <ui:VisualElement class="memo-filter-calendar-header">
-                                <ui:Button name="memo-filter-calendar-prev" text="&lt;" class="memo-filter-calendar-nav"/>
+                                <ui:Button name="memo-filter-calendar-prev" text="" class="memo-filter-calendar-nav">
+                                    <ui:VisualElement class="memo-calendar-chevron is-prev"/>
+                                </ui:Button>
                                 <ui:Label name="memo-filter-calendar-title" text="" class="memo-filter-calendar-title"/>
-                                <ui:Button name="memo-filter-calendar-next" text="&gt;" class="memo-filter-calendar-nav"/>
-                                <ui:Button name="memo-filter-calendar-close" text="닫기" class="memo-filter-calendar-close"/>
+                                <ui:Button name="memo-filter-calendar-next" text="" class="memo-filter-calendar-nav">
+                                    <ui:VisualElement class="memo-calendar-chevron is-next"/>
+                                </ui:Button>
+                                <ui:Button name="memo-filter-calendar-close" text="" class="memo-filter-calendar-close">
+                                    <ui:VisualElement class="memo-calendar-close-icon"/>
+                                </ui:Button>
                             </ui:VisualElement>
                             <ui:VisualElement name="memo-filter-calendar-grid" class="memo-filter-calendar-grid"/>
                         </ui:VisualElement>
@@ -116,6 +117,9 @@
                     </ui:Button>
                     <ui:VisualElement class="scan-input-box memo-search-input-box">
                         <ui:TextField name="memo-search-page-input" label="" placeholder-text="메모 검색" class="scan-input-field"/>
+                        <ui:Button name="memo-search-page-clear-button" text="" class="memo-search-page-clear-button common-icon-button is-hidden">
+                            <ui:VisualElement class="common-icon-button-icon memo-search-clear-icon"/>
+                        </ui:Button>
                     </ui:VisualElement>
                 </ui:VisualElement>
                 <ui:VisualElement name="memo-search-history-section" class="memo-filter-section memo-search-history-section">
@@ -127,6 +131,125 @@
                     <ui:VisualElement name="memo-search-result-list" class="memo-search-result-list"/>
                     <ui:Label name="memo-search-no-result-label" text="검색 결과가 없습니다." class="memo-search-empty-label memo-search-no-result-label is-hidden"/>
                 </ui:ScrollView>
+        </ui:VisualElement>
+        <ui:VisualElement name="memo-detail-page" class="memo-filter-page memo-detail-page is-hidden">
+            <ui:VisualElement class="memo-filter-header">
+                <ui:Button name="memo-detail-back-button" text="" class="memo-filter-back-button common-icon-button">
+                    <ui:VisualElement class="common-icon-button-icon" style="background-image: url(&quot;project://database/Assets/00_MemoAnchor/03_Media/Icon/chevron_forward.png?fileID=2800000&amp;guid=3ca432206e7cabb45abd1dfc722e509d&amp;type=3#chevron_forward&quot;);"/>
+                </ui:Button>
+                <ui:Label name="memo-detail-place-label" text="" class="page-header-title"/>
+                <ui:Button name="memo-detail-menu-button" text="" class="memo-detail-menu-button common-icon-button">
+                    <ui:VisualElement class="common-icon-button-icon" style="background-image: url(&quot;project://database/Assets/00_MemoAnchor/03_Media/Icon/threedots.png?fileID=2800000&amp;guid=9dc37093cd599fa4380fb64d6504bfb7&amp;type=3#threedots&quot;);"/>
+                </ui:Button>
+            </ui:VisualElement>
+            <ui:ScrollView name="memo-detail-scroll" mode="Vertical" horizontal-scroller-visibility="Hidden" vertical-scroller-visibility="Hidden" touch-scroll-type="Elastic" class="memo-detail-scroll">
+                <ui:VisualElement name="memo-detail-content" class="memo-detail-content"/>
+            </ui:ScrollView>
+            <ui:VisualElement name="memo-detail-menu" class="memo-detail-menu is-hidden">
+                <ui:Button name="memo-detail-edit-button" text="" class="memo-detail-menu-item">
+                    <ui:VisualElement class="memo-detail-menu-icon" style="background-image: url(&quot;project://database/Assets/00_MemoAnchor/03_Media/Icon/edit_memo.png?fileID=2800000&amp;guid=e0db5a3be93c96b43a69db25323f753f&amp;type=3#edit_memo&quot;);"/>
+                    <ui:Label text="메모 수정" class="memo-detail-menu-label"/>
+                </ui:Button>
+                <ui:VisualElement class="memo-detail-menu-divider"/>
+                <ui:Button name="memo-detail-delete-button" text="" class="memo-detail-menu-item">
+                    <ui:VisualElement class="memo-detail-menu-icon" style="background-image: url(&quot;project://database/Assets/00_MemoAnchor/03_Media/Icon/trash.png?fileID=2800000&amp;guid=c2fd465122bc15242b8cf6da00d7bbb1&amp;type=3#trash&quot;);"/>
+                    <ui:Label text="메모 삭제" class="memo-detail-menu-label"/>
+                </ui:Button>
+                <ui:VisualElement class="memo-detail-menu-divider"/>
+                <ui:Button name="memo-detail-export-button" text="" class="memo-detail-menu-item">
+                    <ui:VisualElement class="memo-detail-menu-icon" style="background-image: url(&quot;project://database/Assets/00_MemoAnchor/03_Media/Icon/share.png?fileID=2800000&amp;guid=aea85b2576223454d8399826a6a6336c&amp;type=3#share&quot;);"/>
+                    <ui:Label text="내보내기" class="memo-detail-menu-label"/>
+                </ui:Button>
+            </ui:VisualElement>
+        </ui:VisualElement>
+        <ui:VisualElement name="memo-create-page" class="memo-filter-page memo-create-page is-hidden">
+            <ui:VisualElement class="memo-filter-header">
+                <ui:Button name="memo-create-back-button" text="" class="memo-filter-back-button common-icon-button">
+                    <ui:VisualElement class="common-icon-button-icon" style="background-image: url(&quot;project://database/Assets/00_MemoAnchor/03_Media/Icon/chevron_forward.png?fileID=2800000&amp;guid=3ca432206e7cabb45abd1dfc722e509d&amp;type=3#chevron_forward&quot;);"/>
+                </ui:Button>
+                <ui:Label text="메모 생성" class="page-header-title"/>
+            </ui:VisualElement>
+            <ui:ScrollView name="memo-create-scroll" mode="Vertical" horizontal-scroller-visibility="Hidden" vertical-scroller-visibility="Hidden" touch-scroll-type="Elastic" class="memo-create-scroll">
+                <ui:VisualElement class="memo-create-section">
+                    <ui:Label text="수리자" class="memo-filter-section-title"/>
+                    <ui:VisualElement name="memo-create-repairer-card" class="profile-card profile-friend-list-card memo-create-repairer-card">
+                        <ui:Button name="memo-create-repairer-button" class="profile-menu-row profile-friend-list-button">
+                            <ui:Label name="memo-create-repairer-label" text="수리자 선택하기" class="profile-row-title"/>
+                            <ui:VisualElement class="profile-friend-list-actions">
+                                <ui:VisualElement name="memo-create-repairer-chevron" class="profile-row-chevron" style="background-image: url(&quot;project://database/Assets/00_MemoAnchor/03_Media/Icon/chevron_forward.png?fileID=2800000&amp;guid=3ca432206e7cabb45abd1dfc722e509d&amp;type=3#chevron_forward&quot;);"/>
+                            </ui:VisualElement>
+                        </ui:Button>
+                        <ui:VisualElement name="memo-create-repairer-list" class="profile-friend-list is-hidden">
+                            <ui:VisualElement name="memo-create-repairer-items-list" class="profile-friend-items-list"/>
+                        </ui:VisualElement>
+                    </ui:VisualElement>
+                </ui:VisualElement>
+                <ui:VisualElement class="memo-filter-divider"/>
+                <ui:VisualElement class="memo-create-section">
+                    <ui:Label text="타이핑" class="memo-filter-section-title"/>
+                    <ui:VisualElement class="scan-input-box memo-create-title-box">
+                        <ui:TextField name="memo-create-title-input" label="" placeholder-text="제목을 입력해주세요." class="scan-input-field"/>
+                    </ui:VisualElement>
+                    <ui:VisualElement class="scan-input-box memo-create-body-box">
+                        <ui:TextField name="memo-create-body-input" label="" multiline="true" placeholder-text="내용을 입력해주세요." class="scan-input-field memo-create-body-input"/>
+                    </ui:VisualElement>
+                </ui:VisualElement>
+                <ui:VisualElement class="memo-filter-divider"/>
+                <ui:VisualElement class="memo-create-section">
+                    <ui:Label text="마감 기한" class="memo-filter-section-title"/>
+                    <ui:VisualElement class="memo-filter-date-row">
+                        <ui:Button name="memo-create-date-button" class="memo-filter-date-button">
+                            <ui:Label name="memo-create-date-label" text="2026-01-01" class="memo-filter-date-text"/>
+                            <ui:VisualElement class="memo-filter-calendar-icon"/>
+                        </ui:Button>
+                        <ui:Label text="-" class="memo-filter-date-dash"/>
+                        <ui:Button name="memo-create-time-button" class="memo-filter-date-button">
+                            <ui:Label name="memo-create-time-label" text="09:00 AM" class="memo-filter-date-text"/>
+                            <ui:VisualElement class="memo-create-time-icon"/>
+                        </ui:Button>
+                    </ui:VisualElement>
+                    <ui:VisualElement class="memo-filter-calendar memo-create-calendar is-hidden">
+                        <ui:VisualElement class="memo-filter-calendar-header">
+                            <ui:Button name="memo-create-calendar-prev" text="" class="memo-filter-calendar-nav">
+                                <ui:VisualElement class="memo-calendar-chevron is-prev"/>
+                            </ui:Button>
+                            <ui:Label name="memo-create-calendar-title" text="2026년 1월" class="memo-filter-calendar-title"/>
+                            <ui:Button name="memo-create-calendar-next" text="" class="memo-filter-calendar-nav">
+                                <ui:VisualElement class="memo-calendar-chevron is-next"/>
+                            </ui:Button>
+                            <ui:Button name="memo-create-calendar-close" text="" class="memo-filter-calendar-close">
+                                <ui:VisualElement class="memo-calendar-close-icon"/>
+                            </ui:Button>
+                        </ui:VisualElement>
+                        <ui:VisualElement name="memo-create-calendar-grid" class="memo-filter-calendar-grid"/>
+                    </ui:VisualElement>
+                    <ui:VisualElement name="memo-create-time-picker" class="memo-filter-calendar memo-create-time-picker is-hidden">
+                        <ui:VisualElement class="memo-filter-calendar-header">
+                            <ui:Button text="" class="memo-filter-calendar-nav memo-create-time-header-spacer"/>
+                            <ui:Label text="" class="memo-filter-calendar-title memo-create-time-header-spacer"/>
+                            <ui:Button text="" class="memo-filter-calendar-nav memo-create-time-header-spacer"/>
+                            <ui:Button name="memo-create-time-close" text="" class="memo-filter-calendar-close">
+                                <ui:VisualElement class="memo-calendar-close-icon"/>
+                            </ui:Button>
+                        </ui:VisualElement>
+                        <ui:VisualElement class="memo-create-time-selected-band"/>
+                        <ui:VisualElement class="memo-create-time-columns">
+                            <ui:ScrollView name="memo-create-hour-column" mode="Vertical" horizontal-scroller-visibility="Hidden" vertical-scroller-visibility="Hidden" touch-scroll-type="Elastic" class="memo-create-time-column"/>
+                            <ui:ScrollView name="memo-create-minute-column" mode="Vertical" horizontal-scroller-visibility="Hidden" vertical-scroller-visibility="Hidden" touch-scroll-type="Elastic" class="memo-create-time-column"/>
+                            <ui:ScrollView name="memo-create-period-column" mode="Vertical" horizontal-scroller-visibility="Hidden" vertical-scroller-visibility="Hidden" touch-scroll-type="Elastic" class="memo-create-time-column"/>
+                        </ui:VisualElement>
+                    </ui:VisualElement>
+                </ui:VisualElement>
+                <ui:VisualElement class="memo-filter-divider"/>
+                <ui:VisualElement class="memo-create-section">
+                    <ui:Label text="긴급 여부" class="memo-filter-section-title"/>
+                    <ui:VisualElement class="memo-filter-chip-grid memo-create-urgency-grid">
+                        <ui:Button name="memo-create-urgency-high" text="상" class="memo-filter-chip"/>
+                        <ui:Button name="memo-create-urgency-middle" text="중" class="memo-filter-chip is-selected"/>
+                        <ui:Button name="memo-create-urgency-low" text="하" class="memo-filter-chip"/>
+                    </ui:VisualElement>
+                </ui:VisualElement>
+            </ui:ScrollView>
         </ui:VisualElement>
     </ui:VisualElement>
 </ui:UXML>

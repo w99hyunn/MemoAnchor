@@ -12,7 +12,7 @@ namespace MemoAnchor.UI
         private readonly ScanMapService _scanMapService = new();
         private readonly HashSet<string> _openMapAddresses = new(StringComparer.Ordinal);
         private readonly List<ScanMapItem> _scanMaps = new();
-        private Button _mapListButton, _mapPreviewMenuButton;
+        private Button _mapListButton, _mapPreviewMenuButton, _mapCreateMemoButton;
         private VisualElement _mapPreview, _mapListOverlay, _mapListSheet, _mapListContent, _mapEmptyState;
         private Label _mapCurrentSpaceLabel, _mapCurrentAddressLabel, _mapReadModeLabel, _mapScanTimeLabel;
         private string _selectedMapId;
@@ -24,6 +24,7 @@ namespace MemoAnchor.UI
             VisualElement mainRoot = _root.Q<VisualElement>("main-root");
             _mapListButton = _root.Q<Button>("map-list-button");
             _mapPreviewMenuButton = _root.Q<Button>("map-preview-menu-button");
+            _mapCreateMemoButton = _root.Q<Button>("map-create-memo-button");
             _mapPreview = _root.Q<VisualElement>("map-preview");
             _mapListOverlay = _root.Q<VisualElement>("map-list-overlay");
             _mapListSheet = _root.Q<VisualElement>("map-list-sheet");
@@ -40,6 +41,7 @@ namespace MemoAnchor.UI
             _mapListOverlay.AddToClassList(HIDDEN_CLASS);
             _mapListButton.clicked += ShowMapList;
             _mapPreviewMenuButton.clicked += ShowMapList;
+            _mapCreateMemoButton.clicked += OnClickMapCreateMemo;
             _mapListOverlay.RegisterCallback<ClickEvent>(_ => HideMapList());
             _mapListSheet.RegisterCallback<ClickEvent>(evt => evt.StopPropagation());
             ApplySelectedMap();
@@ -49,6 +51,7 @@ namespace MemoAnchor.UI
         {
             _mapListButton.clicked -= ShowMapList;
             _mapPreviewMenuButton.clicked -= ShowMapList;
+            _mapCreateMemoButton.clicked -= OnClickMapCreateMemo;
         }
 
         public async Awaitable RefreshMapListAsync()
@@ -210,12 +213,13 @@ namespace MemoAnchor.UI
 
         private void ApplySelectedMap()
         {
-            ScanMapItem selectedMap = _scanMaps.Find(map => map.id == _selectedMapId);
+            ScanMapItem selectedMap = GetSelectedMap();
             bool hasMap = selectedMap != null;
             _mapPreview.EnableInClassList("is-empty", !hasMap);
             SetVisible(_mapReadModeLabel, hasMap);
             SetVisible(_mapScanTimeLabel, hasMap);
             SetVisible(_mapEmptyState, !hasMap);
+            SetVisible(_mapCreateMemoButton, hasMap);
 
             if (!hasMap)
             {
@@ -228,6 +232,22 @@ namespace MemoAnchor.UI
             _mapCurrentSpaceLabel.text = selectedMap.spaceName;
             _mapCurrentAddressLabel.text = GetMapAddressKey(selectedMap);
             _mapScanTimeLabel.text = $"스캔일시 : {FormatScanTime(selectedMap.scanCreatedAt)}";
+        }
+
+        private void OnClickMapCreateMemo()
+        {
+            ScanMapItem selectedMap = GetSelectedMap();
+            if (selectedMap == null)
+            {
+                return;
+            }
+
+            ShowMemoCreatePage(selectedMap);
+        }
+
+        private ScanMapItem GetSelectedMap()
+        {
+            return _scanMaps.Find(map => map.id == _selectedMapId);
         }
 
         private static string GetMapAddressKey(ScanMapItem map)

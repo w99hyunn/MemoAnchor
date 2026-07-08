@@ -185,16 +185,15 @@ namespace MemoAnchor.UI
 
         private void ShowMemoFilterPage()
         {
+            HideMemoDetailPage();
             SetVisible(_memoFilterPage, true);
-            SetVisible(_bottomNav, false);
-            SetVisible(_memoFilterBottomBar, true);
+            SetMemoFilterNavMode(true);
         }
 
         private void HideMemoFilterPage()
         {
             SetVisible(_memoFilterPage, false);
-            SetVisible(_bottomNav, true);
-            SetVisible(_memoFilterBottomBar, false);
+            SetMemoFilterNavMode(false);
             HideMemoFilterCalendar();
             SetVisible(_memoFilterMapList, false);
         }
@@ -203,6 +202,8 @@ namespace MemoAnchor.UI
         {
             HideMemoFilterPage();
             HideMemoSearchPage();
+            HideMemoCreatePage();
+            HideMemoDetailPage();
         }
 
         private void ShowMemoFilterStartCalendar()
@@ -393,56 +394,8 @@ namespace MemoAnchor.UI
 
         private void RebuildMemoFilterCalendar()
         {
-            _memoFilterCalendarGrid.Clear();
-            _memoFilterCalendarTitle.text = _memoFilterCalendarMonth.ToString("yyyy년 M월");
-
-            string[] weekdays = { "일", "월", "화", "수", "목", "금", "토" };
-            for (int i = 0; i < weekdays.Length; i++)
-            {
-                Button weekday = new() { text = weekdays[i] };
-                weekday.AddToClassList("memo-filter-calendar-cell");
-                weekday.AddToClassList("is-weekday-header");
-                if (i == 0)
-                {
-                    weekday.AddToClassList("is-sunday");
-                }
-                else if (i == 6)
-                {
-                    weekday.AddToClassList("is-saturday");
-                }
-
-                _memoFilterCalendarGrid.Add(weekday);
-            }
-
-            int leadingBlankCount = (int)_memoFilterCalendarMonth.DayOfWeek;
-            DateTime firstVisibleDate = _memoFilterCalendarMonth.AddDays(-leadingBlankCount);
-            const int CALENDAR_VISIBLE_DAY_COUNT = 42;
-            for (int i = 0; i < CALENDAR_VISIBLE_DAY_COUNT; i++)
-            {
-                DateTime date = firstVisibleDate.AddDays(i);
-                int dayOfWeek = (int)date.DayOfWeek;
-                bool isMuted = date.Month != _memoFilterCalendarMonth.Month;
-                Button dayButton = new() { text = date.Day.ToString() };
-                dayButton.AddToClassList("memo-filter-calendar-cell");
-                if (isMuted)
-                {
-                    dayButton.AddToClassList("is-muted");
-                }
-
-                if (dayOfWeek == 0)
-                {
-                    dayButton.AddToClassList("is-sunday");
-                }
-                else if (dayOfWeek == 6)
-                {
-                    dayButton.AddToClassList("is-saturday");
-                }
-
-                DateTime capturedDate = date;
-                dayButton.clicked += () => SelectMemoFilterDate(capturedDate);
-
-                _memoFilterCalendarGrid.Add(dayButton);
-            }
+            DateTime selectedDate = _memoFilterEditingStartDate ? _memoFilterStartDate : _memoFilterEndDate;
+            MemoCalendarUtility.Rebuild(_memoFilterCalendarGrid, _memoFilterCalendarTitle, _memoFilterCalendarMonth, selectedDate, SelectMemoFilterDate);
         }
 
         private void SelectMemoFilterDate(DateTime date)

@@ -29,14 +29,23 @@ namespace MemoAnchor.UI
             _memoSearchResultList = _root.Q<VisualElement>("memo-search-result-list");
             _memoSearchNoResultLabel = _root.Q<Label>("memo-search-no-result-label");
             _memoSearchBackButton = _root.Q<Button>("memo-search-back-button");
+            _memoSearchClearButton = _root.Q<Button>("memo-search-clear-button");
+            _memoSearchPageClearButton = _root.Q<Button>("memo-search-page-clear-button");
 
             SetVisible(_memoSearchPage, false);
             LoadMemoSearchHistory();
             RebuildMemoSearchHistory();
             RefreshMemoSearchPageState(_memoSearchPageInput.value);
+            RefreshMemoSearchClearButton();
 
             _memoSearchSourceInput.RegisterCallback<FocusInEvent>(ShowMemoSearchPage);
             _memoSearchSourceInput.RegisterCallback<ClickEvent>(ShowMemoSearchPage);
+            _memoSearchClearButton.RegisterCallback<PointerDownEvent>(StopMemoSearchClearEvent, TrickleDown.TrickleDown);
+            _memoSearchClearButton.RegisterCallback<PointerUpEvent>(OnMemoSearchClearPointerUp, TrickleDown.TrickleDown);
+            _memoSearchClearButton.RegisterCallback<ClickEvent>(OnMemoSearchClearClicked, TrickleDown.TrickleDown);
+            _memoSearchPageClearButton.RegisterCallback<PointerDownEvent>(StopMemoSearchClearEvent, TrickleDown.TrickleDown);
+            _memoSearchPageClearButton.RegisterCallback<PointerUpEvent>(OnMemoSearchClearPointerUp, TrickleDown.TrickleDown);
+            _memoSearchPageClearButton.RegisterCallback<ClickEvent>(OnMemoSearchClearClicked, TrickleDown.TrickleDown);
             _memoSearchPageInput.RegisterValueChangedCallback(OnMemoSearchInputChanged);
             _memoSearchPageInput.RegisterCallback<KeyDownEvent>(OnMemoSearchKeyDown, TrickleDown.TrickleDown);
             _memoSearchBackButton.clicked += HideMemoSearchPage;
@@ -46,6 +55,12 @@ namespace MemoAnchor.UI
         {
             _memoSearchSourceInput.UnregisterCallback<FocusInEvent>(ShowMemoSearchPage);
             _memoSearchSourceInput.UnregisterCallback<ClickEvent>(ShowMemoSearchPage);
+            _memoSearchClearButton.UnregisterCallback<PointerDownEvent>(StopMemoSearchClearEvent, TrickleDown.TrickleDown);
+            _memoSearchClearButton.UnregisterCallback<PointerUpEvent>(OnMemoSearchClearPointerUp, TrickleDown.TrickleDown);
+            _memoSearchClearButton.UnregisterCallback<ClickEvent>(OnMemoSearchClearClicked, TrickleDown.TrickleDown);
+            _memoSearchPageClearButton.UnregisterCallback<PointerDownEvent>(StopMemoSearchClearEvent, TrickleDown.TrickleDown);
+            _memoSearchPageClearButton.UnregisterCallback<PointerUpEvent>(OnMemoSearchClearPointerUp, TrickleDown.TrickleDown);
+            _memoSearchPageClearButton.UnregisterCallback<ClickEvent>(OnMemoSearchClearClicked, TrickleDown.TrickleDown);
             _memoSearchPageInput.UnregisterValueChangedCallback(OnMemoSearchInputChanged);
             _memoSearchPageInput.UnregisterCallback<KeyDownEvent>(OnMemoSearchKeyDown, TrickleDown.TrickleDown);
             _memoSearchBackButton.clicked -= HideMemoSearchPage;
@@ -56,8 +71,14 @@ namespace MemoAnchor.UI
             ShowMemoSearchPage();
         }
 
-        private void ShowMemoSearchPage(ClickEvent _)
+        private void ShowMemoSearchPage(ClickEvent evt)
         {
+            if (IsMemoSearchClearTarget(evt.target as VisualElement))
+            {
+                evt.StopPropagation();
+                return;
+            }
+
             ShowMemoSearchPage();
         }
 
@@ -80,6 +101,31 @@ namespace MemoAnchor.UI
             RefreshMemoSearchPageState(evt.newValue);
         }
 
+        private void OnMemoSearchClearClicked(ClickEvent evt)
+        {
+            ClearMemoSearchInput();
+            evt.StopImmediatePropagation();
+        }
+
+        private void OnMemoSearchClearPointerUp(PointerUpEvent evt)
+        {
+            ClearMemoSearchInput();
+            evt.StopImmediatePropagation();
+        }
+
+        private static void StopMemoSearchClearEvent(PointerDownEvent evt)
+        {
+            evt.StopImmediatePropagation();
+        }
+
+        private void ClearMemoSearchInput()
+        {
+            _memoSearchSourceInput.SetValueWithoutNotify(string.Empty);
+            _memoSearchPageInput.SetValueWithoutNotify(string.Empty);
+            RefreshMemoSearchPageState(string.Empty);
+            RefreshMemoSearchClearButton();
+        }
+
         private void OnMemoSearchKeyDown(KeyDownEvent evt)
         {
             if (evt.keyCode != KeyCode.Return && evt.keyCode != KeyCode.KeypadEnter)
@@ -97,6 +143,7 @@ namespace MemoAnchor.UI
             _memoSearchSourceInput.SetValueWithoutNotify(normalizedQuery);
             _memoSearchPageInput.SetValueWithoutNotify(normalizedQuery);
             RefreshMemoSearchPageState(normalizedQuery);
+            RefreshMemoSearchClearButton();
 
             if (normalizedQuery.Length > 0)
             {
@@ -109,6 +156,7 @@ namespace MemoAnchor.UI
             string normalizedQuery = query.Trim();
             bool hasQuery = normalizedQuery.Length > 0;
             _memoSearchSourceInput.SetValueWithoutNotify(normalizedQuery);
+            RefreshMemoSearchClearButton();
             SetVisible(_memoSearchHistorySection, !hasQuery);
             SetVisible(_memoSearchResultSection, hasQuery);
             ApplyMemoSearch(normalizedQuery);
@@ -153,6 +201,28 @@ namespace MemoAnchor.UI
             SetVisible(_memoSearchNoResultLabel, resultCount == 0);
         }
 
+        private void RefreshMemoSearchClearButton()
+        {
+            bool hasQuery = _memoSearchSourceInput.value.Trim().Length > 0;
+            SetVisible(_memoSearchClearButton, hasQuery);
+            SetVisible(_memoSearchPageClearButton, hasQuery);
+        }
+
+        private bool IsMemoSearchClearTarget(VisualElement element)
+        {
+            while (element != null)
+            {
+                if (element == _memoSearchClearButton || element == _memoSearchPageClearButton)
+                {
+                    return true;
+                }
+
+                element = element.parent;
+            }
+
+            return false;
+        }
+
         private static bool MemoSearchRowMatches(VisualElement row, string query)
         {
             bool matches = false;
@@ -167,7 +237,7 @@ namespace MemoAnchor.UI
             return matches;
         }
 
-        private static VisualElement CreateMemoSearchResultRow(VisualElement sourceRow)
+        private VisualElement CreateMemoSearchResultRow(VisualElement sourceRow)
         {
             VisualElement row = new();
             row.AddToClassList("memo-search-result-row");
@@ -187,6 +257,15 @@ namespace MemoAnchor.UI
 
             VisualElement icon = new();
             icon.AddToClassList("memo-list-item-icon");
+            if (sourceRow.userData is MemoDetailItem memoItem)
+            {
+                icon.AddToClassList(GetMemoListIconClass(memoItem.Kind));
+                item.RegisterCallback<ClickEvent>(_ =>
+                {
+                    HideMemoSearchPage();
+                    ShowMemoDetailPage(memoItem);
+                });
+            }
 
             Label sourceTitle = sourceRow.Q<Label>(className: "memo-list-item-title");
             Label title = new(sourceTitle.text);

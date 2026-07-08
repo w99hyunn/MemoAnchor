@@ -30,5 +30,13 @@
             <ui:Button name="memo-filter-reset-button" text="초기화" class="memo-filter-bottom-button memo-filter-reset-button"/>
             <ui:Button name="memo-filter-apply-button" text="적용하기" class="memo-filter-bottom-button memo-filter-apply-button"/>
         </ui:VisualElement>
+        <ui:VisualElement name="memo-detail-bottom-bar" class="memo-filter-bottom-bar is-hidden">
+            <ui:Button name="memo-detail-request-button" text="보완 요청" class="memo-filter-bottom-button memo-filter-reset-button"/>
+            <ui:Button name="memo-detail-complete-button" text="완료 확정" class="memo-filter-bottom-button memo-filter-apply-button"/>
+        </ui:VisualElement>
+        <ui:VisualElement name="memo-create-bottom-bar" class="memo-filter-bottom-bar is-hidden">
+            <ui:Button name="memo-create-reset-button" text="초기화" class="memo-filter-bottom-button memo-filter-reset-button"/>
+            <ui:Button name="memo-create-submit-button" text="생성하기" class="memo-filter-bottom-button memo-filter-apply-button"/>
+        </ui:VisualElement>
     </ui:VisualElement>
 </ui:UXML>
