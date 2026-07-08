@@ -1,6 +1,32 @@
 <ui:UXML xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" noNamespaceSchemaLocation="../../../../../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
     <Style src="project://database/Assets/Plugins/UI%20Toolkit/UnityThemes/style.uss?fileID=7433441132597879392&amp;guid=c3edbd9c191f92b49aa6a3ce9ffd69d5&amp;type=3#style"/>
-    <ui:VisualElement name="tab-map" class="tab-page">
-        <ui:Label text="지도" style="font-size: 52px; -unity-font-definition: url(&quot;project://database/Assets/Plugins/UI%20Toolkit/Fonts/Pretendard-Medium.ttf?fileID=12800000&amp;guid=45ed9c45b09f5f2498d91e1982ab7527&amp;type=3#Pretendard-Medium&quot;);"/>
+    <ui:VisualElement name="tab-map" class="tab-page map-tab-page">
+        <ui:VisualElement class="map-top-bar">
+            <ui:VisualElement class="map-title-group">
+                <ui:Label name="map-current-space-label" text="3D MAP" class="map-current-space-label"/>
+                <ui:Label name="map-current-address-label" text="" class="map-current-address-label"/>
+            </ui:VisualElement>
+            <ui:Button name="map-list-button" class="map-list-button common-icon-button">
+                <ui:VisualElement class="common-icon-button-icon" style="background-image: url(&quot;project://database/Assets/00_MemoAnchor/03_Media/Icon/building.png?fileID=2800000&amp;guid=9ac4f4a4e6b84dd7b67d1c4c0a8dd37c&amp;type=3#building&quot;);"/>
+            </ui:Button>
+            <ui:Label name="map-read-mode-label" text="읽기모드" class="map-read-mode-label"/>
+        </ui:VisualElement>
+        <ui:VisualElement name="map-preview" class="map-preview">
+            <ui:Button name="map-preview-menu-button" text="☰" class="map-preview-menu-button common-icon-button"/>
+            <ui:Label name="map-scan-time-label" text="" class="map-scan-time-label"/>
+            <ui:VisualElement name="map-empty-state" class="map-empty-state is-hidden">
+                <ui:Label text="생성된 3D MAP이 없습니다" class="map-empty-title"/>
+                <ui:Label text="하단바 중앙 스캔버튼으로 맵을 생성해주세요." class="map-empty-subtitle"/>
+            </ui:VisualElement>
+        </ui:VisualElement>
+        <ui:VisualElement name="map-list-overlay" class="scan-action-dialog-overlay scan-address-dialog-overlay map-list-overlay is-hidden">
+            <ui:VisualElement name="map-list-sheet" class="scan-action-dialog-sheet scan-address-dialog-sheet map-list-sheet">
+                <ui:VisualElement class="scan-action-dialog-handle scan-address-dialog-handle"/>
+                <ui:Label text="건물목록" class="map-list-title"/>
+                <ui:ScrollView name="map-list-scroll" mode="Vertical" horizontal-scroller-visibility="Hidden" vertical-scroller-visibility="Hidden" touch-scroll-type="Elastic" class="scan-address-list map-list-scroll">
+                    <ui:VisualElement name="map-list-content" class="scan-address-items-list map-list-content"/>
+                </ui:ScrollView>
+            </ui:VisualElement>
+        </ui:VisualElement>
     </ui:VisualElement>
 </ui:UXML>

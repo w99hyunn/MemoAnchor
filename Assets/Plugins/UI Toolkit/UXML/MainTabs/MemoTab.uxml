@@ -10,9 +10,11 @@
                 </ui:Button>
             </ui:VisualElement>
             <ui:VisualElement name="memo-header-actions" class="memo-header-actions">
-                <ui:Button text="" class="home-right-icon-button" style="background-image: url(&quot;project://database/Assets/00_MemoAnchor/03_Media/Icon/trash.png?fileID=2800000&amp;guid=c2fd465122bc15242b8cf6da00d7bbb1&amp;type=3#trash&quot;);"/>
-                <ui:Button text="" name="memo-filter-button" class="home-right-icon-button memo-filter-round-icon-button memo-filter-icon-button">
-                    <ui:VisualElement class="memo-filter-round-icon memo-filter-icon" style="background-image: url(&quot;project://database/Assets/00_MemoAnchor/03_Media/Icon/filter.png?fileID=2800000&amp;guid=e72bd049f96e09a46a5f4816cd8c55cc&amp;type=3#filter&quot;);"/>
+                <ui:Button text="" class="memo-header-icon-button common-icon-button">
+                    <ui:VisualElement class="common-icon-button-icon" style="background-image: url(&quot;project://database/Assets/00_MemoAnchor/03_Media/Icon/trash.png?fileID=2800000&amp;guid=c2fd465122bc15242b8cf6da00d7bbb1&amp;type=3#trash&quot;);"/>
+                </ui:Button>
+                <ui:Button text="" name="memo-filter-button" class="memo-header-icon-button memo-filter-icon-button common-icon-button">
+                    <ui:VisualElement class="common-icon-button-icon" style="background-image: url(&quot;project://database/Assets/00_MemoAnchor/03_Media/Icon/filter.png?fileID=2800000&amp;guid=e72bd049f96e09a46a5f4816cd8c55cc&amp;type=3#filter&quot;);"/>
                 </ui:Button>
             </ui:VisualElement>
         </ui:VisualElement>
@@ -38,8 +40,8 @@
         </ui:ScrollView>
         <ui:VisualElement name="memo-filter-page" class="memo-filter-page is-hidden">
                 <ui:VisualElement class="memo-filter-header">
-                    <ui:Button name="memo-filter-back-button" text="" class="memo-filter-round-icon-button memo-filter-back-button">
-                        <ui:VisualElement class="memo-filter-round-icon memo-filter-back-icon" style="background-image: url(&quot;project://database/Assets/00_MemoAnchor/03_Media/Icon/chevron_forward.png?fileID=2800000&amp;guid=3ca432206e7cabb45abd1dfc722e509d&amp;type=3#chevron_forward&quot;);"/>
+                    <ui:Button name="memo-filter-back-button" text="" class="memo-filter-back-button common-icon-button">
+                        <ui:VisualElement class="common-icon-button-icon" style="background-image: url(&quot;project://database/Assets/00_MemoAnchor/03_Media/Icon/chevron_forward.png?fileID=2800000&amp;guid=3ca432206e7cabb45abd1dfc722e509d&amp;type=3#chevron_forward&quot;);"/>
                     </ui:Button>
                     <ui:Label text="메모 필터" class="page-header-title"/>
                 </ui:VisualElement>
@@ -109,8 +111,8 @@
         </ui:VisualElement>
         <ui:VisualElement name="memo-search-page" class="memo-filter-page memo-search-page is-hidden">
                 <ui:VisualElement class="memo-filter-header memo-search-header">
-                    <ui:Button name="memo-search-back-button" text="" class="memo-filter-round-icon-button memo-filter-back-button">
-                        <ui:VisualElement class="memo-filter-round-icon memo-filter-back-icon" style="background-image: url(&quot;project://database/Assets/00_MemoAnchor/03_Media/Icon/chevron_forward.png?fileID=2800000&amp;guid=3ca432206e7cabb45abd1dfc722e509d&amp;type=3#chevron_forward&quot;);"/>
+                    <ui:Button name="memo-search-back-button" text="" class="memo-filter-back-button common-icon-button">
+                        <ui:VisualElement class="common-icon-button-icon" style="background-image: url(&quot;project://database/Assets/00_MemoAnchor/03_Media/Icon/chevron_forward.png?fileID=2800000&amp;guid=3ca432206e7cabb45abd1dfc722e509d&amp;type=3#chevron_forward&quot;);"/>
                     </ui:Button>
                     <ui:VisualElement class="scan-input-box memo-search-input-box">
                         <ui:TextField name="memo-search-page-input" label="" placeholder-text="메모 검색" class="scan-input-field"/>

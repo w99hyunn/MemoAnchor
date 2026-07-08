@@ -39,6 +39,7 @@ namespace MemoAnchor.UI
         public Button ManagerButton => _managerButton;
 
         public string SelectedAddress { get; private set; }
+        public ScanAddressItem SelectedAddressItem { get; private set; }
         public string SpaceName => _spaceNameField.value;
         public ScanFriendOption SelectedRepairer { get; private set; }
         public ScanFriendOption SelectedManager { get; private set; }
@@ -237,8 +238,18 @@ namespace MemoAnchor.UI
 
         public void SetSelectedAddress(string address)
         {
+            SelectedAddressItem = null;
             SelectedAddress = address;
             _addressButtonText.SetValueWithoutNotify(address);
+            ClearAddressError();
+            ScanStartReadinessChanged?.Invoke();
+        }
+
+        public void SetSelectedAddress(ScanAddressItem address)
+        {
+            SelectedAddressItem = address;
+            SelectedAddress = address.address;
+            _addressButtonText.SetValueWithoutNotify(address.address);
             ClearAddressError();
             ScanStartReadinessChanged?.Invoke();
         }

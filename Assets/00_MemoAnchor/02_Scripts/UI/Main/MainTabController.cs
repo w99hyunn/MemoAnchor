@@ -11,6 +11,7 @@ namespace MemoAnchor.UI
 
         private MainTabView _view;
         private Tab_ScanView _scanView;
+        private Tab_ScanController _scanController;
         private int _currentTabIndex;
         private bool _isScanNavModeActive;
         private bool _isRegistered;
@@ -19,6 +20,7 @@ namespace MemoAnchor.UI
         {
             TryGetComponent<MainTabView>(out _view);
             TryGetComponent<Tab_ScanView>(out _scanView);
+            TryGetComponent<Tab_ScanController>(out _scanController);
         }
 
         private void Start()
@@ -101,11 +103,6 @@ namespace MemoAnchor.UI
 
         private void OnClickScanStart()
         {
-            if (_scanView.IsScanStartReady())
-            {
-                return;
-            }
-
             if (!_scanView.HasSpaceName())
             {
                 _scanView.HighlightSpaceNameError();
@@ -115,6 +112,25 @@ namespace MemoAnchor.UI
             {
                 _scanView.HighlightAddressError();
             }
+
+            if (!_scanView.IsScanStartReady())
+            {
+                return;
+            }
+
+            _ = CreateTemporaryMapAndShowAsync();
+        }
+
+        private async Awaitable CreateTemporaryMapAndShowAsync()
+        {
+            bool created = await _scanController.CreateTemporaryMapAsync();
+            if (!created)
+            {
+                return;
+            }
+
+            _isScanNavModeActive = false;
+            ShowTab(3);
         }
 
         private void ShowTab(int tabIndex)
@@ -141,6 +157,11 @@ namespace MemoAnchor.UI
             _view.SetScanNavMode(_isScanNavModeActive);
             UpdateScanStartAvailability();
             UpdateTabStripOffset();
+
+            if (_currentTabIndex == 3)
+            {
+                _ = _view.RefreshMapListAsync();
+            }
         }
 
         private void UpdateScanStartAvailability()

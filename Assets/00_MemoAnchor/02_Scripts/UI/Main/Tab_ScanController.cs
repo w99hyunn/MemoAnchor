@@ -15,8 +15,10 @@ namespace MemoAnchor.UI
         private Tab_ScanView _view;
         private KakaoPostcodeWebView _postcodeWebView;
         private readonly ScanAddressService _scanAddressService = new();
+        private readonly ScanMapService _scanMapService = new();
         private FriendSelectionTarget _friendSelectionTarget;
         private int _friendSelectionRequestToken;
+        private bool _isCreatingTemporaryMap;
 
         private void Awake()
         {
@@ -55,7 +57,7 @@ namespace MemoAnchor.UI
 
         private void SelectAddress(ScanAddressItem address)
         {
-            _view.SetSelectedAddress(address.address);
+            _view.SetSelectedAddress(address);
             _view.HideAddressDialog();
         }
 
@@ -127,7 +129,49 @@ namespace MemoAnchor.UI
             _view.ShowAddressDialog();
             if (saveResult.IsSuccess)
             {
-                _view.SetSelectedAddress(result.address);
+                ScanAddressItem savedAddress = saveResult.AddressList.addresses.Find(address =>
+                    string.Equals(address.address, result.address, StringComparison.OrdinalIgnoreCase));
+                _view.SetSelectedAddress(savedAddress ?? new ScanAddressItem
+                {
+                    address = result.address,
+                    roadAddress = result.roadAddress
+                });
+            }
+        }
+
+        public async Awaitable<bool> CreateTemporaryMapAsync()
+        {
+            if (_isCreatingTemporaryMap)
+            {
+                return false;
+            }
+
+            _isCreatingTemporaryMap = true;
+
+            try
+            {
+                ScanAddressItem address = _view.SelectedAddressItem;
+                var payload = new ScanMapCreateRequest
+                {
+                    addressId = address?.id ?? string.Empty,
+                    address = _view.SelectedAddress,
+                    roadAddress = address?.roadAddress ?? _view.SelectedAddress,
+                    spaceName = _view.SpaceName,
+                    repairerPlayerId = _view.SelectedRepairer.Id,
+                    managerPlayerId = _view.SelectedManager.Id
+                };
+
+                ScanMapCreateResult result = await _scanMapService.CreateMapAsync(payload);
+                if (!result.IsSuccess)
+                {
+                    PopupManager.ShowMessage("맵 생성 실패", "서버에 맵을 저장하지 못했습니다.", "확인");
+                }
+
+                return result.IsSuccess;
+            }
+            finally
+            {
+                _isCreatingTemporaryMap = false;
             }
         }
 

@@ -281,6 +281,7 @@ namespace MemoAnchor.UI
 
                 Button removeButton = new();
                 removeButton.AddToClassList("memo-search-history-remove");
+                removeButton.AddToClassList("common-icon-button");
                 removeButton.RegisterCallback<ClickEvent>(evt =>
                 {
                     RemoveMemoSearchHistory(item);
@@ -288,6 +289,7 @@ namespace MemoAnchor.UI
                 });
 
                 VisualElement removeIcon = new();
+                removeIcon.AddToClassList("common-icon-button-icon");
                 removeIcon.AddToClassList("memo-search-history-remove-icon");
 
                 contentButton.Add(icon);

@@ -16,7 +16,6 @@ namespace MemoAnchor.UI
         private const string ERROR_CLASS = "is-error";
         private const string HOME_ADMIN_MODE_CLASS = "is-admin-mode";
         private const string HOME_WORK_MODE_CLASS = "is-work-mode";
-        private const float MEMO_SWIPE_INTENT_THRESHOLD = 20f;
         private const float MEMO_SWIPE_OPEN_THRESHOLD = 80f;
 
         [SerializeField] private VisualTreeAsset _scanActionDialogAsset;
@@ -130,6 +129,7 @@ namespace MemoAnchor.UI
             InitializeMemoFilterDates();
             RegisterMemoFilterPage();
             RegisterMemoSearchPage();
+            RegisterMapPage();
             HideProfileAccountSettings();
             HideAlertDialog();
             RebuildProfileFriendList();
@@ -157,6 +157,7 @@ namespace MemoAnchor.UI
             UnregisterFriendsCallbacks();
             UnregisterMemoFilterPage();
             UnregisterMemoSearchPage();
+            UnregisterMapPage();
         }
 
         public void SetScanNavMode(bool enabled)
@@ -411,73 +412,29 @@ namespace MemoAnchor.UI
             _root.Query<VisualElement>(className: "memo-list-swipe-row").ForEach(row =>
             {
                 Vector3 pointerDownPosition = Vector3.zero;
-                bool isSwipeIntent = false;
-                bool isGestureResolved = false;
 
                 row.RegisterCallback<PointerDownEvent>(evt =>
                 {
                     pointerDownPosition = evt.position;
-                    isSwipeIntent = false;
-                    isGestureResolved = false;
-                });
-
-                row.RegisterCallback<PointerMoveEvent>(evt =>
-                {
-                    Vector3 delta = evt.position - pointerDownPosition;
-                    if (!isGestureResolved)
-                    {
-                        float absX = Mathf.Abs(delta.x);
-                        float absY = Mathf.Abs(delta.y);
-                        if (absX < MEMO_SWIPE_INTENT_THRESHOLD && absY < MEMO_SWIPE_INTENT_THRESHOLD)
-                        {
-                            return;
-                        }
-
-                        isSwipeIntent = absX > absY;
-                        isGestureResolved = true;
-                        if (isSwipeIntent)
-                        {
-                            row.CapturePointer(evt.pointerId);
-                        }
-                    }
-
-                    if (!isSwipeIntent)
-                    {
-                        return;
-                    }
-
-                    evt.StopPropagation();
                 });
 
                 row.RegisterCallback<PointerUpEvent>(evt =>
                 {
                     Vector3 delta = evt.position - pointerDownPosition;
-                    if (!isSwipeIntent && Mathf.Abs(delta.x) <= Mathf.Abs(delta.y))
+                    float absX = Mathf.Abs(delta.x);
+                    float absY = Mathf.Abs(delta.y);
+                    if (absX <= absY || absX < MEMO_SWIPE_OPEN_THRESHOLD)
                     {
                         return;
                     }
 
-                    evt.StopPropagation();
-                    if (delta.x < -MEMO_SWIPE_OPEN_THRESHOLD)
+                    if (delta.x < 0f)
                     {
                         row.AddToClassList(MEMO_DELETE_OPEN_CLASS);
                     }
-                    else if (delta.x > MEMO_SWIPE_OPEN_THRESHOLD)
+                    else
                     {
                         row.RemoveFromClassList(MEMO_DELETE_OPEN_CLASS);
-                    }
-
-                    if (row.HasPointerCapture(evt.pointerId))
-                    {
-                        row.ReleasePointer(evt.pointerId);
-                    }
-                });
-
-                row.RegisterCallback<PointerCancelEvent>(evt =>
-                {
-                    if (row.HasPointerCapture(evt.pointerId))
-                    {
-                        row.ReleasePointer(evt.pointerId);
                     }
                 });
 
