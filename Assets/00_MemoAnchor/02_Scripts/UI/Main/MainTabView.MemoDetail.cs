@@ -147,10 +147,35 @@ namespace MemoAnchor.UI
         private void RebuildMemoList()
         {
             _memoListContainer.Clear();
+            bool isEmpty = _memoDetailItems.Count == 0;
+            _memoListContainer.EnableInClassList("is-empty", isEmpty);
+            _memoListContainer.parent.EnableInClassList("is-memo-list-empty", isEmpty);
+            if (isEmpty)
+            {
+                AddMemoListEmptyState();
+                return;
+            }
+
             foreach (MemoDetailItem item in _memoDetailItems)
             {
                 AddMemoListRow(item);
             }
+        }
+
+        private void AddMemoListEmptyState()
+        {
+            VisualElement emptyState = new();
+            emptyState.AddToClassList("memo-list-empty-state");
+
+            Label title = new("메모가 없습니다");
+            title.AddToClassList("map-empty-title");
+            emptyState.Add(title);
+
+            Label subtitle = new("참여 중인 장소에 생성된 메모가 없습니다.");
+            subtitle.AddToClassList("map-empty-subtitle");
+            emptyState.Add(subtitle);
+
+            _memoListContainer.Add(emptyState);
         }
 
         private void AddMemoListRow(MemoDetailItem item)

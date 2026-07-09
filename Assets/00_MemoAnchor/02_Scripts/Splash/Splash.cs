@@ -23,6 +23,8 @@ namespace MemoAnchor
         private AuthService authService;
         private VisualElement loginPanel;
         private VisualElement signupPanel;
+        private VisualElement loginLoadingOverlay;
+        private VisualElement loginLoadingSpinner;
         private VisualElement signupCompanyInputBox;
         private VisualElement signupNameInputBox;
         private VisualElement signupEmailInputBox;
@@ -35,6 +37,8 @@ namespace MemoAnchor
         private Label signupStatusLabel;
         private bool isLoggingIn;
         private bool isCompletingLogin;
+        private bool isWaitingExternalLogin;
+        private int loginAttemptToken;
 
         private void Awake()
         {
@@ -57,6 +61,20 @@ namespace MemoAnchor
         private void OnDestroy()
         {
             Application.deepLinkActivated -= HandleDeepLink;
+        }
+
+        private void OnApplicationFocus(bool hasFocus)
+        {
+            if (!hasFocus)
+            {
+                return;
+            }
+
+            if (isLoggingIn && isWaitingExternalLogin)
+            {
+                isWaitingExternalLogin = false;
+                SetLoginCompletionLoading(true);
+            }
         }
 
         private async Awaitable ShowLoginAsync()
@@ -114,6 +132,8 @@ namespace MemoAnchor
             VisualElement root = uiDocument.rootVisualElement;
             loginPanel = root.Q<VisualElement>("login-panel");
             signupPanel = root.Q<VisualElement>("signup-panel");
+            loginLoadingOverlay = root.Q<VisualElement>("splash-login-loading-overlay");
+            loginLoadingSpinner = root.Q<VisualElement>("splash-login-loading-spinner");
             signupCompanyInput = root.Q<TextField>("signup-company-input");
             signupNameInput = root.Q<TextField>("signup-name-input");
             signupEmailInput = root.Q<TextField>("signup-email-input");
@@ -138,6 +158,7 @@ namespace MemoAnchor
         {
             SetVisible(loginPanel, false);
             SetVisible(signupPanel, false);
+            SetVisible(loginLoadingOverlay, false);
         }
 
         private static void SetVisible(VisualElement element, bool visible)
@@ -153,10 +174,11 @@ namespace MemoAnchor
             }
 
             isLoggingIn = true;
+            isWaitingExternalLogin = true;
+            loginAttemptToken++;
             SetLoginButtonsEnabled(false);
-            MemoAnchor.UI.PopupManager.ShowMessage("로그인 진행 중", "브라우저에서 로그인을 완료해주세요.", "확인");
             string sessionId = authService.BeginProviderLogin(provider);
-            _ = CompleteLoginSessionAsync(sessionId);
+            _ = CompleteLoginSessionAsync(sessionId, loginAttemptToken);
         }
 
         private void HandleDeepLink(string url)
@@ -177,6 +199,8 @@ namespace MemoAnchor
                 return false;
             }
 
+            isWaitingExternalLogin = false;
+            SetLoginCompletionLoading(true);
             ShowLoginPanel();
             _ = CompleteLoginAsync(resultId);
             return true;
@@ -191,7 +215,9 @@ namespace MemoAnchor
 
             isCompletingLogin = true;
             isLoggingIn = true;
+            isWaitingExternalLogin = false;
             SetLoginButtonsEnabled(false);
+            SetLoginCompletionLoading(true);
             try
             {
                 AuthCompletion completion = await authService.CompleteLoginAsync(resultId);
@@ -203,7 +229,7 @@ namespace MemoAnchor
             }
         }
 
-        private async Awaitable CompleteLoginSessionAsync(string sessionId)
+        private async Awaitable CompleteLoginSessionAsync(string sessionId, int token)
         {
             if (isCompletingLogin)
             {
@@ -214,10 +240,22 @@ namespace MemoAnchor
             try
             {
                 AuthCompletion completion = await authService.CompleteLoginSessionAsync(sessionId);
+                if (token != loginAttemptToken)
+                {
+                    return;
+                }
+
+                isWaitingExternalLogin = false;
+                SetLoginCompletionLoading(true);
                 await CompleteLoginAsync(completion);
             }
             catch (System.Exception exception)
             {
+                if (token != loginAttemptToken)
+                {
+                    return;
+                }
+
                 RecoverLogin(exception);
             }
         }
@@ -226,11 +264,21 @@ namespace MemoAnchor
         {
             if (completion.IsExistingMember)
             {
+                CompleteLoginState();
                 await EnterMainSceneAsync();
                 return;
             }
 
+            CompleteLoginState();
             ShowSignupPanel(completion);
+        }
+
+        private void CompleteLoginState()
+        {
+            isLoggingIn = false;
+            isCompletingLogin = false;
+            isWaitingExternalLogin = false;
+            loginAttemptToken++;
         }
 
         private async Awaitable SubmitSignupAsync()
@@ -274,6 +322,9 @@ namespace MemoAnchor
 
             isLoggingIn = false;
             isCompletingLogin = false;
+            isWaitingExternalLogin = false;
+            loginAttemptToken++;
+            SetLoginCompletionLoading(false);
             SetLoginButtonsEnabled(true);
         }
 
@@ -297,6 +348,7 @@ namespace MemoAnchor
         private void ShowSignupPanel(AuthCompletion completion)
         {
             SetVisible(loginPanel, false);
+            SetLoginCompletionLoading(false);
             MemoAnchor.UI.PopupManager.HideConfirm();
             SetVisible(signupPanel, true);
             signupNameInput.value = completion.Profile.Name;
@@ -389,10 +441,22 @@ namespace MemoAnchor
 
         private async Awaitable EnterMainSceneAsync()
         {
+            SetLoginCompletionLoading(false);
             MemoAnchor.UI.PopupManager.HideConfirm();
             SetSignupStatus("메인 화면으로 이동합니다.");
             await fadeTransition.FadeOutAsync();
             SceneManager.LoadScene(mainScene);
+        }
+
+        private void SetLoginCompletionLoading(bool isLoading)
+        {
+            if (isLoading)
+            {
+                LoadingSpinnerController.ShowOverlay(loginLoadingOverlay, loginLoadingSpinner);
+                return;
+            }
+
+            LoadingSpinnerController.HideOverlay(loginLoadingOverlay, loginLoadingSpinner);
         }
 
         private void SetLoginButtonsEnabled(bool enabled)

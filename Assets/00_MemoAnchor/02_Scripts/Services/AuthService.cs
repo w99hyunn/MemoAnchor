@@ -69,7 +69,7 @@ namespace MemoAnchor
 
         public async Awaitable<AuthCompletion> CompleteLoginSessionAsync(string sessionId)
         {
-            const float TIMEOUT_SECONDS = 180f;
+            const float TIMEOUT_SECONDS = 7f;
             float elapsed = 0f;
 
             while (elapsed < TIMEOUT_SECONDS)

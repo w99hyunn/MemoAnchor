@@ -6,7 +6,40 @@ namespace MemoAnchor.UI
 {
     public static class LoadingSpinnerController
     {
+        private const string HIDDEN_CLASS = "is-hidden";
+        private const string OPEN_CLASS = "is-open";
+
         private static readonly Dictionary<VisualElement, SpinnerState> States = new();
+        private static readonly Dictionary<VisualElement, int> OverlayTokens = new();
+
+        public static void ShowOverlay(VisualElement overlay, VisualElement spinner)
+        {
+            int token = NextOverlayToken(overlay);
+            overlay.RemoveFromClassList(HIDDEN_CLASS);
+            overlay.RemoveFromClassList(OPEN_CLASS);
+            overlay.schedule.Execute(() =>
+            {
+                if (OverlayTokens[overlay] == token)
+                {
+                    overlay.AddToClassList(OPEN_CLASS);
+                }
+            }).ExecuteLater(16);
+            Start(spinner);
+        }
+
+        public static void HideOverlay(VisualElement overlay, VisualElement spinner)
+        {
+            int token = NextOverlayToken(overlay);
+            overlay.RemoveFromClassList(OPEN_CLASS);
+            overlay.schedule.Execute(() =>
+            {
+                if (OverlayTokens[overlay] == token)
+                {
+                    overlay.AddToClassList(HIDDEN_CLASS);
+                }
+            }).ExecuteLater(180);
+            Stop(spinner);
+        }
 
         public static void Start(VisualElement spinner, float cycleDurationMs = 1250f, long intervalMs = 16)
         {
@@ -66,6 +99,14 @@ namespace MemoAnchor.UI
             painter.BeginPath();
             painter.Arc(center, radius, new Angle(start), new Angle(end), ArcDirection.Clockwise);
             painter.Stroke();
+        }
+
+        private static int NextOverlayToken(VisualElement overlay)
+        {
+            OverlayTokens.TryGetValue(overlay, out int token);
+            token++;
+            OverlayTokens[overlay] = token;
+            return token;
         }
 
         private sealed class SpinnerState

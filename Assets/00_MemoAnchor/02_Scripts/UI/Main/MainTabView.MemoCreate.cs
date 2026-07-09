@@ -25,7 +25,6 @@ namespace MemoAnchor.UI
         private string _memoCreateRepairerPlayerId = string.Empty;
         private bool _memoCreateRepairerExpanded;
         private bool _isMemoCreateSubmitting;
-        private int _memoCreateLoadingTransitionToken;
         private DateTime _memoCreateSelectedDate = new(2026, 1, 1);
         private DateTime _memoCreateCalendarMonth = new(2026, 1, 1);
         private int _memoCreateSelectedHour = 9;
@@ -289,45 +288,19 @@ namespace MemoAnchor.UI
 
         private void SetMemoCreateSubmitting(bool isSubmitting)
         {
-            _memoCreateLoadingTransitionToken++;
-            int token = _memoCreateLoadingTransitionToken;
-
             if (isSubmitting)
             {
-                _memoCreateLoadingOverlay.RemoveFromClassList(HIDDEN_CLASS);
-                _memoCreateLoadingOverlay.RemoveFromClassList(DIALOG_OPEN_CLASS);
-                _memoCreateLoadingOverlay.schedule.Execute(() =>
-                {
-                    if (token == _memoCreateLoadingTransitionToken)
-                    {
-                        _memoCreateLoadingOverlay.AddToClassList(DIALOG_OPEN_CLASS);
-                    }
-                }).ExecuteLater(16);
+                LoadingSpinnerController.ShowOverlay(_memoCreateLoadingOverlay, _memoCreateLoadingSpinner);
             }
             else
             {
-                _memoCreateLoadingOverlay.RemoveFromClassList(DIALOG_OPEN_CLASS);
-                _memoCreateLoadingOverlay.schedule.Execute(() =>
-                {
-                    if (token == _memoCreateLoadingTransitionToken)
-                    {
-                        _memoCreateLoadingOverlay.AddToClassList(HIDDEN_CLASS);
-                    }
-                }).ExecuteLater(180);
+                LoadingSpinnerController.HideOverlay(_memoCreateLoadingOverlay, _memoCreateLoadingSpinner);
             }
 
             _tabViewport.EnableInClassList("is-ui-blurred", isSubmitting);
             _bottomNavWrapper.EnableInClassList("is-ui-blurred", isSubmitting);
             _memoCreateSubmitButton.SetEnabled(!isSubmitting);
             _memoCreateSubmitButton.text = isSubmitting ? "생성 중..." : "생성하기";
-            if (isSubmitting)
-            {
-                LoadingSpinnerController.Start(_memoCreateLoadingSpinner);
-            }
-            else
-            {
-                LoadingSpinnerController.Stop(_memoCreateLoadingSpinner);
-            }
         }
 
         private void ToggleMemoCreateRepairerList()

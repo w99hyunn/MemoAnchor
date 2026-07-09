@@ -233,6 +233,15 @@
     padding-bottom: 300px;
 }
 
+#memo-content-scroll .unity-scroll-view__content-container {
+    flex-grow: 1;
+}
+
+.tab-content-inner.is-memo-list-empty {
+    flex-grow: 1;
+    padding-bottom: 0;
+}
+
 #home-content-scroll {
     margin-left: -50px;
     margin-right: -50px;
@@ -583,8 +592,8 @@
 }
 
 .map-current-address-label {
-    margin-left: 18px;
-    font-size: 30px;
+    margin-left: 30px;
+    font-size: 40px;
     color: rgb(84, 84, 84);
     -unity-text-align: lower-left;
 }
@@ -593,12 +602,17 @@
     background-image: none;
 }
 
+.map-list-button .common-icon-button-icon {
+    width: 58px;
+    height: 58px;
+}
+
 .map-read-mode-label {
-    height: 82px;
+    height: 150px;
     flex-grow: 0;
     flex-shrink: 0;
     width: 100%;
-    font-size: 32px;
+    font-size: 38px;
     color: rgb(96, 96, 96);
     -unity-text-align: middle-left;
 }
@@ -1092,6 +1106,17 @@
     margin-bottom: 0;
     margin-left: 0;
     padding-bottom: 0;
+}
+
+.memo-list-container.is-empty {
+    flex-grow: 1;
+    justify-content: center;
+    align-items: center;
+}
+
+.memo-list-empty-state {
+    align-items: center;
+    justify-content: center;
 }
 
 .memo-list-swipe-row {
@@ -1840,7 +1865,7 @@
 }
 
 .memo-calendar-chevron.is-prev {
-    rotate: 0deg;
+    rotate: 0;
 }
 
 .memo-calendar-chevron.is-next {
