@@ -20,7 +20,7 @@ namespace MemoAnchor.UI
         private const float MEMO_DELETE_LONG_PRESS_MOVE_TOLERANCE = 18f;
 
         private Button _homeButton, _menuButton, _scanButton, _mapButton, _profileButton, _scanStartButton;
-        private VisualElement _root, _tabViewport, _tabStrip, _bottomNavWrapper, _bottomNav, _memoFilterBottomBar, _memoDetailBottomBar, _memoCreateBottomBar;
+        private VisualElement _root, _tabViewport, _tabStrip, _bottomNavWrapper, _bottomNav, _memoFilterBottomBar, _memoDetailBottomBar, _memoCreateBottomBar, _memoTrashBottomBar;
         private VisualElement _homeTab, _menuTab, _scanTab, _mapTab, _profileTab;
 
         public event Action<int> TabSwitchRequested;
@@ -60,6 +60,7 @@ namespace MemoAnchor.UI
             _memoFilterBottomBar = _root.Q<VisualElement>("memo-filter-bottom-bar");
             _memoDetailBottomBar = _root.Q<VisualElement>("memo-detail-bottom-bar");
             _memoCreateBottomBar = _root.Q<VisualElement>("memo-create-bottom-bar");
+            _memoTrashBottomBar = _root.Q<VisualElement>("memo-trash-bottom-bar");
             _homeTab = _root.Q<VisualElement>("tab-home");
             _menuTab = _root.Q<VisualElement>("tab-menu");
             _scanTab = _root.Q<VisualElement>("tab-scan");
@@ -142,6 +143,12 @@ namespace MemoAnchor.UI
         {
             _bottomNavWrapper.EnableInClassList("is-memo-create-mode", enabled);
             SetVisible(_memoCreateBottomBar, enabled);
+        }
+
+        private void SetMemoTrashNavMode(bool enabled, bool showActions)
+        {
+            _bottomNavWrapper.EnableInClassList("is-memo-trash-mode", enabled);
+            SetVisible(_memoTrashBottomBar, enabled && showActions);
         }
 
         private void RequestTabSwitch(int tabIndex)

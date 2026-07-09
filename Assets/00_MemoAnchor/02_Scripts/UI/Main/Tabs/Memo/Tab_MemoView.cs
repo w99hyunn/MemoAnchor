@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System;
+using Unity.Services.Authentication;
 using UnityEngine;
 using UnityEngine.UIElements;
 
@@ -7,13 +8,21 @@ namespace MemoAnchor.UI
 {
     public partial class MainView
     {
+        [SerializeField] private VisualTreeAsset _memoListItemAsset;
+
         private readonly MemoService _memoService = new();
         private readonly List<MemoDetailItem> _memoDetailItems = new();
-        private VisualElement _memoListContainer, _memoDetailPage, _memoDetailMenu, _memoDetailContent;
-        private Button _memoDetailBackButton, _memoDetailMenuButton;
+        private readonly List<MemoDetailItem> _memoTrashItems = new();
+        private readonly HashSet<string> _selectedTrashMemoIds = new(StringComparer.OrdinalIgnoreCase);
+        private VisualElement _memoListContainer, _memoDetailPage, _memoDetailMenu, _memoDetailContent, _memoTrashPage, _memoTrashListContainer;
+        private Button _memoDetailBackButton, _memoDetailMenuButton, _memoDetailDeleteButton, _memoTrashButton, _memoTrashBackButton, _memoTrashSelectButton;
+        private Button _memoTrashPermanentDeleteButton, _memoTrashRestoreButton;
         private Label _memoDetailPlaceLabel;
+        private MemoDetailItem _currentMemoDetailItem;
         private bool _isMemoListLoading;
+        private bool _isMemoTrashLoading;
         private bool _isCreatingMemo;
+        private bool _isMemoTrashSelecting;
 
         private void RegisterMemoDetailPage()
         {
@@ -21,8 +30,16 @@ namespace MemoAnchor.UI
             _memoDetailPage = _root.Q<VisualElement>("memo-detail-page");
             _memoDetailMenu = _root.Q<VisualElement>("memo-detail-menu");
             _memoDetailContent = _root.Q<VisualElement>("memo-detail-content");
+            _memoTrashPage = _root.Q<VisualElement>("memo-trash-page");
+            _memoTrashListContainer = _root.Q<VisualElement>("memo-trash-list-container");
             _memoDetailBackButton = _root.Q<Button>("memo-detail-back-button");
             _memoDetailMenuButton = _root.Q<Button>("memo-detail-menu-button");
+            _memoDetailDeleteButton = _root.Q<Button>("memo-detail-delete-button");
+            _memoTrashButton = _root.Q<Button>("memo-trash-button");
+            _memoTrashBackButton = _root.Q<Button>("memo-trash-back-button");
+            _memoTrashSelectButton = _root.Q<Button>("memo-trash-select-button");
+            _memoTrashPermanentDeleteButton = _root.Q<Button>("memo-trash-permanent-delete-button");
+            _memoTrashRestoreButton = _root.Q<Button>("memo-trash-restore-button");
             _memoDetailPlaceLabel = _root.Q<Label>("memo-detail-place-label");
 
             RebuildMemoList();
@@ -30,6 +47,12 @@ namespace MemoAnchor.UI
 
             _memoDetailBackButton.clicked += HideMemoDetailPage;
             _memoDetailMenuButton.clicked += ToggleMemoDetailMenu;
+            _memoDetailDeleteButton.clicked += ShowCurrentMemoDeleteConfirm;
+            _memoTrashButton.clicked += ShowMemoTrashPage;
+            _memoTrashBackButton.clicked += HideMemoTrashPage;
+            _memoTrashSelectButton.clicked += ToggleMemoTrashSelectMode;
+            _memoTrashPermanentDeleteButton.clicked += ShowSelectedTrashDeleteConfirm;
+            _memoTrashRestoreButton.clicked += ShowSelectedTrashRestoreConfirm;
             _ = RefreshMemoListAsync();
         }
 
@@ -37,6 +60,12 @@ namespace MemoAnchor.UI
         {
             _memoDetailBackButton.clicked -= HideMemoDetailPage;
             _memoDetailMenuButton.clicked -= ToggleMemoDetailMenu;
+            _memoDetailDeleteButton.clicked -= ShowCurrentMemoDeleteConfirm;
+            _memoTrashButton.clicked -= ShowMemoTrashPage;
+            _memoTrashBackButton.clicked -= HideMemoTrashPage;
+            _memoTrashSelectButton.clicked -= ToggleMemoTrashSelectMode;
+            _memoTrashPermanentDeleteButton.clicked -= ShowSelectedTrashDeleteConfirm;
+            _memoTrashRestoreButton.clicked -= ShowSelectedTrashRestoreConfirm;
         }
 
         public async Awaitable RefreshMemoListAsync()
@@ -128,10 +157,12 @@ namespace MemoAnchor.UI
                 Place = GetFirstNonEmpty(memo.locationName, memo.mapName, "3D MAP"),
                 Title = GetFirstNonEmpty(memo.title, "새 메모"),
                 Body = GetFirstNonEmpty(memo.body, string.Empty),
+                AuthorPlayerId = GetFirstNonEmpty(memo.authorPlayerId, string.Empty),
                 Location = BuildMemoLocation(memo),
                 DueText = GetFirstNonEmpty(memo.dueText, string.Empty),
                 Assignee = GetFirstNonEmpty(memo.assigneeName, string.Empty),
-                Author = GetFirstNonEmpty(memo.authorName, string.Empty)
+                Author = GetFirstNonEmpty(memo.authorName, string.Empty),
+                DeletedAt = GetFirstNonEmpty(memo.deletedAt, string.Empty)
             };
 
             foreach (MemoChecklistEntry checklistItem in memo.checklistItems)
@@ -153,6 +184,7 @@ namespace MemoAnchor.UI
             if (isEmpty)
             {
                 AddMemoListEmptyState();
+                CacheMemoFilterRows();
                 return;
             }
 
@@ -160,6 +192,8 @@ namespace MemoAnchor.UI
             {
                 AddMemoListRow(item);
             }
+
+            CacheMemoFilterRows();
         }
 
         private void AddMemoListEmptyState()
@@ -180,20 +214,13 @@ namespace MemoAnchor.UI
 
         private void AddMemoListRow(MemoDetailItem item)
         {
-            VisualElement row = new();
-            row.AddToClassList("memo-list-swipe-row");
+            TemplateContainer template = _memoListItemAsset.Instantiate();
+            VisualElement row = template.Q<VisualElement>(className: "memo-list-swipe-row");
             row.userData = item;
 
-            Button deleteButton = new();
-            deleteButton.name = "memo-list-delete-button";
-            deleteButton.AddToClassList("memo-list-delete-button");
-            VisualElement deleteIcon = new();
-            deleteIcon.AddToClassList("memo-list-delete-icon");
-            deleteButton.Add(deleteIcon);
+            ApplyMemoListRow(template, item);
 
-            VisualElement foreground = new();
-            foreground.name = "memo-list-item-foreground";
-            foreground.AddToClassList("memo-list-item");
+            VisualElement foreground = template.Q<VisualElement>("memo-list-item-foreground");
             foreground.RegisterCallback<ClickEvent>(evt =>
             {
                 if (row.ClassListContains(MEMO_DELETE_OPEN_CLASS))
@@ -213,60 +240,30 @@ namespace MemoAnchor.UI
 
                 ShowMemoDetailPage(item);
             });
-
-            VisualElement body = new();
-            body.AddToClassList("memo-list-item-body");
-
-            VisualElement titleRow = new();
-            titleRow.AddToClassList("memo-list-item-title-row");
-            VisualElement titleWrap = new();
-            titleWrap.AddToClassList("memo-list-item-title-wrap");
-
-            VisualElement icon = new();
-            icon.AddToClassList("memo-list-item-icon");
-            icon.AddToClassList(GetMemoListIconClass(item.Kind));
-
-            Label title = new(item.Title);
-            title.AddToClassList("memo-list-item-title");
-
-            VisualElement dot = new();
-            dot.AddToClassList("memo-list-item-dot");
-
-            titleWrap.Add(icon);
-            titleWrap.Add(title);
-            titleRow.Add(titleWrap);
-            titleRow.Add(dot);
-            body.Add(titleRow);
-            AddMemoListMetaRow(body, item.Location, string.Empty);
-            AddMemoListMetaRow(body, item.DueText, item.Assignee);
-
-            foreground.Add(body);
-            row.Add(deleteButton);
-            row.Add(foreground);
             RegisterMemoDeleteRow(row);
-            _memoListContainer.Add(row);
-
-            VisualElement divider = new();
-            divider.AddToClassList("memo-list-divider");
-            _memoListContainer.Add(divider);
+            _memoListContainer.Add(template);
         }
 
-        private static void AddMemoListMetaRow(VisualElement body, string first, string second)
+        private static void ApplyMemoListRow(VisualElement row, MemoDetailItem item)
         {
-            VisualElement row = new();
-            row.AddToClassList("memo-list-item-meta-row");
-            Label firstLabel = new(first);
-            firstLabel.AddToClassList("memo-list-item-meta");
-            Label secondLabel = new(second);
-            secondLabel.AddToClassList("memo-list-item-meta");
-            row.Add(firstLabel);
-            row.Add(secondLabel);
-            body.Add(row);
+            VisualElement icon = row.Q<VisualElement>("memo-list-item-icon");
+            icon.RemoveFromClassList("memo-list-item-icon-text");
+            icon.RemoveFromClassList("memo-list-item-icon-check");
+            icon.RemoveFromClassList("memo-list-item-icon-mic");
+            icon.RemoveFromClassList("memo-list-item-icon-gallery");
+            icon.AddToClassList(GetMemoListIconClass(item.Kind));
+
+            row.Q<Label>("memo-list-item-title").text = item.Title;
+            row.Q<Label>("memo-list-item-location-label").text = item.Location;
+            row.Q<Label>("memo-list-item-empty-label").text = string.Empty;
+            row.Q<Label>("memo-list-item-due-label").text = item.DueText;
+            row.Q<Label>("memo-list-item-assignee-label").text = item.Assignee;
         }
 
         private void ShowMemoDetailPage(MemoDetailItem item)
         {
-            bool canManageMemo = CanManageMemo(item);
+            _currentMemoDetailItem = item;
+            bool canManageMemo = CanManageMemo(item) || CanDeleteMemo(item);
             _memoDetailPlaceLabel.text = item.Place;
             _memoDetailContent.Clear();
             HideMemoDetailMenu();
@@ -278,6 +275,7 @@ namespace MemoAnchor.UI
 
         private void HideMemoDetailPage()
         {
+            _currentMemoDetailItem = null;
             SetVisible(_memoDetailPage, false);
             HideMemoDetailMenu();
             SetMemoDetailNavMode(false);
@@ -307,6 +305,259 @@ namespace MemoAnchor.UI
         {
             ScanMapItem map = _scanMaps.Find(scanMap => string.Equals(scanMap.id, item.MapId, StringComparison.OrdinalIgnoreCase));
             return string.Equals(map?.currentUserRole, "manager", StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static bool CanDeleteMemo(MemoDetailItem item)
+        {
+            return string.Equals(item.AuthorPlayerId, AuthenticationService.Instance.PlayerId, StringComparison.OrdinalIgnoreCase);
+        }
+
+        private void ShowCurrentMemoDeleteConfirm()
+        {
+            HideMemoDetailMenu();
+            if (_currentMemoDetailItem == null)
+            {
+                return;
+            }
+
+            ShowMemoDeleteConfirm(_currentMemoDetailItem);
+        }
+
+        private void ShowMemoDeleteConfirm(MemoDetailItem item)
+        {
+            if (!CanDeleteMemo(item))
+            {
+                PopupManager.ShowMessage("삭제할 수 없음", "자신이 작성한 메모만 삭제할 수 있습니다.", "확인");
+                return;
+            }
+
+            PopupManager.ShowConfirm("메모 삭제", "이 메모를 휴지통으로 이동할까요?", "취소", "삭제", () => _ = MoveMemoToTrashAsync(item));
+        }
+
+        private async Awaitable MoveMemoToTrashAsync(MemoDetailItem item)
+        {
+            MemoListResponse response = await _memoService.MoveMemoToTrashAsync(item.Id);
+            ApplyMemoListResponse(response);
+            HideMemoDetailPage();
+        }
+
+        private void ShowMemoTrashPage()
+        {
+            SetVisible(_memoTrashPage, true);
+            SetMemoFilterNavMode(false);
+            SetMemoTrashNavMode(true, false);
+            _ = RefreshMemoTrashAsync();
+        }
+
+        private void HideMemoTrashPage()
+        {
+            SetMemoTrashSelectMode(false);
+            SetVisible(_memoTrashPage, false);
+            SetMemoTrashNavMode(false, false);
+        }
+
+        private void ToggleMemoTrashSelectMode()
+        {
+            SetMemoTrashSelectMode(!_isMemoTrashSelecting);
+        }
+
+        private void SetMemoTrashSelectMode(bool selecting)
+        {
+            _isMemoTrashSelecting = selecting;
+            _memoTrashSelectButton.text = selecting ? "취소" : "선택";
+            _memoTrashPage.EnableInClassList("is-trash-selecting", selecting);
+            if (!selecting)
+            {
+                _selectedTrashMemoIds.Clear();
+            }
+
+            _memoTrashListContainer.Query<VisualElement>(className: "memo-list-swipe-row").ForEach(row =>
+            {
+                row.RemoveFromClassList(MEMO_DELETE_OPEN_CLASS);
+                row.EnableInClassList("is-trash-selected", row.userData is MemoDetailItem item && _selectedTrashMemoIds.Contains(item.Id));
+            });
+            RefreshMemoTrashActionBar();
+        }
+
+        private void RefreshMemoTrashActionBar()
+        {
+            SetMemoTrashNavMode(_memoTrashPage != null && !_memoTrashPage.ClassListContains(HIDDEN_CLASS), _selectedTrashMemoIds.Count > 0);
+        }
+
+        private async Awaitable RefreshMemoTrashAsync()
+        {
+            if (_isMemoTrashLoading)
+            {
+                return;
+            }
+
+            _isMemoTrashLoading = true;
+
+            try
+            {
+                MemoListResponse response = await _memoService.LoadTrashedMemosAsync();
+                ApplyMemoTrashResponse(response);
+            }
+            finally
+            {
+                _isMemoTrashLoading = false;
+            }
+        }
+
+        private void ApplyMemoTrashResponse(MemoListResponse response)
+        {
+            _memoTrashItems.Clear();
+            foreach (MemoItem memo in response.memos)
+            {
+                _memoTrashItems.Add(CreateMemoDetailItem(memo));
+            }
+
+            RebuildMemoTrashList();
+        }
+
+        private void RebuildMemoTrashList()
+        {
+            _memoTrashListContainer.Clear();
+            SetMemoTrashSelectMode(false);
+            _memoTrashListContainer.EnableInClassList("is-empty", _memoTrashItems.Count == 0);
+            _memoTrashListContainer.parent.EnableInClassList("is-memo-list-empty", _memoTrashItems.Count == 0);
+
+            if (_memoTrashItems.Count == 0)
+            {
+                AddMemoTrashEmptyState();
+                return;
+            }
+
+            foreach (MemoDetailItem item in _memoTrashItems)
+            {
+                AddMemoTrashRow(item);
+            }
+        }
+
+        private void AddMemoTrashEmptyState()
+        {
+            VisualElement emptyState = new();
+            emptyState.AddToClassList("memo-list-empty-state");
+
+            Label title = new("휴지통이 비어 있습니다");
+            title.AddToClassList("map-empty-title");
+            emptyState.Add(title);
+
+            Label subtitle = new("삭제한 메모가 없습니다.");
+            subtitle.AddToClassList("map-empty-subtitle");
+            emptyState.Add(subtitle);
+
+            _memoTrashListContainer.Add(emptyState);
+        }
+
+        private void AddMemoTrashRow(MemoDetailItem item)
+        {
+            TemplateContainer template = _memoListItemAsset.Instantiate();
+            VisualElement row = template.Q<VisualElement>(className: "memo-list-swipe-row");
+            row.userData = item;
+            ApplyMemoListRow(template, item);
+
+            VisualElement foreground = template.Q<VisualElement>("memo-list-item-foreground");
+            foreground.RegisterCallback<ClickEvent>(evt =>
+            {
+                if (_isMemoTrashSelecting)
+                {
+                    ToggleTrashMemoSelection(row, item);
+                    evt.StopPropagation();
+                    return;
+                }
+
+                PopupManager.ShowConfirm("메모 복구", "이 메모를 다시 지도에 표시할까요?", "취소", "복구", () => _ = RestoreMemoAsync(item));
+            });
+
+            row.EnableInClassList("is-trash-selected", _selectedTrashMemoIds.Contains(item.Id));
+
+            RegisterMemoDeleteRow(row, trashItem =>
+            {
+                PopupManager.ShowConfirm("영구 삭제", "휴지통에서 완전히 삭제할까요?", "취소", "삭제", () => _ = DeleteMemoPermanentlyAsync(trashItem));
+            });
+
+            _memoTrashListContainer.Add(template);
+        }
+
+        private async Awaitable RestoreMemoAsync(MemoDetailItem item)
+        {
+            MemoListResponse response = await _memoService.RestoreMemoAsync(item.Id);
+            _selectedTrashMemoIds.Remove(item.Id);
+            ApplyMemoTrashResponse(response);
+            await RefreshMemoListAsync();
+        }
+
+        private async Awaitable DeleteMemoPermanentlyAsync(MemoDetailItem item)
+        {
+            MemoListResponse response = await _memoService.DeleteMemoPermanentlyAsync(item.Id);
+            _selectedTrashMemoIds.Remove(item.Id);
+            ApplyMemoTrashResponse(response);
+        }
+
+        private void ToggleTrashMemoSelection(VisualElement row, MemoDetailItem item)
+        {
+            if (!_isMemoTrashSelecting)
+            {
+                return;
+            }
+
+            if (!_selectedTrashMemoIds.Add(item.Id))
+            {
+                _selectedTrashMemoIds.Remove(item.Id);
+            }
+
+            row.EnableInClassList("is-trash-selected", _selectedTrashMemoIds.Contains(item.Id));
+            RefreshMemoTrashActionBar();
+        }
+
+        private void ShowSelectedTrashRestoreConfirm()
+        {
+            if (_selectedTrashMemoIds.Count == 0)
+            {
+                return;
+            }
+
+            PopupManager.ShowConfirm("메모 복구", "선택한 메모를 다시 지도에 표시할까요?", "취소", "복구", () => _ = RestoreSelectedTrashMemosAsync());
+        }
+
+        private void ShowSelectedTrashDeleteConfirm()
+        {
+            if (_selectedTrashMemoIds.Count == 0)
+            {
+                return;
+            }
+
+            PopupManager.ShowConfirm("영구 삭제", "선택한 메모를 휴지통에서 완전히 삭제할까요?", "취소", "삭제", () => _ = DeleteSelectedTrashMemosAsync());
+        }
+
+        private async Awaitable RestoreSelectedTrashMemosAsync()
+        {
+            string[] memoIds = new string[_selectedTrashMemoIds.Count];
+            _selectedTrashMemoIds.CopyTo(memoIds);
+            MemoListResponse response = null;
+            foreach (string memoId in memoIds)
+            {
+                response = await _memoService.RestoreMemoAsync(memoId);
+            }
+
+            _selectedTrashMemoIds.Clear();
+            ApplyMemoTrashResponse(response ?? new MemoListResponse());
+            await RefreshMemoListAsync();
+        }
+
+        private async Awaitable DeleteSelectedTrashMemosAsync()
+        {
+            string[] memoIds = new string[_selectedTrashMemoIds.Count];
+            _selectedTrashMemoIds.CopyTo(memoIds);
+            MemoListResponse response = null;
+            foreach (string memoId in memoIds)
+            {
+                response = await _memoService.DeleteMemoPermanentlyAsync(memoId);
+            }
+
+            _selectedTrashMemoIds.Clear();
+            ApplyMemoTrashResponse(response ?? new MemoListResponse());
         }
 
         private void BuildMemoDetailContent(MemoDetailItem item)
@@ -576,10 +827,12 @@ namespace MemoAnchor.UI
             public string Place;
             public string Title;
             public string Body;
+            public string AuthorPlayerId;
             public string Location;
             public string DueText;
             public string Assignee;
             public string Author;
+            public string DeletedAt;
             public List<MemoChecklistItem> ChecklistItems = new();
             public List<string> VoiceItems = new();
             public List<string> ImageUrls = new();

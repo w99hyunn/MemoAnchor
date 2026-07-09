@@ -25,10 +25,12 @@ namespace MemoAnchor
         public string urgency;
         public string title;
         public string body;
+        public string authorPlayerId;
         public string authorName;
         public string assigneeName;
         public string dueText;
         public string createdAt;
+        public string deletedAt;
         public List<MemoChecklistEntry> checklistItems = new();
         public List<string> voiceItems = new();
         public List<string> imageUrls = new();
@@ -74,8 +76,10 @@ namespace MemoAnchor
         private const string MEMOS_API_PATH = "/api/memos";
 
         private MemoListResponse _lastResponse = new();
+        private MemoListResponse _lastTrashResponse = new();
         private bool _isLoading;
         private bool _isCreating;
+        private bool _isMutating;
 
         public async Awaitable<MemoListResponse> LoadMemosAsync()
         {
@@ -138,6 +142,80 @@ namespace MemoAnchor
             finally
             {
                 _isCreating = false;
+            }
+        }
+
+        public async Awaitable<MemoListResponse> LoadTrashedMemosAsync()
+        {
+            if (_isLoading || !AuthenticationService.Instance.IsSignedIn)
+            {
+                return _lastTrashResponse;
+            }
+
+            _isLoading = true;
+
+            try
+            {
+                using UnityWebRequest request = ServicesManager.CreateAuthorizedGetRequest($"{MEMOS_API_PATH}/trash");
+                await ServicesManager.SendRequestAsync(request);
+
+                if (request.result != UnityWebRequest.Result.Success)
+                {
+                    Debug.LogWarning($"Memo trash load failed: {request.error}");
+                    return _lastTrashResponse;
+                }
+
+                _lastTrashResponse = JsonUtility.FromJson<MemoListResponse>(request.downloadHandler.text);
+                return _lastTrashResponse;
+            }
+            finally
+            {
+                _isLoading = false;
+            }
+        }
+
+        public async Awaitable<MemoListResponse> MoveMemoToTrashAsync(string memoId)
+        {
+            return await MutateMemoAsync($"{MEMOS_API_PATH}/{UnityWebRequest.EscapeURL(memoId)}", UnityWebRequest.kHttpVerbDELETE, _lastResponse, response => _lastResponse = response);
+        }
+
+        public async Awaitable<MemoListResponse> RestoreMemoAsync(string memoId)
+        {
+            return await MutateMemoAsync($"{MEMOS_API_PATH}/{UnityWebRequest.EscapeURL(memoId)}/restore", UnityWebRequest.kHttpVerbPOST, _lastTrashResponse, response => _lastTrashResponse = response);
+        }
+
+        public async Awaitable<MemoListResponse> DeleteMemoPermanentlyAsync(string memoId)
+        {
+            return await MutateMemoAsync($"{MEMOS_API_PATH}/{UnityWebRequest.EscapeURL(memoId)}/permanent", UnityWebRequest.kHttpVerbDELETE, _lastTrashResponse, response => _lastTrashResponse = response);
+        }
+
+        private async Awaitable<MemoListResponse> MutateMemoAsync(string path, string method, MemoListResponse fallback, Action<MemoListResponse> applyResponse)
+        {
+            if (_isMutating || !AuthenticationService.Instance.IsSignedIn)
+            {
+                return fallback;
+            }
+
+            _isMutating = true;
+
+            try
+            {
+                using UnityWebRequest request = ServicesManager.CreateAuthorizedRequest(path, method);
+                await ServicesManager.SendRequestAsync(request);
+
+                if (request.result != UnityWebRequest.Result.Success)
+                {
+                    Debug.LogWarning($"Memo mutation failed: {request.error}");
+                    return fallback;
+                }
+
+                MemoListResponse response = JsonUtility.FromJson<MemoListResponse>(request.downloadHandler.text);
+                applyResponse(response);
+                return response;
+            }
+            finally
+            {
+                _isMutating = false;
             }
         }
 

@@ -90,13 +90,11 @@ namespace MemoAnchor.UI
             SetVisible(_memoSearchPage, true);
             _memoSearchPageInput.SetValueWithoutNotify(_memoSearchSourceInput.value);
             RefreshMemoSearchPageState(_memoSearchPageInput.value);
-            _memoSearchPageInput.schedule.Execute(() => _memoSearchPageInput.Focus()).ExecuteLater(16);
         }
 
         private void HideMemoSearchPage()
         {
             SetVisible(_memoSearchPage, false);
-            _memoSearchPageInput.Blur();
         }
 
         private void OnMemoSearchInputChanged(ChangeEvent<string> evt)

@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 using UnityEngine.UIElements;
 
@@ -6,6 +7,11 @@ namespace MemoAnchor.UI
     public partial class MainView
     {
         private void RegisterMemoDeleteRow(VisualElement row)
+        {
+            RegisterMemoDeleteRow(row, ShowMemoDeleteConfirm);
+        }
+
+        private void RegisterMemoDeleteRow(VisualElement row, Action<MemoDetailItem> onDelete)
         {
             Vector3 pointerDownPosition = Vector3.zero;
             IVisualElementScheduledItem longPressItem = null;
@@ -47,8 +53,7 @@ namespace MemoAnchor.UI
 
             row.Q<Button>("memo-list-delete-button").clicked += () =>
             {
-                RemoveMemoFilterRow(row);
-                row.parent.RemoveFromHierarchy();
+                onDelete((MemoDetailItem)row.userData);
             };
         }
 

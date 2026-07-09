@@ -10,7 +10,7 @@
                 </ui:Button>
             </ui:VisualElement>
             <ui:VisualElement name="memo-header-actions" class="memo-header-actions">
-                <ui:Button text="" class="memo-header-icon-button common-icon-button">
+                <ui:Button text="" name="memo-trash-button" class="memo-header-icon-button common-icon-button">
                     <ui:VisualElement class="common-icon-button-icon" style="background-image: url(&quot;project://database/Assets/00_MemoAnchor/03_Media/Icon/trash.png?fileID=2800000&amp;guid=c2fd465122bc15242b8cf6da00d7bbb1&amp;type=3#trash&quot;);"/>
                 </ui:Button>
                 <ui:Button text="" name="memo-filter-button" class="memo-header-icon-button memo-filter-icon-button common-icon-button">
@@ -127,6 +127,20 @@
                     <ui:VisualElement name="memo-search-result-list" class="memo-search-result-list"/>
                     <ui:Label name="memo-search-no-result-label" text="검색 결과가 없습니다." class="memo-search-empty-label memo-search-no-result-label is-hidden"/>
                 </ui:ScrollView>
+        </ui:VisualElement>
+        <ui:VisualElement name="memo-trash-page" class="memo-filter-page memo-trash-page is-hidden">
+            <ui:VisualElement class="memo-filter-header">
+                <ui:Button name="memo-trash-back-button" text="" class="memo-filter-back-button common-icon-button">
+                    <ui:VisualElement class="common-icon-button-icon" style="background-image: url(&quot;project://database/Assets/00_MemoAnchor/03_Media/Icon/chevron_forward.png?fileID=2800000&amp;guid=3ca432206e7cabb45abd1dfc722e509d&amp;type=3#chevron_forward&quot;);"/>
+                </ui:Button>
+                <ui:Label text="메모 휴지통" class="page-header-title"/>
+            </ui:VisualElement>
+            <ui:VisualElement class="memo-trash-action-row">
+                <ui:Button name="memo-trash-select-button" text="선택" class="memo-trash-select-button"/>
+            </ui:VisualElement>
+            <ui:ScrollView name="memo-trash-scroll" mode="Vertical" horizontal-scroller-visibility="Hidden" vertical-scroller-visibility="Hidden" touch-scroll-type="Elastic" class="memo-detail-scroll memo-trash-scroll">
+                <ui:VisualElement name="memo-trash-list-container" class="memo-list-container"/>
+            </ui:ScrollView>
         </ui:VisualElement>
         <ui:VisualElement name="memo-detail-page" class="memo-filter-page memo-detail-page is-hidden">
             <ui:VisualElement class="memo-filter-header">

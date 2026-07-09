@@ -78,6 +78,14 @@ namespace MemoAnchor
             return request;
         }
 
+        public static UnityWebRequest CreateAuthorizedRequest(string path, string method)
+        {
+            UnityWebRequest request = new(BuildServerUrl(path), method);
+            request.downloadHandler = new DownloadHandlerBuffer();
+            Authorize(request);
+            return request;
+        }
+
         public static void Authorize(UnityWebRequest request)
         {
             request.SetRequestHeader(AUTHORIZATION_HEADER, $"{BEARER_PREFIX}{AuthenticationService.Instance.AccessToken}");

@@ -237,6 +237,10 @@
     flex-grow: 1;
 }
 
+#memo-trash-scroll .unity-scroll-view__content-container {
+    flex-grow: 1;
+}
+
 .tab-content-inner.is-memo-list-empty {
     flex-grow: 1;
     padding-bottom: 0;
@@ -952,7 +956,8 @@
 
 .bottom-nav-wrapper.is-memo-filter-mode .bottom-nav,
 .bottom-nav-wrapper.is-memo-detail-mode .bottom-nav,
-.bottom-nav-wrapper.is-memo-create-mode .bottom-nav {
+.bottom-nav-wrapper.is-memo-create-mode .bottom-nav,
+.bottom-nav-wrapper.is-memo-trash-mode .bottom-nav {
     display: none;
 }
 
@@ -1170,6 +1175,58 @@
     transition-timing-function: ease-out;
 }
 
+.memo-trash-check-button {
+    display: none;
+    width: 58px;
+    height: 58px;
+    padding: 0;
+    margin: 0 28px 0 0;
+    border-width: 4px;
+    border-color: rgb(178, 178, 178);
+    border-radius: 29px;
+    background-color: rgb(255, 255, 255);
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.memo-trash-check-button:hover:enabled,
+.memo-trash-check-button:active:enabled {
+    border-width: 4px;
+    border-color: rgb(178, 178, 178);
+    background-color: rgb(255, 255, 255);
+}
+
+.memo-trash-page.is-trash-selecting .memo-trash-check-button {
+    display: flex;
+}
+
+.memo-list-swipe-row.is-trash-selected .memo-trash-check-button {
+    border-width: 0;
+    background-color: rgb(82, 96, 139);
+}
+
+.memo-list-swipe-row.is-trash-selected .memo-trash-check-button:hover:enabled,
+.memo-list-swipe-row.is-trash-selected .memo-trash-check-button:active:enabled {
+    border-width: 0;
+    background-color: rgb(82, 96, 139);
+}
+
+.memo-trash-check-icon {
+    display: none;
+    width: 30px;
+    height: 18px;
+    border-left-width: 5px;
+    border-bottom-width: 5px;
+    border-color: rgb(255, 255, 255);
+    rotate: -45deg;
+    margin-top: -4px;
+}
+
+.memo-list-swipe-row.is-trash-selected .memo-trash-check-icon {
+    display: flex;
+}
+
 .memo-list-item:hover {
     background-color: rgb(247, 247, 247);
 }
@@ -1322,6 +1379,36 @@
     margin-left: 14px;
     margin-right: 14px;
     background-color: rgb(236, 236, 236);
+}
+
+.memo-trash-action-row {
+    height: 105px;
+    flex-grow: 0;
+    flex-shrink: 0;
+    flex-direction: row;
+    justify-content: flex-end;
+    align-items: center;
+    padding-right: 50px;
+}
+
+.memo-filter-page .memo-trash-select-button {
+    position: relative;
+    height: 72px;
+    padding-left: 32px;
+    padding-right: 32px;
+    border-width: 0;
+    border-radius: 36px;
+    background-color: rgb(255, 255, 255);
+    color: rgb(44, 44, 44);
+    font-size: 34px;
+    -unity-font-definition: url("project://database/Assets/Plugins/UI%20Toolkit/Fonts/Pretendard-Regular.ttf?fileID=12800000&guid=c19593ccf51a3b643a58d19da7851c10&type=3#Pretendard-Regular");
+}
+
+.memo-trash-scroll {
+    background-color: rgb(255, 255, 255);
+    border-top-left-radius: 100px;
+    border-top-right-radius: 100px;
+    overflow: hidden;
 }
 
 .memo-detail-scroll {
@@ -2181,6 +2268,13 @@
     transition-property: background-color;
     transition-duration: 0.14s;
     transition-timing-function: ease-out;
+}
+
+.memo-trash-bottom-bar .nav-action-button {
+    width: 0;
+    min-width: 0;
+    flex-grow: 1;
+    flex-shrink: 1;
 }
 
 .nav-action-secondary {

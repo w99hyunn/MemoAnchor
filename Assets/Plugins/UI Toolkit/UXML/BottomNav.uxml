@@ -38,5 +38,9 @@
             <ui:Button name="memo-create-reset-button" text="초기화" class="nav-action-button nav-action-secondary"/>
             <ui:Button name="memo-create-submit-button" text="생성하기" class="nav-action-button nav-action-primary"/>
         </ui:VisualElement>
+        <ui:VisualElement name="memo-trash-bottom-bar" class="nav-action-bar memo-trash-bottom-bar is-hidden">
+            <ui:Button name="memo-trash-permanent-delete-button" text="영구 삭제" class="nav-action-button nav-action-secondary"/>
+            <ui:Button name="memo-trash-restore-button" text="복구" class="nav-action-button nav-action-primary"/>
+        </ui:VisualElement>
     </ui:VisualElement>
 </ui:UXML>

@@ -354,6 +354,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7ad7983a77196a844b61d2f6d54f2a41, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::MemoAnchor.UI.MainView
+  _memoListItemAsset: {fileID: 9197481963319205126, guid: fd34d1f1c1b6ecd4287e00e18419777e, type: 3}
   _memoCreateChecklistInputAsset: {fileID: 9197481963319205126, guid: 93219ba7802d4d23943b3b169ccbab69, type: 3}
   _memoCreateRepairerRowAsset: {fileID: 9197481963319205126, guid: c329d1f3e9eb45fda3d0c4f2b0e55dc9, type: 3}
   _memoCreateRepairerStatusAsset: {fileID: 9197481963319205126, guid: 60619ff9da1040c7b16cc1864b8cee21, type: 3}

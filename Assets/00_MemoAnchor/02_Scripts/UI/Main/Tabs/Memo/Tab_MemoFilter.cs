@@ -131,7 +131,7 @@ namespace MemoAnchor.UI
         {
             _memoFilterRows.Clear();
             int index = 0;
-            _root.Query<VisualElement>(className: "memo-list-swipe-row").ForEach(row =>
+            _memoListContainer.Query<VisualElement>(className: "memo-list-swipe-row").ForEach(row =>
             {
                 string map = GetMemoFilterRowMap(row);
                 int urgency = index % 3;
