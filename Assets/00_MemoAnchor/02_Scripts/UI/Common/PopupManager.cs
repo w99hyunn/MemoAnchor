@@ -12,6 +12,7 @@ namespace MemoAnchor.UI
         [SerializeField] private VisualTreeAsset _confirmPopupAsset;
 
         private VisualElement _root;
+        private VisualElement _confirmOverlay;
         private VisualElement _confirmActions;
         private VisualElement _confirmInputBox;
         private TextField _confirmInput;
@@ -21,6 +22,7 @@ namespace MemoAnchor.UI
         private Action _onConfirmSubmit;
         private Action<string> _onInputSubmit;
         private bool _confirmUsesInput;
+        private int _confirmPresentationVersion;
 
         private void Awake()
         {
@@ -87,7 +89,9 @@ namespace MemoAnchor.UI
                 _root.Add(_confirmTree);
             }
 
+            _confirmPresentationVersion++;
             _confirmTree.BringToFront();
+            PopupPresentation.ScheduleOpen(_confirmOverlay);
         }
 
         private void ShowTextInputInternal(string title, string message, string value, string cancelText, string submitText, Action<string> onSubmit)
@@ -113,7 +117,9 @@ namespace MemoAnchor.UI
                 _root.Add(_confirmTree);
             }
 
+            _confirmPresentationVersion++;
             _confirmTree.BringToFront();
+            PopupPresentation.ScheduleOpen(_confirmOverlay);
             _confirmInput.Focus();
         }
 
@@ -122,7 +128,17 @@ namespace MemoAnchor.UI
             _onConfirmSubmit = null;
             _onInputSubmit = null;
             _confirmUsesInput = false;
-            _confirmTree?.RemoveFromHierarchy();
+
+            if (_confirmTree?.parent == null)
+            {
+                return;
+            }
+
+            int closeVersion = ++_confirmPresentationVersion;
+            PopupPresentation.ScheduleClose(
+                _confirmOverlay,
+                () => _confirmPresentationVersion == closeVersion,
+                () => _confirmTree.RemoveFromHierarchy());
         }
 
         private void SubmitConfirm()
@@ -173,7 +189,7 @@ namespace MemoAnchor.UI
             _confirmTree.style.top = 0;
             _confirmTree.style.bottom = 0;
 
-            VisualElement confirmOverlay = _confirmTree.Q<VisualElement>("common-confirm-popup-overlay");
+            _confirmOverlay = _confirmTree.Q<VisualElement>("common-confirm-popup-overlay");
             VisualElement confirmSheet = _confirmTree.Q<VisualElement>("common-confirm-popup-sheet");
             _confirmTitleLabel = _confirmTree.Q<Label>("common-confirm-popup-title");
             _confirmMessageLabel = _confirmTree.Q<Label>("common-confirm-popup-message");
@@ -186,7 +202,7 @@ namespace MemoAnchor.UI
             _confirmCancelButton = _confirmTree.Q<Button>("common-confirm-cancel-button");
             _confirmSubmitButton = _confirmTree.Q<Button>("common-confirm-submit-button");
 
-            confirmOverlay.RegisterCallback<ClickEvent>(_ => HideConfirmInternal());
+            _confirmOverlay.RegisterCallback<ClickEvent>(_ => HideConfirmInternal());
             confirmSheet.RegisterCallback<ClickEvent>(evt => evt.StopPropagation());
             _confirmCancelButton.clicked += HideConfirmInternal;
             _confirmSubmitButton.clicked += SubmitConfirm;

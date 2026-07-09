@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System;
 using UnityEngine;
 using UnityEngine.UIElements;
 
@@ -58,7 +59,7 @@ namespace MemoAnchor.UI
             }
         }
 
-        private async Awaitable<bool> CreateMemoForMapAsync(ScanMapItem map, string title, string body, string urgency, string assigneePlayerId, string assigneeName)
+        private async Awaitable<bool> CreateMemoForMapAsync(ScanMapItem map, string kind, string title, string body, string urgency, string assigneePlayerId, string assigneeName, string dueText, List<MemoChecklistEntry> checklistItems)
         {
             if (_isCreatingMemo)
             {
@@ -73,12 +74,14 @@ namespace MemoAnchor.UI
                 {
                     mapId = map.id,
                     locationName = map.spaceName,
-                    kind = "text",
+                    kind = kind,
                     urgency = urgency,
                     title = title,
                     body = body,
                     assigneePlayerId = assigneePlayerId,
-                    assigneeName = assigneeName
+                    assigneeName = assigneeName,
+                    dueText = dueText,
+                    checklistItems = checklistItems
                 };
 
                 MemoCreateResult result = await _memoService.CreateMemoAsync(payload);
@@ -219,9 +222,11 @@ namespace MemoAnchor.UI
 
         private void ShowMemoDetailPage(MemoDetailItem item)
         {
+            bool canManageMemo = CanManageMemo(item);
             _memoDetailPlaceLabel.text = item.Place;
             _memoDetailContent.Clear();
             HideMemoDetailMenu();
+            SetVisible(_memoDetailMenuButton, canManageMemo);
             SetVisible(_memoDetailPage, true);
             SetMemoDetailNavMode(true);
             BuildMemoDetailContent(item);
@@ -236,6 +241,11 @@ namespace MemoAnchor.UI
 
         private void ToggleMemoDetailMenu()
         {
+            if (_memoDetailMenuButton.ClassListContains(HIDDEN_CLASS))
+            {
+                return;
+            }
+
             bool shouldShow = _memoDetailMenu.ClassListContains(HIDDEN_CLASS);
             SetVisible(_memoDetailMenu, shouldShow);
             if (shouldShow)
@@ -247,6 +257,12 @@ namespace MemoAnchor.UI
         private void HideMemoDetailMenu()
         {
             SetVisible(_memoDetailMenu, false);
+        }
+
+        private bool CanManageMemo(MemoDetailItem item)
+        {
+            ScanMapItem map = _scanMaps.Find(scanMap => string.Equals(scanMap.id, item.MapId, StringComparison.OrdinalIgnoreCase));
+            return string.Equals(map?.currentUserRole, "manager", StringComparison.OrdinalIgnoreCase);
         }
 
         private void BuildMemoDetailContent(MemoDetailItem item)
@@ -344,17 +360,30 @@ namespace MemoAnchor.UI
         {
             VisualElement footer = new();
             footer.AddToClassList("memo-card-footer");
-            footer.Add(CreateMemoDetailFooterLabel(item.Author));
-            footer.Add(CreateMemoDetailFooterLabel(item.Assignee));
-            footer.Add(CreateMemoDetailFooterLabel(item.DueText));
+            footer.Add(CreateMemoDetailFooterItem("\uC791\uC131\uC790", item.Author));
+            footer.Add(CreateMemoDetailFooterItem("\uC218\uB9AC\uC790", item.Assignee));
+            footer.Add(CreateMemoDetailFooterItem("\uB9C8\uAC10", item.DueText));
             bodyCard.Add(footer);
         }
 
-        private static Label CreateMemoDetailFooterLabel(string text)
+        private static VisualElement CreateMemoDetailFooterItem(string prefix, string text)
         {
-            Label label = new(text);
-            label.AddToClassList("memo-card-footer-label");
-            return label;
+            VisualElement item = new();
+            item.AddToClassList("memo-card-footer-item");
+
+            Label prefixLabel = new(prefix);
+            prefixLabel.AddToClassList("memo-card-footer-label");
+            prefixLabel.AddToClassList("memo-card-footer-prefix");
+            item.Add(prefixLabel);
+
+            if (!string.IsNullOrWhiteSpace(text))
+            {
+                Label valueLabel = new(text);
+                valueLabel.AddToClassList("memo-card-footer-label");
+                item.Add(valueLabel);
+            }
+
+            return item;
         }
 
         private static string GetMemoListIconClass(MemoDetailKind kind)

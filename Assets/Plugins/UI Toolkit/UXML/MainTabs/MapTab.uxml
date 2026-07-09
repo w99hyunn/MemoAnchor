@@ -13,7 +13,10 @@
         <ui:Label name="map-read-mode-label" text="읽기모드" class="map-read-mode-label"/>
         <ui:VisualElement name="map-preview" class="map-preview">
             <ui:Button name="map-preview-menu-button" text="☰" class="map-preview-menu-button common-icon-button"/>
-            <ui:Button name="map-create-memo-button" text="메모 생성" class="map-create-memo-button is-hidden"/>
+            <ui:VisualElement name="map-create-memo-actions" class="map-create-memo-actions is-hidden">
+                <ui:Button name="map-create-text-memo-button" text="타이핑 메모 생성" class="map-create-memo-button"/>
+                <ui:Button name="map-create-checklist-memo-button" text="체크리스트 메모 생성" class="map-create-memo-button"/>
+            </ui:VisualElement>
             <ui:Label name="map-scan-time-label" text="" class="map-scan-time-label"/>
             <ui:VisualElement name="map-empty-state" class="map-empty-state is-hidden">
                 <ui:Label text="생성된 3D MAP이 없습니다" class="map-empty-title"/>

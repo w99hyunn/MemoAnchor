@@ -12,8 +12,8 @@ namespace MemoAnchor.UI
         private readonly ScanMapService _scanMapService = new();
         private readonly HashSet<string> _openMapAddresses = new(StringComparer.Ordinal);
         private readonly List<ScanMapItem> _scanMaps = new();
-        private Button _mapListButton, _mapPreviewMenuButton, _mapCreateMemoButton;
-        private VisualElement _mapPreview, _mapListOverlay, _mapListSheet, _mapListContent, _mapEmptyState;
+        private Button _mapListButton, _mapPreviewMenuButton, _mapCreateTextMemoButton, _mapCreateChecklistMemoButton;
+        private VisualElement _mapPreview, _mapListOverlay, _mapListSheet, _mapListContent, _mapEmptyState, _mapCreateMemoActions;
         private Label _mapCurrentSpaceLabel, _mapCurrentAddressLabel, _mapReadModeLabel, _mapScanTimeLabel;
         private string _selectedMapId;
         private int _mapListTransitionToken;
@@ -24,7 +24,9 @@ namespace MemoAnchor.UI
             VisualElement mainRoot = _root.Q<VisualElement>("main-root");
             _mapListButton = _root.Q<Button>("map-list-button");
             _mapPreviewMenuButton = _root.Q<Button>("map-preview-menu-button");
-            _mapCreateMemoButton = _root.Q<Button>("map-create-memo-button");
+            _mapCreateMemoActions = _root.Q<VisualElement>("map-create-memo-actions");
+            _mapCreateTextMemoButton = _root.Q<Button>("map-create-text-memo-button");
+            _mapCreateChecklistMemoButton = _root.Q<Button>("map-create-checklist-memo-button");
             _mapPreview = _root.Q<VisualElement>("map-preview");
             _mapListOverlay = _root.Q<VisualElement>("map-list-overlay");
             _mapListSheet = _root.Q<VisualElement>("map-list-sheet");
@@ -41,7 +43,8 @@ namespace MemoAnchor.UI
             _mapListOverlay.AddToClassList(HIDDEN_CLASS);
             _mapListButton.clicked += ShowMapList;
             _mapPreviewMenuButton.clicked += ShowMapList;
-            _mapCreateMemoButton.clicked += OnClickMapCreateMemo;
+            _mapCreateTextMemoButton.clicked += OnClickMapCreateTextMemo;
+            _mapCreateChecklistMemoButton.clicked += OnClickMapCreateChecklistMemo;
             _mapListOverlay.RegisterCallback<ClickEvent>(_ => HideMapList());
             _mapListSheet.RegisterCallback<ClickEvent>(evt => evt.StopPropagation());
             ApplySelectedMap();
@@ -51,7 +54,8 @@ namespace MemoAnchor.UI
         {
             _mapListButton.clicked -= ShowMapList;
             _mapPreviewMenuButton.clicked -= ShowMapList;
-            _mapCreateMemoButton.clicked -= OnClickMapCreateMemo;
+            _mapCreateTextMemoButton.clicked -= OnClickMapCreateTextMemo;
+            _mapCreateChecklistMemoButton.clicked -= OnClickMapCreateChecklistMemo;
         }
 
         public async Awaitable RefreshMapListAsync()
@@ -219,7 +223,7 @@ namespace MemoAnchor.UI
             SetVisible(_mapReadModeLabel, hasMap);
             SetVisible(_mapScanTimeLabel, hasMap);
             SetVisible(_mapEmptyState, !hasMap);
-            SetVisible(_mapCreateMemoButton, hasMap);
+            SetVisible(_mapCreateMemoActions, hasMap);
 
             if (!hasMap)
             {
@@ -234,7 +238,17 @@ namespace MemoAnchor.UI
             _mapScanTimeLabel.text = $"스캔일시 : {FormatScanTime(selectedMap.scanCreatedAt)}";
         }
 
-        private void OnClickMapCreateMemo()
+        private void OnClickMapCreateTextMemo()
+        {
+            ShowMemoCreatePageForSelectedMap("text");
+        }
+
+        private void OnClickMapCreateChecklistMemo()
+        {
+            ShowMemoCreatePageForSelectedMap("checklist");
+        }
+
+        private void ShowMemoCreatePageForSelectedMap(string kind)
         {
             ScanMapItem selectedMap = GetSelectedMap();
             if (selectedMap == null)
@@ -242,7 +256,7 @@ namespace MemoAnchor.UI
                 return;
             }
 
-            ShowMemoCreatePage(selectedMap);
+            ShowMemoCreatePage(selectedMap, kind);
         }
 
         private ScanMapItem GetSelectedMap()

@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using Unity.Services.Friends;
 using Unity.Services.Friends.Models;
 using UnityEngine;
@@ -8,17 +9,23 @@ namespace MemoAnchor.UI
 {
     public partial class MainTabView
     {
-        private VisualElement _memoCreatePage, _memoCreateCalendar, _memoCreateCalendarGrid, _memoCreateTimePicker;
+        private VisualElement _memoCreatePage, _memoCreateCalendar, _memoCreateCalendarGrid, _memoCreateTimePicker, _memoCreateLoadingOverlay, _memoCreateLoadingSpinner;
         private ScrollView _memoCreateScroll;
         private ScrollView _memoCreateHourColumn, _memoCreateMinuteColumn, _memoCreatePeriodColumn;
         private Button _memoCreateCalendarCloseButton, _memoCreateCalendarPrevButton, _memoCreateCalendarNextButton;
         private Button _memoCreateDateButton, _memoCreateTimeButton, _memoCreateTimeCloseButton;
+        private Button _memoCreateChecklistAddButton;
         private Button _memoCreateUrgencyHighButton, _memoCreateUrgencyMiddleButton, _memoCreateUrgencyLowButton;
-        private Label _memoCreateDateLabel, _memoCreateTimeLabel, _memoCreateCalendarTitle;
+        private Label _memoCreateDateLabel, _memoCreateTimeLabel, _memoCreateCalendarTitle, _memoCreateContentTitle;
+        private VisualElement _memoCreateTitleContent, _memoCreateTextContent, _memoCreateChecklistContent, _memoCreateChecklistList;
+        private readonly List<TextField> _memoCreateChecklistInputs = new();
         private ScanMapItem _memoCreateTargetMap;
+        private string _memoCreateKind = "text";
         private string _memoCreateUrgency = "middle";
         private string _memoCreateRepairerPlayerId = string.Empty;
         private bool _memoCreateRepairerExpanded;
+        private bool _isMemoCreateSubmitting;
+        private int _memoCreateLoadingTransitionToken;
         private DateTime _memoCreateSelectedDate = new(2026, 1, 1);
         private DateTime _memoCreateCalendarMonth = new(2026, 1, 1);
         private int _memoCreateSelectedHour = 9;
@@ -29,6 +36,8 @@ namespace MemoAnchor.UI
         private void RegisterMemoCreatePage()
         {
             _memoCreatePage = _root.Q<VisualElement>("memo-create-page");
+            _memoCreateLoadingOverlay = _root.Q<VisualElement>("memo-create-loading-overlay");
+            _memoCreateLoadingSpinner = _root.Q<VisualElement>("memo-create-loading-spinner");
             _memoCreateScroll = _root.Q<ScrollView>("memo-create-scroll");
             _memoCreateCalendar = _root.Q<VisualElement>(className: "memo-create-calendar");
             _memoCreateCalendarGrid = _root.Q<VisualElement>("memo-create-calendar-grid");
@@ -42,9 +51,15 @@ namespace MemoAnchor.UI
             _memoCreateDateButton = _root.Q<Button>("memo-create-date-button");
             _memoCreateTimeButton = _root.Q<Button>("memo-create-time-button");
             _memoCreateTimeCloseButton = _root.Q<Button>("memo-create-time-close");
+            _memoCreateChecklistAddButton = _root.Q<Button>("memo-create-checklist-add-button");
             _memoCreateDateLabel = _root.Q<Label>("memo-create-date-label");
             _memoCreateTimeLabel = _root.Q<Label>("memo-create-time-label");
             _memoCreateCalendarTitle = _root.Q<Label>("memo-create-calendar-title");
+            _memoCreateContentTitle = _root.Q<Label>("memo-create-content-title");
+            _memoCreateTitleContent = _root.Q<VisualElement>("memo-create-title-content");
+            _memoCreateTextContent = _root.Q<VisualElement>("memo-create-text-content");
+            _memoCreateChecklistContent = _root.Q<VisualElement>("memo-create-checklist-content");
+            _memoCreateChecklistList = _root.Q<VisualElement>("memo-create-checklist-list");
             _memoCreateBackButton = _root.Q<Button>("memo-create-back-button");
             _memoCreateRepairerButton = _root.Q<Button>("memo-create-repairer-button");
             _memoCreateRepairerCard = _root.Q<VisualElement>("memo-create-repairer-card");
@@ -62,10 +77,12 @@ namespace MemoAnchor.UI
 
             BuildMemoCreateCalendar();
             BuildMemoCreateTimePicker();
+            SetVisible(_memoCreateLoadingOverlay, false);
             HideMemoCreatePage();
 
             _memoCreateBackButton.clicked += OnClickMemoCreateBack;
             _memoCreateRepairerButton.clicked += ToggleMemoCreateRepairerList;
+            _memoCreateChecklistAddButton.clicked += AddMemoCreateChecklistInput;
             _memoCreateDateButton.clicked += ShowMemoCreateCalendar;
             _memoCreateTimeButton.clicked += ShowMemoCreateTimePicker;
             _memoCreateCalendarCloseButton.clicked += HideMemoCreateCalendar;
@@ -81,7 +98,7 @@ namespace MemoAnchor.UI
             _memoCreateHourColumn.RegisterCallback<PointerCancelEvent>(OnMemoCreateHourColumnPointerCancel);
             _memoCreateMinuteColumn.RegisterCallback<PointerCancelEvent>(OnMemoCreateMinuteColumnPointerCancel);
             _memoCreatePeriodColumn.RegisterCallback<PointerCancelEvent>(OnMemoCreatePeriodColumnPointerCancel);
-            _memoCreateResetButton.clicked += ResetMemoCreateForm;
+            _memoCreateResetButton.clicked += RequestResetMemoCreateForm;
             _memoCreateSubmitButton.clicked += OnClickMemoCreateSubmit;
             _memoCreateUrgencyHighButton.clicked += () => SetMemoCreateUrgency("high");
             _memoCreateUrgencyMiddleButton.clicked += () => SetMemoCreateUrgency("middle");
@@ -92,6 +109,7 @@ namespace MemoAnchor.UI
         {
             _memoCreateBackButton.clicked -= OnClickMemoCreateBack;
             _memoCreateRepairerButton.clicked -= ToggleMemoCreateRepairerList;
+            _memoCreateChecklistAddButton.clicked -= AddMemoCreateChecklistInput;
             _memoCreateDateButton.clicked -= ShowMemoCreateCalendar;
             _memoCreateTimeButton.clicked -= ShowMemoCreateTimePicker;
             _memoCreateCalendarCloseButton.clicked -= HideMemoCreateCalendar;
@@ -107,15 +125,15 @@ namespace MemoAnchor.UI
             _memoCreateHourColumn.UnregisterCallback<PointerCancelEvent>(OnMemoCreateHourColumnPointerCancel);
             _memoCreateMinuteColumn.UnregisterCallback<PointerCancelEvent>(OnMemoCreateMinuteColumnPointerCancel);
             _memoCreatePeriodColumn.UnregisterCallback<PointerCancelEvent>(OnMemoCreatePeriodColumnPointerCancel);
-            _memoCreateResetButton.clicked -= ResetMemoCreateForm;
+            _memoCreateResetButton.clicked -= RequestResetMemoCreateForm;
             _memoCreateSubmitButton.clicked -= OnClickMemoCreateSubmit;
         }
 
-        private void ShowMemoCreatePage(ScanMapItem map)
+        private void ShowMemoCreatePage(ScanMapItem map, string kind)
         {
             _memoCreateTargetMap = map;
             RequestTabSwitch(1);
-            ResetMemoCreateForm();
+            ResetMemoCreateForm(kind);
             _ = RebuildMemoCreateRepairerListAsync();
             HideMemoDetailPage();
             _memoSearchSourceInput.Blur();
@@ -139,8 +157,25 @@ namespace MemoAnchor.UI
 
         private void ResetMemoCreateForm()
         {
+            ResetMemoCreateForm(_memoCreateKind);
+        }
+
+        private void RequestResetMemoCreateForm()
+        {
+            PopupManager.ShowConfirm(
+                "입력 내용 초기화",
+                "입력한 내용이 모두 초기화됩니다.",
+                "취소",
+                "초기화",
+                ResetMemoCreateForm);
+        }
+
+        private void ResetMemoCreateForm(string kind)
+        {
             _memoCreateTitleInput.SetValueWithoutNotify(string.Empty);
             _memoCreateBodyInput.SetValueWithoutNotify(string.Empty);
+            SetMemoCreateKind(kind);
+            RebuildMemoCreateChecklistInputs();
             _memoCreateRepairerPlayerId = string.Empty;
             _memoCreateRepairerLabel.text = "수리자 선택하기";
             SetMemoCreateRepairerExpanded(false);
@@ -210,6 +245,16 @@ namespace MemoAnchor.UI
                 return;
             }
 
+            if (_isMemoCreateSubmitting)
+            {
+                return;
+            }
+
+            _isMemoCreateSubmitting = true;
+            SetMemoCreateSubmitting(true);
+
+            try
+            {
             string title = _memoCreateTitleInput.value.Trim();
             string body = _memoCreateBodyInput.value.Trim();
             if (string.IsNullOrWhiteSpace(title))
@@ -218,7 +263,15 @@ namespace MemoAnchor.UI
             }
 
             string assigneeName = string.IsNullOrWhiteSpace(_memoCreateRepairerPlayerId) ? string.Empty : _memoCreateRepairerLabel.text;
-            bool isCreated = await CreateMemoForMapAsync(_memoCreateTargetMap, title, body, _memoCreateUrgency, _memoCreateRepairerPlayerId, assigneeName);
+            string dueText = BuildMemoCreateDueText();
+            List<MemoChecklistEntry> checklistItems = BuildMemoCreateChecklistItems();
+            if (_memoCreateKind == "checklist" && checklistItems.Count > 0)
+            {
+                title = checklistItems[0].text;
+                body = string.Empty;
+            }
+
+            bool isCreated = await CreateMemoForMapAsync(_memoCreateTargetMap, _memoCreateKind, title, body, _memoCreateUrgency, _memoCreateRepairerPlayerId, assigneeName, dueText, checklistItems);
             if (!isCreated)
             {
                 return;
@@ -226,6 +279,55 @@ namespace MemoAnchor.UI
 
             HideMemoCreatePage();
             RequestTabSwitch(3);
+            }
+            finally
+            {
+                _isMemoCreateSubmitting = false;
+                SetMemoCreateSubmitting(false);
+            }
+        }
+
+        private void SetMemoCreateSubmitting(bool isSubmitting)
+        {
+            _memoCreateLoadingTransitionToken++;
+            int token = _memoCreateLoadingTransitionToken;
+
+            if (isSubmitting)
+            {
+                _memoCreateLoadingOverlay.RemoveFromClassList(HIDDEN_CLASS);
+                _memoCreateLoadingOverlay.RemoveFromClassList(DIALOG_OPEN_CLASS);
+                _memoCreateLoadingOverlay.schedule.Execute(() =>
+                {
+                    if (token == _memoCreateLoadingTransitionToken)
+                    {
+                        _memoCreateLoadingOverlay.AddToClassList(DIALOG_OPEN_CLASS);
+                    }
+                }).ExecuteLater(16);
+            }
+            else
+            {
+                _memoCreateLoadingOverlay.RemoveFromClassList(DIALOG_OPEN_CLASS);
+                _memoCreateLoadingOverlay.schedule.Execute(() =>
+                {
+                    if (token == _memoCreateLoadingTransitionToken)
+                    {
+                        _memoCreateLoadingOverlay.AddToClassList(HIDDEN_CLASS);
+                    }
+                }).ExecuteLater(180);
+            }
+
+            _tabViewport.EnableInClassList("is-ui-blurred", isSubmitting);
+            _bottomNavWrapper.EnableInClassList("is-ui-blurred", isSubmitting);
+            _memoCreateSubmitButton.SetEnabled(!isSubmitting);
+            _memoCreateSubmitButton.text = isSubmitting ? "생성 중..." : "생성하기";
+            if (isSubmitting)
+            {
+                LoadingSpinnerController.Start(_memoCreateLoadingSpinner);
+            }
+            else
+            {
+                LoadingSpinnerController.Stop(_memoCreateLoadingSpinner);
+            }
         }
 
         private void ToggleMemoCreateRepairerList()
@@ -235,6 +337,86 @@ namespace MemoAnchor.UI
             {
                 _ = RebuildMemoCreateRepairerListAsync();
             }
+        }
+
+        private void SetMemoCreateKind(string kind)
+        {
+            _memoCreateKind = kind == "checklist" ? "checklist" : "text";
+            bool isChecklist = _memoCreateKind == "checklist";
+            _memoCreateContentTitle.text = isChecklist ? "체크리스트 (최대 10개)" : "타이핑";
+            SetVisible(_memoCreateTitleContent, true);
+            SetVisible(_memoCreateTextContent, !isChecklist);
+            SetVisible(_memoCreateChecklistContent, isChecklist);
+            if (isChecklist && _memoCreateChecklistInputs.Count == 0)
+            {
+                AddMemoCreateChecklistInput();
+            }
+        }
+
+        private void RebuildMemoCreateChecklistInputs()
+        {
+            _memoCreateChecklistList.Clear();
+            _memoCreateChecklistInputs.Clear();
+            AddMemoCreateChecklistInput();
+        }
+
+        private void AddMemoCreateChecklistInput()
+        {
+            if (_memoCreateChecklistInputs.Count >= 10)
+            {
+                return;
+            }
+
+            VisualElement row = new();
+            row.AddToClassList("memo-create-checklist-row");
+
+            VisualElement inputBox = new();
+            inputBox.AddToClassList("scan-input-box");
+            inputBox.AddToClassList("memo-create-checklist-input-box");
+
+            TextField input = new()
+            {
+                label = string.Empty,
+                textEdition = { placeholder = "체크리스트 내용을 작성해주세요." }
+            };
+            input.AddToClassList("scan-input-field");
+            input.SetValueWithoutNotify(string.Empty);
+            inputBox.Add(input);
+
+            Button removeButton = new();
+            removeButton.AddToClassList("memo-filter-calendar-close");
+            VisualElement removeIcon = new();
+            removeIcon.AddToClassList("memo-calendar-close-icon");
+            removeButton.Add(removeIcon);
+            removeButton.clicked += () => RemoveMemoCreateChecklistInput(row, input);
+
+            row.Add(inputBox);
+            row.Add(removeButton);
+            _memoCreateChecklistList.Add(row);
+            _memoCreateChecklistInputs.Add(input);
+        }
+
+        private void RemoveMemoCreateChecklistInput(VisualElement row, TextField input)
+        {
+            _memoCreateChecklistInputs.Remove(input);
+            row.RemoveFromHierarchy();
+        }
+
+        private List<MemoChecklistEntry> BuildMemoCreateChecklistItems()
+        {
+            List<MemoChecklistEntry> items = new();
+            foreach (TextField input in _memoCreateChecklistInputs)
+            {
+                string text = input.value.Trim();
+                if (string.IsNullOrWhiteSpace(text))
+                {
+                    continue;
+                }
+
+                items.Add(new MemoChecklistEntry { text = text, done = false });
+            }
+
+            return items;
         }
 
         private void SetMemoCreateRepairerExpanded(bool expanded)
@@ -529,6 +711,22 @@ namespace MemoAnchor.UI
         {
             _memoCreateDateLabel.text = _memoCreateSelectedDate.ToString("yyyy-MM-dd");
             _memoCreateTimeLabel.text = $"{_memoCreateSelectedHour:00}:{_memoCreateSelectedMinute:00} {(_memoCreateIsPm ? "PM" : "AM")}";
+        }
+
+        private string BuildMemoCreateDueText()
+        {
+            int dayDelta = (_memoCreateSelectedDate.Date - DateTime.Today).Days;
+            if (dayDelta > 0)
+            {
+                return $"{dayDelta}일 전";
+            }
+
+            if (dayDelta == 0)
+            {
+                return "오늘";
+            }
+
+            return "지남";
         }
     }
 }

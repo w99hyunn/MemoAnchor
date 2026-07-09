@@ -112,7 +112,6 @@ namespace MemoAnchor
         {
             PlayerProfileSaveRequest payload = new()
             {
-                provider = pendingAuthResult.provider,
                 name = name,
                 email = email,
                 companyName = companyName
@@ -231,7 +230,6 @@ namespace MemoAnchor
         [Serializable]
         private sealed class PlayerProfileSaveRequest
         {
-            public string provider;
             public string name;
             public string email;
             public string companyName;

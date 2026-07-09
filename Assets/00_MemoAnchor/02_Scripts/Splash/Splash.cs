@@ -94,7 +94,14 @@ namespace MemoAnchor
             }
             catch (System.Exception exception)
             {
-                Debug.LogException(exception);
+                if (IsServerConnectionException(exception))
+                {
+                    ShowServerConnectionFailedPopup();
+                }
+                else
+                {
+                    Debug.LogException(exception);
+                }
             }
 
             isCompletingLogin = false;
@@ -255,11 +262,30 @@ namespace MemoAnchor
 
         private void RecoverLogin(System.Exception exception)
         {
-            Debug.LogException(exception);
-            MemoAnchor.UI.PopupManager.ShowMessage("로그인 실패", "로그인에 실패했습니다. 다시 시도해주세요.", "확인");
+            if (IsServerConnectionException(exception))
+            {
+                ShowServerConnectionFailedPopup();
+            }
+            else
+            {
+                Debug.LogException(exception);
+                MemoAnchor.UI.PopupManager.ShowMessage("로그인 실패", "로그인에 실패했습니다. 다시 시도해주세요.", "확인");
+            }
+
             isLoggingIn = false;
             isCompletingLogin = false;
             SetLoginButtonsEnabled(true);
+        }
+
+        private static bool IsServerConnectionException(System.Exception exception)
+        {
+            return exception is System.InvalidOperationException
+                && exception.Message == "Cannot connect to destination host";
+        }
+
+        private static void ShowServerConnectionFailedPopup()
+        {
+            MemoAnchor.UI.PopupManager.ShowMessage("서버 연결 실패", "로그인 서버에 연결할 수 없습니다. 서버 상태를 확인해주세요.", "확인");
         }
 
         private void ShowLoginPanel()

@@ -51,6 +51,8 @@ namespace MemoAnchor
         public string body;
         public string assigneePlayerId;
         public string assigneeName;
+        public string dueText;
+        public List<MemoChecklistEntry> checklistItems = new();
     }
 
     public readonly struct MemoCreateResult

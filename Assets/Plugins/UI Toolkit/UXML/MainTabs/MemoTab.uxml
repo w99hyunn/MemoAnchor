@@ -186,12 +186,19 @@
                 </ui:VisualElement>
                 <ui:VisualElement class="memo-filter-divider"/>
                 <ui:VisualElement class="memo-create-section">
-                    <ui:Label text="타이핑" class="memo-filter-section-title"/>
-                    <ui:VisualElement class="scan-input-box memo-create-title-box">
+                    <ui:Label name="memo-create-content-title" text="타이핑" class="memo-filter-section-title"/>
+                    <ui:VisualElement name="memo-create-title-content" class="scan-input-box memo-create-title-box">
                         <ui:TextField name="memo-create-title-input" label="" placeholder-text="제목을 입력해주세요." class="scan-input-field"/>
                     </ui:VisualElement>
-                    <ui:VisualElement class="scan-input-box memo-create-body-box">
+                    <ui:VisualElement name="memo-create-text-content" class="scan-input-box memo-create-body-box">
                         <ui:TextField name="memo-create-body-input" label="" multiline="true" placeholder-text="내용을 입력해주세요." class="scan-input-field memo-create-body-input"/>
+                    </ui:VisualElement>
+                    <ui:VisualElement name="memo-create-checklist-content" class="memo-create-checklist-content is-hidden">
+                        <ui:VisualElement name="memo-create-checklist-list" class="memo-create-checklist-list"/>
+                        <ui:Button name="memo-create-checklist-add-button" text="" class="memo-create-checklist-add-button">
+                            <ui:Label text="체크리스트 추가하기" class="memo-create-checklist-add-label"/>
+                            <ui:Label text="+" class="scan-address-add-icon"/>
+                        </ui:Button>
                     </ui:VisualElement>
                 </ui:VisualElement>
                 <ui:VisualElement class="memo-filter-divider"/>

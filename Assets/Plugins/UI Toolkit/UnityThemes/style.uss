@@ -5,6 +5,7 @@
     --brand-pink-hover: rgb(143, 27, 56);
     --brand-pink-active: rgb(126, 24, 49);
     --nav-icon-active: var(--brand-pink);
+    --nav-bar-radius: 84px;
 }
 
 .unity-label {
@@ -31,6 +32,24 @@
 .unity-button:active:enabled {
     background-color: transparent;
     border-color: transparent;
+}
+
+.unity-button:focus {
+    border-left-color: transparent;
+    border-right-color: transparent;
+    border-top-color: transparent;
+    border-bottom-color: transparent;
+}
+
+.unity-button:focus:enabled {
+    border-left-color: transparent;
+    border-right-color: transparent;
+    border-top-color: transparent;
+    border-bottom-color: transparent;
+}
+
+.is-ui-blurred {
+    filter: blur(8px);
 }
 
 .common-icon-button {
@@ -160,6 +179,9 @@
     flex-grow: 1;
     min-height: 0;
     overflow: hidden;
+    transition-property: filter;
+    transition-duration: 0.18s;
+    transition-timing-function: ease-out;
 }
 
 .tab-strip {
@@ -611,14 +633,23 @@
     -unity-text-align: middle-center;
 }
 
-.map-create-memo-button {
+.map-create-memo-actions {
     position: absolute;
     left: 50%;
     top: 50%;
-    width: 280px;
+    width: 360px;
+    margin-left: -180px;
+    margin-top: -116px;
+}
+
+.map-create-memo-actions.is-hidden {
+    display: none;
+}
+
+.map-create-memo-button {
+    width: 360px;
     height: 96px;
-    margin-left: -140px;
-    margin-top: -48px;
+    margin-bottom: 40px;
     border-radius: 48px;
     background-color: rgb(30, 30, 34);
     color: rgb(255, 255, 255);
@@ -632,10 +663,6 @@
 
 .map-create-memo-button:active:enabled {
     background-color: rgb(16, 16, 20);
-}
-
-.map-create-memo-button.is-hidden {
-    display: none;
 }
 
 .map-scan-time-label {
@@ -730,7 +757,7 @@
     justify-content: center;
     transition-duration: 0.26s;
     transition-timing-function: ease-out;
-    transition-property: justify-content;
+    transition-property: justify-content, filter;
 }
 
 .bottom-nav {
@@ -744,7 +771,7 @@
     align-items: center;
     justify-content: space-around;
     background-color: var(--nav-bg);
-    border-radius: 100px;
+    border-radius: var(--nav-bar-radius);
     padding-left: 18px;
     padding-right: 18px;
     transition-duration: 0.28s;
@@ -780,8 +807,8 @@
     top: 0;
     width: 0;
     height: 200px;
-    border-radius: 100px;
-    background-color: rgb(30, 30, 34);
+    border-radius: var(--nav-bar-radius);
+    background-color: var(--nav-bg);
     opacity: 0;
     overflow: hidden;
     translate: 24px 0;
@@ -913,14 +940,6 @@
 .bottom-nav-wrapper.is-memo-detail-mode .bottom-nav,
 .bottom-nav-wrapper.is-memo-create-mode .bottom-nav {
     display: none;
-}
-
-.bottom-nav-wrapper.is-memo-detail-mode .memo-filter-reset-button {
-    background-color: rgb(90, 90, 90);
-}
-
-.bottom-nav-wrapper.is-memo-detail-mode .memo-filter-apply-button {
-    background-color: rgb(184, 29, 62);
 }
 
 .nav-press-bg {
@@ -1453,11 +1472,21 @@
     align-items: flex-end;
 }
 
-.memo-card-footer-label {
+.memo-card-footer-item {
+    flex-direction: row;
     margin-left: 18px;
     margin-right: 18px;
+}
+
+.memo-card-footer-label {
     font-size: 26px;
     color: rgb(160, 160, 160);
+}
+
+.memo-card-footer-prefix {
+    margin-right: 6px;
+    color: rgb(128, 128, 128);
+    -unity-font-definition: url("project://database/Assets/Plugins/UI%20Toolkit/Fonts/Pretendard-SemiBold.ttf?fileID=12800000&guid=7136488b0fb8f924b91754e33f3b5abc&type=3#Pretendard-SemiBold");
 }
 
 .memo-filter-page {
@@ -2064,74 +2093,63 @@
     transition-timing-function: ease-out;
 }
 
-.memo-filter-bottom-bar {
+.nav-action-bar {
     position: absolute;
     left: 0;
     right: 0;
     top: 0;
     bottom: 0;
     height: auto;
-    padding-top: 18px;
-    padding-right: 18px;
-    padding-bottom: 18px;
-    padding-left: 18px;
-    border-radius: 100px;
+    padding-top: 24px;
+    padding-right: 24px;
+    padding-bottom: 24px;
+    padding-left: 24px;
+    border-radius: var(--nav-bar-radius);
     background-color: var(--nav-bg);
     flex-direction: row;
+    align-items: center;
 }
 
-.memo-filter-bottom-bar.is-hidden {
+.nav-action-bar.is-hidden {
     display: none;
 }
 
-.memo-filter-bottom-button {
+.nav-action-button {
     flex-grow: 1;
-    height: 164px;
-    border-radius: 82px;
+    height: 152px;
+    border-radius: 64px;
     color: rgb(255, 255, 255);
-    font-size: 44px;
+    font-size: 42px;
     -unity-font-definition: url("project://database/Assets/Plugins/UI%20Toolkit/Fonts/Pretendard-SemiBold.ttf?fileID=12800000&guid=7136488b0fb8f924b91754e33f3b5abc&type=3#Pretendard-SemiBold");
     transition-property: background-color;
     transition-duration: 0.14s;
     transition-timing-function: ease-out;
 }
 
-.memo-filter-reset-button {
-    background-color: rgb(82, 82, 82);
-    margin-right: 10px;
+.nav-action-secondary {
+    margin-right: 12px;
+    background-color: rgb(124, 110, 114);
 }
 
-.memo-filter-reset-button:hover:enabled {
-    background-color: rgb(74, 74, 74);
+.nav-action-secondary:hover:enabled {
+    background-color: rgb(113, 100, 104);
 }
 
-.memo-filter-reset-button:active:enabled {
-    background-color: rgb(62, 62, 62);
+.nav-action-secondary:active:enabled {
+    background-color: rgb(101, 89, 93);
 }
 
-.memo-filter-apply-button {
-    background-color: rgb(86, 99, 142);
-    margin-left: 10px;
+.nav-action-primary {
+    margin-left: 12px;
+    background-color: rgb(184, 29, 62);
 }
 
-.memo-filter-apply-button:hover:enabled {
-    background-color: rgb(76, 90, 133);
+.nav-action-primary:hover:enabled {
+    background-color: rgb(171, 25, 56);
 }
 
-.memo-filter-apply-button:active:enabled {
-    background-color: rgb(66, 79, 119);
-}
-
-.memo-filter-page.is-admin-mode .memo-filter-apply-button {
-    background-color: var(--brand-pink);
-}
-
-.memo-filter-page.is-admin-mode .memo-filter-apply-button:hover:enabled {
-    background-color: var(--brand-pink-hover);
-}
-
-.memo-filter-page.is-admin-mode .memo-filter-apply-button:active:enabled {
-    background-color: var(--brand-pink-active);
+.nav-action-primary:active:enabled {
+    background-color: rgb(154, 22, 50);
 }
 
 .memo-search-page {
@@ -2343,6 +2361,78 @@
     margin-top: 18px;
 }
 
+.memo-create-title-box.is-hidden,
+.memo-create-body-box.is-hidden {
+    display: none;
+}
+
+.memo-create-checklist-content {
+    margin-top: 22px;
+}
+
+.memo-create-checklist-content.is-hidden {
+    display: none;
+}
+
+.memo-create-checklist-list {
+    flex-grow: 0;
+}
+
+.memo-create-checklist-row {
+    height: 110px;
+    margin-bottom: 22px;
+    flex-direction: row;
+    align-items: center;
+}
+
+.memo-create-checklist-input-box {
+    flex-grow: 1;
+    height: 110px;
+}
+
+.memo-create-checklist-row .memo-filter-calendar-close {
+    position: absolute;
+    right: 22px;
+    top: 23px;
+}
+
+.memo-create-checklist-add-button {
+    height: 110px;
+    border-width: 2px;
+    border-color: rgb(219, 219, 219);
+    border-radius: 55px;
+    background-color: rgb(255, 255, 255);
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    transition-property: background-color, border-color;
+    transition-duration: 0.14s;
+    transition-timing-function: ease-out;
+}
+
+.memo-create-checklist-add-button:hover:enabled {
+    background-color: rgb(248, 248, 248);
+    border-color: rgb(194, 194, 194);
+}
+
+.memo-create-checklist-add-button:active:enabled {
+    background-color: rgb(239, 239, 239);
+    border-color: rgb(170, 170, 170);
+}
+
+.memo-create-checklist-add-label {
+    font-size: 34px;
+    color: rgb(28, 28, 28);
+    -unity-text-align: middle-center;
+}
+
+.memo-create-checklist-add-button .scan-address-add-icon {
+    position: absolute;
+    right: 42px;
+    margin-right: 0;
+    color: rgb(184, 184, 184);
+}
+
 .memo-create-calendar {
     margin-top: 20px;
 }
@@ -2355,6 +2445,35 @@
 
 .memo-create-time-picker.is-hidden {
     display: none;
+}
+
+.memo-create-loading-overlay {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.7);
+    opacity: 0;
+    align-items: center;
+    justify-content: center;
+    transition-property: opacity;
+    transition-duration: 0.18s;
+    transition-timing-function: ease-out;
+}
+
+.memo-create-loading-overlay.is-hidden {
+    display: none;
+}
+
+.memo-create-loading-overlay.is-open {
+    opacity: 1;
+}
+
+.memo-create-loading-spinner {
+    width: 96px;
+    height: 96px;
+    background-color: rgba(0, 0, 0, 0);
 }
 
 .memo-create-time-header-spacer {
