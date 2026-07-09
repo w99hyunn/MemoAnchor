@@ -8,7 +8,6 @@ namespace MemoAnchor.UI
     {
         private const string HIDDEN_CLASS = "is-hidden";
         private const string OPEN_CLASS = "is-open";
-
         private static readonly Dictionary<VisualElement, SpinnerState> States = new();
         private static readonly Dictionary<VisualElement, int> OverlayTokens = new();
 

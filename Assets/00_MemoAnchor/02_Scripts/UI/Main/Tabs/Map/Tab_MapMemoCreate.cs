@@ -302,8 +302,6 @@ namespace MemoAnchor.UI
                 LoadingSpinnerController.HideOverlay(_memoCreateLoadingOverlay, _memoCreateLoadingSpinner);
             }
 
-            _tabViewport.EnableInClassList("is-ui-blurred", isSubmitting);
-            _bottomNavWrapper.EnableInClassList("is-ui-blurred", isSubmitting);
             _memoCreateSubmitButton.SetEnabled(!isSubmitting);
             _memoCreateSubmitButton.text = isSubmitting ? "생성 중..." : "생성하기";
         }

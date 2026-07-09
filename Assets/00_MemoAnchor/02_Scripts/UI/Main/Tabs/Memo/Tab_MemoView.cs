@@ -14,7 +14,7 @@ namespace MemoAnchor.UI
         private readonly List<MemoDetailItem> _memoDetailItems = new();
         private readonly List<MemoDetailItem> _memoTrashItems = new();
         private readonly HashSet<string> _selectedTrashMemoIds = new(StringComparer.OrdinalIgnoreCase);
-        private VisualElement _memoListContainer, _memoDetailPage, _memoDetailMenu, _memoDetailContent, _memoTrashPage, _memoTrashListContainer;
+        private VisualElement _memoListContainer, _memoDetailPage, _memoDetailMenu, _memoDetailContent, _memoTrashPage, _memoTrashListContainer, _memoLoadingOverlay, _memoLoadingSpinner;
         private Button _memoDetailBackButton, _memoDetailMenuButton, _memoDetailDeleteButton, _memoTrashButton, _memoTrashBackButton, _memoTrashSelectButton;
         private Button _memoTrashPermanentDeleteButton, _memoTrashRestoreButton;
         private Label _memoDetailPlaceLabel;
@@ -32,6 +32,8 @@ namespace MemoAnchor.UI
             _memoDetailContent = _root.Q<VisualElement>("memo-detail-content");
             _memoTrashPage = _root.Q<VisualElement>("memo-trash-page");
             _memoTrashListContainer = _root.Q<VisualElement>("memo-trash-list-container");
+            _memoLoadingOverlay = _root.Q<VisualElement>("memo-loading-overlay");
+            _memoLoadingSpinner = _root.Q<VisualElement>("memo-loading-spinner");
             _memoDetailBackButton = _root.Q<Button>("memo-detail-back-button");
             _memoDetailMenuButton = _root.Q<Button>("memo-detail-menu-button");
             _memoDetailDeleteButton = _root.Q<Button>("memo-detail-delete-button");
@@ -44,6 +46,7 @@ namespace MemoAnchor.UI
 
             RebuildMemoList();
             HideMemoDetailPage();
+            SetVisible(_memoLoadingOverlay, false);
 
             _memoDetailBackButton.clicked += HideMemoDetailPage;
             _memoDetailMenuButton.clicked += ToggleMemoDetailMenu;
@@ -336,9 +339,18 @@ namespace MemoAnchor.UI
 
         private async Awaitable MoveMemoToTrashAsync(MemoDetailItem item)
         {
-            MemoListResponse response = await _memoService.MoveMemoToTrashAsync(item.Id);
-            ApplyMemoListResponse(response);
-            HideMemoDetailPage();
+            SetMemoServerWaiting(true);
+
+            try
+            {
+                MemoListResponse response = await _memoService.MoveMemoToTrashAsync(item.Id);
+                ApplyMemoListResponse(response);
+                HideMemoDetailPage();
+            }
+            finally
+            {
+                SetMemoServerWaiting(false);
+            }
         }
 
         private void ShowMemoTrashPage()
@@ -392,6 +404,7 @@ namespace MemoAnchor.UI
             }
 
             _isMemoTrashLoading = true;
+            SetMemoServerWaiting(true);
 
             try
             {
@@ -401,6 +414,7 @@ namespace MemoAnchor.UI
             finally
             {
                 _isMemoTrashLoading = false;
+                SetMemoServerWaiting(false);
             }
         }
 
@@ -482,17 +496,35 @@ namespace MemoAnchor.UI
 
         private async Awaitable RestoreMemoAsync(MemoDetailItem item)
         {
-            MemoListResponse response = await _memoService.RestoreMemoAsync(item.Id);
-            _selectedTrashMemoIds.Remove(item.Id);
-            ApplyMemoTrashResponse(response);
-            await RefreshMemoListAsync();
+            SetMemoServerWaiting(true);
+
+            try
+            {
+                MemoListResponse response = await _memoService.RestoreMemoAsync(item.Id);
+                _selectedTrashMemoIds.Remove(item.Id);
+                ApplyMemoTrashResponse(response);
+                await RefreshMemoListAsync();
+            }
+            finally
+            {
+                SetMemoServerWaiting(false);
+            }
         }
 
         private async Awaitable DeleteMemoPermanentlyAsync(MemoDetailItem item)
         {
-            MemoListResponse response = await _memoService.DeleteMemoPermanentlyAsync(item.Id);
-            _selectedTrashMemoIds.Remove(item.Id);
-            ApplyMemoTrashResponse(response);
+            SetMemoServerWaiting(true);
+
+            try
+            {
+                MemoListResponse response = await _memoService.DeleteMemoPermanentlyAsync(item.Id);
+                _selectedTrashMemoIds.Remove(item.Id);
+                ApplyMemoTrashResponse(response);
+            }
+            finally
+            {
+                SetMemoServerWaiting(false);
+            }
         }
 
         private void ToggleTrashMemoSelection(VisualElement row, MemoDetailItem item)
@@ -536,14 +568,24 @@ namespace MemoAnchor.UI
             string[] memoIds = new string[_selectedTrashMemoIds.Count];
             _selectedTrashMemoIds.CopyTo(memoIds);
             MemoListResponse response = null;
-            foreach (string memoId in memoIds)
-            {
-                response = await _memoService.RestoreMemoAsync(memoId);
-            }
 
-            _selectedTrashMemoIds.Clear();
-            ApplyMemoTrashResponse(response ?? new MemoListResponse());
-            await RefreshMemoListAsync();
+            SetMemoServerWaiting(true);
+
+            try
+            {
+                foreach (string memoId in memoIds)
+                {
+                    response = await _memoService.RestoreMemoAsync(memoId);
+                }
+
+                _selectedTrashMemoIds.Clear();
+                ApplyMemoTrashResponse(response ?? new MemoListResponse());
+                await RefreshMemoListAsync();
+            }
+            finally
+            {
+                SetMemoServerWaiting(false);
+            }
         }
 
         private async Awaitable DeleteSelectedTrashMemosAsync()
@@ -551,13 +593,35 @@ namespace MemoAnchor.UI
             string[] memoIds = new string[_selectedTrashMemoIds.Count];
             _selectedTrashMemoIds.CopyTo(memoIds);
             MemoListResponse response = null;
-            foreach (string memoId in memoIds)
-            {
-                response = await _memoService.DeleteMemoPermanentlyAsync(memoId);
-            }
 
-            _selectedTrashMemoIds.Clear();
-            ApplyMemoTrashResponse(response ?? new MemoListResponse());
+            SetMemoServerWaiting(true);
+
+            try
+            {
+                foreach (string memoId in memoIds)
+                {
+                    response = await _memoService.DeleteMemoPermanentlyAsync(memoId);
+                }
+
+                _selectedTrashMemoIds.Clear();
+                ApplyMemoTrashResponse(response ?? new MemoListResponse());
+            }
+            finally
+            {
+                SetMemoServerWaiting(false);
+            }
+        }
+
+        private void SetMemoServerWaiting(bool isWaiting)
+        {
+            if (isWaiting)
+            {
+                LoadingSpinnerController.ShowOverlay(_memoLoadingOverlay, _memoLoadingSpinner);
+            }
+            else
+            {
+                LoadingSpinnerController.HideOverlay(_memoLoadingOverlay, _memoLoadingSpinner);
+            }
         }
 
         private void BuildMemoDetailContent(MemoDetailItem item)

@@ -268,5 +268,8 @@
                 </ui:VisualElement>
             </ui:ScrollView>
         </ui:VisualElement>
+        <ui:VisualElement name="memo-loading-overlay" class="memo-create-loading-overlay is-hidden">
+            <ui:VisualElement name="memo-loading-spinner" class="memo-create-loading-spinner"/>
+        </ui:VisualElement>
     </ui:VisualElement>
 </ui:UXML>

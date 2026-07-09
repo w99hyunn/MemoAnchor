@@ -48,10 +48,6 @@
     border-bottom-color: transparent;
 }
 
-.is-ui-blurred {
-    filter: blur(8px);
-}
-
 .common-icon-button {
     width: 88px;
     height: 88px;
