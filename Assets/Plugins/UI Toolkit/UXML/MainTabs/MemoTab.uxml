@@ -87,14 +87,10 @@
                     <ui:VisualElement class="memo-filter-section">
                         <ui:Label text="맵 필터" class="memo-filter-section-title"/>
                         <ui:Button name="memo-filter-map-button" class="memo-filter-select-button">
-                            <ui:Label name="memo-filter-map-label" text="건물 선택하기" class="memo-filter-select-text"/>
-                            <ui:Label text="›" class="memo-filter-select-chevron"/>
+                            <ui:Label name="memo-filter-map-label" text="전체" class="memo-filter-select-text"/>
+                            <ui:VisualElement class="memo-filter-select-chevron"/>
                         </ui:Button>
-                        <ui:VisualElement name="memo-filter-map-list" class="memo-filter-map-list">
-                            <ui:Button name="memo-filter-map-1" text="" class="memo-filter-map-item"/>
-                            <ui:Button name="memo-filter-map-2" text="" class="memo-filter-map-item"/>
-                            <ui:Button name="memo-filter-map-3" text="" class="memo-filter-map-item"/>
-                        </ui:VisualElement>
+                        <ui:VisualElement name="memo-filter-map-list" class="memo-filter-map-list"/>
                     </ui:VisualElement>
                     <ui:VisualElement class="memo-filter-divider"/>
                     <ui:VisualElement class="memo-filter-section">

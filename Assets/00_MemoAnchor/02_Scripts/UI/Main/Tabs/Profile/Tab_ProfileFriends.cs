@@ -10,14 +10,18 @@ using UnityEngine.UIElements;
 
 namespace MemoAnchor.UI
 {
-    public partial class MainTabView
+    public partial class MainView
     {
+        [SerializeField] private VisualTreeAsset _alertRequestItemAsset;
+
         private bool _friendsInitialized;
         private bool _friendsCallbacksRegistered;
         private bool _isFriendsInitializing;
         private bool _isFriendsRefreshing;
         private bool _friendsRefreshQueued;
         private bool _isFriendRequestSubmitting;
+
+        public event Action FriendRequestAlertsChanged;
 
         private async Awaitable InitializeFriendsAsync()
         {
@@ -242,30 +246,30 @@ namespace MemoAnchor.UI
 
         private void RebuildOpenAlertFriendRequests()
         {
-            RebuildAlertItems();
+            FriendRequestAlertsChanged?.Invoke();
         }
 
-        private void AddFriendRequestAlerts()
+        public void AddFriendRequestAlertsTo(VisualElement alertRequestList)
         {
             if (!_friendsInitialized)
             {
-                AddRequestStatus("친구 정보를 불러오는 중입니다.");
+                AddRequestStatus(alertRequestList, "친구 정보를 불러오는 중입니다.");
                 return;
             }
 
             if (FriendsService.Instance.IncomingFriendRequests.Count == 0)
             {
-                AddRequestStatus("새 친구요청이 없습니다.");
+                AddRequestStatus(alertRequestList, "새 친구요청이 없습니다.");
                 return;
             }
 
             foreach (Relationship request in FriendsService.Instance.IncomingFriendRequests)
             {
-                AddFriendRequestAlert(request);
+                AddFriendRequestAlert(alertRequestList, request);
             }
         }
 
-        private void AddFriendRequestAlert(Relationship request)
+        private void AddFriendRequestAlert(VisualElement alertRequestList, Relationship request)
         {
             TemplateContainer item = _alertRequestItemAsset.Instantiate();
             string memberId = request.Member.Id;
@@ -277,10 +281,10 @@ namespace MemoAnchor.UI
             item.Q<Button>("alert-reject-button").clicked += () => _ = DeclineFriendRequestAsync(memberId);
             item.Q<Button>("alert-accept-button").clicked += () => _ = AcceptFriendRequestAsync(memberId);
 
-            _alertRequestList.Add(item);
+            alertRequestList.Add(item);
         }
 
-        private void AddRequestStatus(string title)
+        private void AddRequestStatus(VisualElement alertRequestList, string title)
         {
             TemplateContainer item = _alertRequestItemAsset.Instantiate();
             item.Q<Label>("alert-primary-text").text = title;
@@ -291,7 +295,7 @@ namespace MemoAnchor.UI
 
             item.Q<Label>("alert-time-text").text = string.Empty;
             item.Q<VisualElement>(className: "alert-action-row").style.display = DisplayStyle.None;
-            _alertRequestList.Add(item);
+            alertRequestList.Add(item);
         }
 
         private async Awaitable AcceptFriendRequestAsync(string memberId)

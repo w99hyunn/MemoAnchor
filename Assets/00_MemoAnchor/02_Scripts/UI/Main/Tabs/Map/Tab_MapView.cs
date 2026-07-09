@@ -7,7 +7,7 @@ using UnityEngine.UIElements;
 
 namespace MemoAnchor.UI
 {
-    public partial class MainTabView
+    public partial class MainView
     {
         private readonly ScanMapService _scanMapService = new();
         private readonly HashSet<string> _openMapAddresses = new(StringComparer.Ordinal);
@@ -235,20 +235,20 @@ namespace MemoAnchor.UI
 
             _mapCurrentSpaceLabel.text = selectedMap.spaceName;
             _mapCurrentAddressLabel.text = GetMapAddressKey(selectedMap);
-            _mapScanTimeLabel.text = $"스캔일시 : {FormatScanTime(selectedMap.scanCreatedAt)}";
+            _mapScanTimeLabel.text = $"?ㅼ틪?쇱떆 : {FormatScanTime(selectedMap.scanCreatedAt)}";
         }
 
         private void OnClickMapCreateTextMemo()
         {
-            ShowMemoCreatePageForSelectedMap("text");
+            ShowMapMemoCreatePageForSelectedMap("text");
         }
 
         private void OnClickMapCreateChecklistMemo()
         {
-            ShowMemoCreatePageForSelectedMap("checklist");
+            ShowMapMemoCreatePageForSelectedMap("checklist");
         }
 
-        private void ShowMemoCreatePageForSelectedMap(string kind)
+        private void ShowMapMemoCreatePageForSelectedMap(string kind)
         {
             ScanMapItem selectedMap = GetSelectedMap();
             if (selectedMap == null)
@@ -256,7 +256,7 @@ namespace MemoAnchor.UI
                 return;
             }
 
-            ShowMemoCreatePage(selectedMap, kind);
+            ShowMapMemoCreatePage(selectedMap, kind);
         }
 
         private ScanMapItem GetSelectedMap()

@@ -269,6 +269,8 @@ GameObject:
   - component: {fileID: 1996884578}
   - component: {fileID: 1996884580}
   - component: {fileID: 1996884579}
+  - component: {fileID: 1996884583}
+  - component: {fileID: 1996884584}
   - component: {fileID: 1996884581}
   - component: {fileID: 1996884582}
   m_Layer: 5
@@ -339,7 +341,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: afa409d017c1eca4cb5d2d00d7fd5e0b, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::MemoAnchor.UI.MainTabController
+  m_EditorClassIdentifier: Assembly-CSharp::MemoAnchor.UI.MainController
 --- !u!114 &1996884580
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -351,11 +353,41 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 7ad7983a77196a844b61d2f6d54f2a41, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::MemoAnchor.UI.MainTabView
+  m_EditorClassIdentifier: Assembly-CSharp::MemoAnchor.UI.MainView
+  _memoCreateChecklistInputAsset: {fileID: 9197481963319205126, guid: 93219ba7802d4d23943b3b169ccbab69, type: 3}
+  _memoCreateRepairerRowAsset: {fileID: 9197481963319205126, guid: c329d1f3e9eb45fda3d0c4f2b0e55dc9, type: 3}
+  _memoCreateRepairerStatusAsset: {fileID: 9197481963319205126, guid: 60619ff9da1040c7b16cc1864b8cee21, type: 3}
+  _memoCreateTimeOptionAsset: {fileID: 9197481963319205126, guid: 6c8033298da54ae9bada830243c50fc0, type: 3}
   _scanActionDialogAsset: {fileID: 9197481963319205126, guid: c089c196f57e6c34e9cca09e94a770fd, type: 3}
   _alertRequestItemAsset: {fileID: 9197481963319205126, guid: 947d4cfd7f6a40b8aa63af803cd4219c, type: 3}
-  _alertMapItemAsset: {fileID: 9197481963319205126, guid: d5f9982459534f41b893bf1fe14a792f, type: 3}
   _splashScene: Splash
+--- !u!114 &1996884583
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1996884575}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cdfeba9e8dddab544aea3e528944850c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::MemoAnchor.UI.Tab_HomeView
+  _homeAdminTitle: "\uAD00\uB9AC\uC790"
+  _homeWorkTitle: "\uC791\uC5C5\uC790"
+--- !u!114 &1996884584
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1996884575}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 739b466ceee94598a4447b4cef8ee937, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::MemoAnchor.UI.Tab_HomeController
+  _alertMapItemAsset: {fileID: 9197481963319205126, guid: d5f9982459534f41b893bf1fe14a792f, type: 3}
 --- !u!114 &1996884581
 MonoBehaviour:
   m_ObjectHideFlags: 0

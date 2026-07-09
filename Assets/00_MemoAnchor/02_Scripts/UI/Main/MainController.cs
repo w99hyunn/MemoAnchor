@@ -3,13 +3,13 @@ using UnityEngine.UIElements;
 
 namespace MemoAnchor.UI
 {
-    [RequireComponent(typeof(MainTabView))]
-    public class MainTabController : MonoBehaviour
+    [RequireComponent(typeof(MainView))]
+    public class MainController : MonoBehaviour
     {
         private const string NavTapDownClass = "is-tapping-down";
         private const int NavTapDownDurationMs = 105;
 
-        private MainTabView _view;
+        private MainView _view;
         private Tab_ScanView _scanView;
         private Tab_ScanController _scanController;
         private int _currentTabIndex;
@@ -18,7 +18,7 @@ namespace MemoAnchor.UI
 
         private void Awake()
         {
-            TryGetComponent<MainTabView>(out _view);
+            TryGetComponent<MainView>(out _view);
             TryGetComponent<Tab_ScanView>(out _scanView);
             TryGetComponent<Tab_ScanController>(out _scanController);
         }

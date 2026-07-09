@@ -5,13 +5,16 @@ using UnityEngine.UIElements;
 
 namespace MemoAnchor.UI
 {
-    public partial class MainTabView
+    public partial class MainView
     {
         private const string MEMO_SEARCH_HISTORY_KEY = "MemoAnchor.MemoSearch.History";
         private const int MEMO_SEARCH_HISTORY_LIMIT = 20;
 
+        private TextField _memoSearchSourceInput, _memoSearchPageInput;
+        private Button _memoSearchBackButton, _memoSearchClearButton, _memoSearchPageClearButton;
         private Label _memoSearchEmptyLabel;
         private Label _memoSearchNoResultLabel;
+        private VisualElement _memoSearchPage, _memoSearchHistoryList;
         private VisualElement _memoSearchHistorySection;
         private VisualElement _memoSearchResultSection;
         private VisualElement _memoSearchResultList;

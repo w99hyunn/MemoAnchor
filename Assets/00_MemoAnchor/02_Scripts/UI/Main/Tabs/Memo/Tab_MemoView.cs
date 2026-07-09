@@ -5,7 +5,7 @@ using UnityEngine.UIElements;
 
 namespace MemoAnchor.UI
 {
-    public partial class MainTabView
+    public partial class MainView
     {
         private readonly MemoService _memoService = new();
         private readonly List<MemoDetailItem> _memoDetailItems = new();
@@ -194,7 +194,25 @@ namespace MemoAnchor.UI
             VisualElement foreground = new();
             foreground.name = "memo-list-item-foreground";
             foreground.AddToClassList("memo-list-item");
-            foreground.RegisterCallback<ClickEvent>(_ => ShowMemoDetailPage(item));
+            foreground.RegisterCallback<ClickEvent>(evt =>
+            {
+                if (row.ClassListContains(MEMO_DELETE_OPEN_CLASS))
+                {
+                    if (row.ClassListContains(MEMO_DELETE_PRESS_CLASS))
+                    {
+                        row.RemoveFromClassList(MEMO_DELETE_PRESS_CLASS);
+                    }
+                    else
+                    {
+                        row.RemoveFromClassList(MEMO_DELETE_OPEN_CLASS);
+                    }
+
+                    evt.StopPropagation();
+                    return;
+                }
+
+                ShowMemoDetailPage(item);
+            });
 
             VisualElement body = new();
             body.AddToClassList("memo-list-item-body");
@@ -225,6 +243,7 @@ namespace MemoAnchor.UI
             foreground.Add(body);
             row.Add(deleteButton);
             row.Add(foreground);
+            RegisterMemoDeleteRow(row);
             _memoListContainer.Add(row);
 
             VisualElement divider = new();
