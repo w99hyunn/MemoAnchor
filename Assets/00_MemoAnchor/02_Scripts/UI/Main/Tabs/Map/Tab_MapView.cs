@@ -235,7 +235,7 @@ namespace MemoAnchor.UI
 
             _mapCurrentSpaceLabel.text = selectedMap.spaceName;
             _mapCurrentAddressLabel.text = GetMapAddressKey(selectedMap);
-            _mapScanTimeLabel.text = $"?ㅼ틪?쇱떆 : {FormatScanTime(selectedMap.scanCreatedAt)}";
+            _mapScanTimeLabel.text = $"스캔일시 : {FormatScanTime(selectedMap.scanCreatedAt)}";
         }
 
         private void OnClickMapCreateTextMemo()

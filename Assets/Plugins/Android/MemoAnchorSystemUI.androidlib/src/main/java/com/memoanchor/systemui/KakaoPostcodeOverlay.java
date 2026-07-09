@@ -31,7 +31,7 @@ public final class KakaoPostcodeOverlay {
             + "function buildAddress(data){var addr=data.userSelectedType==='R'?data.roadAddress:data.jibunAddress;"
             + "var extra='';"
             + "if(data.userSelectedType==='R'){"
-            + "if(data.bname!==''&&/[?숇줈媛]$/.test(data.bname)){extra+=data.bname;}"
+            + "if(data.bname!==''&&/[동로가]$/.test(data.bname)){extra+=data.bname;}"
             + "if(data.buildingName!==''&&data.apartment==='Y'){extra+=(extra!==''?', ':'')+data.buildingName;}"
             + "if(extra!==''){addr+=' ('+extra+')';}}"
             + "return {zonecode:data.zonecode,address:addr,roadAddress:data.roadAddress,jibunAddress:data.jibunAddress,buildingName:data.buildingName,bname:data.bname};}"

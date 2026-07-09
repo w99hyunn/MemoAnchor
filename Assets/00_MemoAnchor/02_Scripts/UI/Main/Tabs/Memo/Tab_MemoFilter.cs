@@ -174,7 +174,7 @@ namespace MemoAnchor.UI
                 Button emptyButton = new();
                 emptyButton.AddToClassList("scan-address-list-item");
                 emptyButton.AddToClassList("memo-filter-map-item");
-                Label emptyText = new("李몄뿬 以묒씤 留듭씠 ?놁뒿?덈떎.");
+                Label emptyText = new("참여 중인 맵이 없습니다.");
                 emptyText.AddToClassList("scan-address-list-text");
                 emptyButton.Add(emptyText);
                 emptyButton.SetEnabled(false);
@@ -321,7 +321,7 @@ namespace MemoAnchor.UI
             button.userData = string.Empty;
             button.AddToClassList("scan-address-list-item");
             button.AddToClassList("memo-filter-map-item");
-            Label text = new("?꾩껜");
+            Label text = new("전체");
             text.AddToClassList("scan-address-list-text");
             button.Add(text);
             button.clicked += () => SelectMemoFilterMap(null);
@@ -466,7 +466,7 @@ namespace MemoAnchor.UI
         {
             _memoFilterStartDateLabel.text = _memoFilterStartDate.ToString("yyyy-MM-dd");
             _memoFilterEndDateLabel.text = _memoFilterEndDate.ToString("yyyy-MM-dd");
-            _memoFilterMapLabel.text = string.IsNullOrEmpty(_memoFilterMap) ? "?꾩껜" : _memoFilterMap;
+            _memoFilterMapLabel.text = string.IsNullOrEmpty(_memoFilterMap) ? "전체" : _memoFilterMap;
             _memoFilterCalendarTitle.text = _memoFilterCalendarMonth.ToString("yyyy년 M월");
 
             _memoFilterDateToggle.EnableInClassList(SELECTED_CLASS, _memoFilterDateEnabled);
