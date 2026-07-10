@@ -10,9 +10,6 @@ namespace MemoAnchor
     public class Splash : MonoBehaviour
     {
         private const string HIDDEN_CLASS = "is-hidden";
-        private const string INPUT_ERROR_CLASS = "is-error";
-        private const int SHAKE_FRAME_COUNT = 12;
-        private const float SHAKE_OFFSET = 40f;
         private static readonly Regex EmailRegex = new("^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$", RegexOptions.Compiled);
         private static readonly HashSet<string> HandledLoginResultIds = new();
 
@@ -397,13 +394,12 @@ namespace MemoAnchor
 
         private static void SetSignupInputError(VisualElement inputBox)
         {
-            inputBox.AddToClassList(INPUT_ERROR_CLASS);
+            InputValidationFeedback.ShowError(inputBox);
         }
 
         private static void ClearSignupInputError(VisualElement inputBox)
         {
-            inputBox.RemoveFromClassList(INPUT_ERROR_CLASS);
-            inputBox.style.translate = new Translate(0, 0, 0);
+            InputValidationFeedback.ClearError(inputBox);
         }
 
         private async Awaitable ShakeInvalidSignupInputsAsync()
@@ -412,30 +408,12 @@ namespace MemoAnchor
             AddInvalidSignupInput(invalidInputs, signupCompanyInputBox);
             AddInvalidSignupInput(invalidInputs, signupNameInputBox);
             AddInvalidSignupInput(invalidInputs, signupEmailInputBox);
-
-            for (int i = 0; i < SHAKE_FRAME_COUNT; i++)
-            {
-                float offset = i % 2 == 0 ? -SHAKE_OFFSET : SHAKE_OFFSET;
-                foreach (VisualElement inputBox in invalidInputs)
-                {
-                    inputBox.style.translate = new Translate(offset, 0, 0);
-                }
-
-                await Awaitable.NextFrameAsync();
-            }
-
-            foreach (VisualElement inputBox in invalidInputs)
-            {
-                inputBox.style.translate = new Translate(0, 0, 0);
-            }
+            await InputValidationFeedback.ShakeAsync(invalidInputs);
         }
 
         private static void AddInvalidSignupInput(List<VisualElement> invalidInputs, VisualElement inputBox)
         {
-            if (inputBox.ClassListContains(INPUT_ERROR_CLASS))
-            {
-                invalidInputs.Add(inputBox);
-            }
+            InputValidationFeedback.AddIfError(invalidInputs, inputBox);
         }
 
 

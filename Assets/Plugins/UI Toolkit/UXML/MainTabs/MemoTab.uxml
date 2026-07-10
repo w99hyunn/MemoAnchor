@@ -177,7 +177,7 @@
                 <ui:Button name="memo-create-back-button" text="" class="page-back-button common-icon-button">
                     <ui:VisualElement class="common-icon-button-icon" style="background-image: url(&quot;project://database/Assets/00_MemoAnchor/03_Media/Icon/chevron_forward.png?fileID=2800000&amp;guid=3ca432206e7cabb45abd1dfc722e509d&amp;type=3#chevron_forward&quot;);"/>
                 </ui:Button>
-                <ui:Label text="메모 생성" class="page-header-title"/>
+                <ui:Label name="memo-create-page-title" text="메모 생성" class="page-header-title"/>
             </ui:VisualElement>
             <ui:ScrollView name="memo-create-scroll" mode="Vertical" horizontal-scroller-visibility="Hidden" vertical-scroller-visibility="Hidden" touch-scroll-type="Elastic" class="memo-create-scroll">
                 <ui:VisualElement class="memo-create-section">
@@ -199,9 +199,11 @@
                     <ui:Label name="memo-create-content-title" text="타이핑" class="memo-filter-section-title"/>
                     <ui:VisualElement name="memo-create-title-content" class="scan-input-box memo-create-title-box">
                         <ui:TextField name="memo-create-title-input" label="" placeholder-text="제목을 입력해주세요." class="scan-input-field"/>
+                        <ui:VisualElement picking-mode="Ignore" class="signup-input-border"/>
                     </ui:VisualElement>
                     <ui:VisualElement name="memo-create-text-content" class="scan-input-box memo-create-body-box">
                         <ui:TextField name="memo-create-body-input" label="" multiline="true" placeholder-text="내용을 입력해주세요." class="scan-input-field memo-create-body-input"/>
+                        <ui:VisualElement picking-mode="Ignore" class="signup-input-border"/>
                     </ui:VisualElement>
                     <ui:VisualElement name="memo-create-checklist-content" class="memo-create-checklist-content is-hidden">
                         <ui:VisualElement name="memo-create-checklist-list" class="content-list"/>

@@ -15,7 +15,7 @@ namespace MemoAnchor.UI
         private readonly List<MemoDetailItem> _memoTrashItems = new();
         private readonly HashSet<string> _selectedTrashMemoIds = new(StringComparer.OrdinalIgnoreCase);
         private VisualElement _memoListContainer, _memoDetailPage, _memoDetailMenu, _memoDetailContent, _memoTrashPage, _memoTrashListContainer, _memoLoadingOverlay, _memoLoadingSpinner;
-        private Button _memoDetailBackButton, _memoDetailMenuButton, _memoDetailDeleteButton, _memoTrashButton, _memoTrashBackButton, _memoTrashSelectButton;
+        private Button _memoDetailBackButton, _memoDetailMenuButton, _memoDetailEditButton, _memoDetailDeleteButton, _memoTrashButton, _memoTrashBackButton, _memoTrashSelectButton;
         private Button _memoTrashPermanentDeleteButton, _memoTrashRestoreButton;
         private Label _memoDetailPlaceLabel;
         private MemoDetailItem _currentMemoDetailItem;
@@ -36,6 +36,7 @@ namespace MemoAnchor.UI
             _memoLoadingSpinner = _root.Q<VisualElement>("memo-loading-spinner");
             _memoDetailBackButton = _root.Q<Button>("memo-detail-back-button");
             _memoDetailMenuButton = _root.Q<Button>("memo-detail-menu-button");
+            _memoDetailEditButton = _root.Q<Button>("memo-detail-edit-button");
             _memoDetailDeleteButton = _root.Q<Button>("memo-detail-delete-button");
             _memoTrashButton = _root.Q<Button>("memo-trash-button");
             _memoTrashBackButton = _root.Q<Button>("memo-trash-back-button");
@@ -50,6 +51,7 @@ namespace MemoAnchor.UI
 
             _memoDetailBackButton.clicked += HideMemoDetailPage;
             _memoDetailMenuButton.clicked += ToggleMemoDetailMenu;
+            _memoDetailEditButton.clicked += ShowCurrentMemoEditPage;
             _memoDetailDeleteButton.clicked += ShowCurrentMemoDeleteConfirm;
             _memoTrashButton.clicked += ShowMemoTrashPage;
             _memoTrashBackButton.clicked += HideMemoTrashPage;
@@ -63,6 +65,7 @@ namespace MemoAnchor.UI
         {
             _memoDetailBackButton.clicked -= HideMemoDetailPage;
             _memoDetailMenuButton.clicked -= ToggleMemoDetailMenu;
+            _memoDetailEditButton.clicked -= ShowCurrentMemoEditPage;
             _memoDetailDeleteButton.clicked -= ShowCurrentMemoDeleteConfirm;
             _memoTrashButton.clicked -= ShowMemoTrashPage;
             _memoTrashBackButton.clicked -= HideMemoTrashPage;
@@ -102,19 +105,7 @@ namespace MemoAnchor.UI
 
             try
             {
-                var payload = new MemoCreateRequest
-                {
-                    mapId = map.id,
-                    locationName = map.spaceName,
-                    kind = kind,
-                    urgency = urgency,
-                    title = title,
-                    body = body,
-                    assigneePlayerId = assigneePlayerId,
-                    assigneeName = assigneeName,
-                    dueText = dueText,
-                    checklistItems = checklistItems
-                };
+                MemoCreateRequest payload = BuildMemoRequest(map, kind, title, body, urgency, assigneePlayerId, assigneeName, dueText, checklistItems);
 
                 MemoCreateResult result = await _memoService.CreateMemoAsync(payload);
                 if (!result.IsSuccess)
@@ -136,6 +127,57 @@ namespace MemoAnchor.UI
             {
                 _isCreatingMemo = false;
             }
+        }
+
+        private async Awaitable<MemoDetailItem> UpdateMemoForMapAsync(MemoDetailItem item, ScanMapItem map, string kind, string title, string body, string urgency, string assigneePlayerId, string assigneeName, string dueText, List<MemoChecklistEntry> checklistItems)
+        {
+            if (_isCreatingMemo)
+            {
+                return null;
+            }
+
+            _isCreatingMemo = true;
+
+            try
+            {
+                MemoCreateRequest payload = BuildMemoRequest(map, kind, title, body, urgency, assigneePlayerId, assigneeName, dueText, checklistItems);
+                MemoCreateResult result = await _memoService.UpdateMemoAsync(item.Id, payload);
+                if (!result.IsSuccess)
+                {
+                    PopupManager.ShowMessage("메모 수정 실패", "서버에 수정 내용을 저장하지 못했습니다.", "확인");
+                    return null;
+                }
+
+                MemoListResponse response = result.MemoList;
+                if (response.memos.Count == 0)
+                {
+                    response = await _memoService.LoadMemosAsync();
+                }
+
+                ApplyMemoListResponse(response);
+                return result.Memo == null ? _memoDetailItems.Find(memo => memo.Id == item.Id) : CreateMemoDetailItem(result.Memo);
+            }
+            finally
+            {
+                _isCreatingMemo = false;
+            }
+        }
+
+        private static MemoCreateRequest BuildMemoRequest(ScanMapItem map, string kind, string title, string body, string urgency, string assigneePlayerId, string assigneeName, string dueText, List<MemoChecklistEntry> checklistItems)
+        {
+            return new MemoCreateRequest
+            {
+                mapId = map.id,
+                locationName = map.spaceName,
+                kind = kind,
+                urgency = urgency,
+                title = title,
+                body = body,
+                assigneePlayerId = assigneePlayerId,
+                assigneeName = assigneeName,
+                dueText = dueText,
+                checklistItems = checklistItems
+            };
         }
 
         private void ApplyMemoListResponse(MemoListResponse response)
@@ -161,6 +203,7 @@ namespace MemoAnchor.UI
                 Title = GetFirstNonEmpty(memo.title, "새 메모"),
                 Body = GetFirstNonEmpty(memo.body, string.Empty),
                 AuthorPlayerId = GetFirstNonEmpty(memo.authorPlayerId, string.Empty),
+                AssigneePlayerId = GetFirstNonEmpty(memo.assigneePlayerId, string.Empty),
                 Location = BuildMemoLocation(memo),
                 DueText = GetFirstNonEmpty(memo.dueText, string.Empty),
                 Assignee = GetFirstNonEmpty(memo.assigneeName, string.Empty),
@@ -315,6 +358,28 @@ namespace MemoAnchor.UI
         private static bool CanDeleteMemo(MemoDetailItem item)
         {
             return string.Equals(item.AuthorPlayerId, AuthenticationService.Instance.PlayerId, StringComparison.OrdinalIgnoreCase);
+        }
+
+        private bool CanEditMemo(MemoDetailItem item)
+        {
+            return CanDeleteMemo(item) || CanManageMemo(item);
+        }
+
+        private void ShowCurrentMemoEditPage()
+        {
+            HideMemoDetailMenu();
+            if (_currentMemoDetailItem == null)
+            {
+                return;
+            }
+
+            if (!CanEditMemo(_currentMemoDetailItem))
+            {
+                PopupManager.ShowMessage("수정할 수 없음", "메모 작성자 또는 맵 관리자만 수정할 수 있습니다.", "확인");
+                return;
+            }
+
+            ShowMemoEditPage(_currentMemoDetailItem);
         }
 
         private void ShowCurrentMemoDeleteConfirm()
@@ -894,6 +959,7 @@ namespace MemoAnchor.UI
             public string Title;
             public string Body;
             public string AuthorPlayerId;
+            public string AssigneePlayerId;
             public string Location;
             public string DueText;
             public string Assignee;

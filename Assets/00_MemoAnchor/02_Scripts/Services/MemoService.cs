@@ -27,6 +27,7 @@ namespace MemoAnchor
         public string body;
         public string authorPlayerId;
         public string authorName;
+        public string assigneePlayerId;
         public string assigneeName;
         public string dueText;
         public string createdAt;
@@ -171,6 +172,42 @@ namespace MemoAnchor
             finally
             {
                 _isLoading = false;
+            }
+        }
+
+        public async Awaitable<MemoCreateResult> UpdateMemoAsync(string memoId, MemoCreateRequest payload)
+        {
+            if (_isMutating || !AuthenticationService.Instance.IsSignedIn)
+            {
+                return new MemoCreateResult(false, null, _lastResponse);
+            }
+
+            _isMutating = true;
+
+            try
+            {
+                string json = JsonUtility.ToJson(payload);
+                string path = $"{MEMOS_API_PATH}/{UnityWebRequest.EscapeURL(memoId)}";
+                using UnityWebRequest request = ServicesManager.CreateAuthorizedJsonRequest(path, json, "PUT");
+                await ServicesManager.SendRequestAsync(request);
+
+                if (request.result != UnityWebRequest.Result.Success)
+                {
+                    Debug.LogWarning($"Memo update failed: {request.error}");
+                    return new MemoCreateResult(false, null, _lastResponse);
+                }
+
+                MemoCreateResponse response = JsonUtility.FromJson<MemoCreateResponse>(request.downloadHandler.text);
+                if (response.memos != null)
+                {
+                    _lastResponse = new MemoListResponse { memos = response.memos };
+                }
+
+                return new MemoCreateResult(true, response.memo, _lastResponse);
+            }
+            finally
+            {
+                _isMutating = false;
             }
         }
 

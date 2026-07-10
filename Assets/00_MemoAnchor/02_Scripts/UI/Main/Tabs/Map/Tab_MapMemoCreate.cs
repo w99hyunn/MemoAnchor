@@ -23,7 +23,7 @@ namespace MemoAnchor.UI
         private Button _memoCreateDateButton, _memoCreateTimeButton, _memoCreateTimeCloseButton;
         private Button _memoCreateChecklistAddButton;
         private Button _memoCreateUrgencyHighButton, _memoCreateUrgencyMiddleButton, _memoCreateUrgencyLowButton;
-        private Label _memoCreateDateLabel, _memoCreateTimeLabel, _memoCreateCalendarTitle, _memoCreateContentTitle, _memoCreateRepairerLabel;
+        private Label _memoCreateDateLabel, _memoCreateTimeLabel, _memoCreateCalendarTitle, _memoCreateContentTitle, _memoCreateRepairerLabel, _memoCreatePageTitle;
         private TextField _memoCreateTitleInput, _memoCreateBodyInput;
         private VisualElement _memoCreateTitleContent, _memoCreateTextContent, _memoCreateChecklistContent, _memoCreateChecklistList;
         private readonly List<TextField> _memoCreateChecklistInputs = new();
@@ -31,6 +31,10 @@ namespace MemoAnchor.UI
         private string _memoCreateKind = "text";
         private string _memoCreateUrgency = "middle";
         private string _memoCreateRepairerPlayerId = string.Empty;
+        private string _memoCreateDefaultRepairerLabel;
+        private string _memoCreateOriginalDueText = string.Empty;
+        private MemoDetailItem _memoCreateEditingItem;
+        private bool _memoCreateDueChanged;
         private bool _memoCreateRepairerExpanded;
         private bool _isMemoCreateSubmitting;
         private DateTime _memoCreateSelectedDate;
@@ -74,6 +78,7 @@ namespace MemoAnchor.UI
             _memoCreateRepairerItemsList = _root.Q<VisualElement>("memo-create-repairer-items-list");
             _memoCreateRepairerChevron = _root.Q<VisualElement>("memo-create-repairer-chevron");
             _memoCreateRepairerLabel = _root.Q<Label>("memo-create-repairer-label");
+            _memoCreatePageTitle = _root.Q<Label>("memo-create-page-title");
             _memoCreateResetButton = _root.Q<Button>("memo-create-reset-button");
             _memoCreateSubmitButton = _root.Q<Button>("memo-create-submit-button");
             _memoCreateTitleInput = _root.Q<TextField>("memo-create-title-input");
@@ -81,6 +86,7 @@ namespace MemoAnchor.UI
             _memoCreateUrgencyHighButton = _root.Q<Button>("memo-create-urgency-high");
             _memoCreateUrgencyMiddleButton = _root.Q<Button>("memo-create-urgency-middle");
             _memoCreateUrgencyLowButton = _root.Q<Button>("memo-create-urgency-low");
+            _memoCreateDefaultRepairerLabel = _memoCreateRepairerLabel.text;
 
             SetMemoCreateDateTimeToNow();
             BuildMemoCreateCalendar();
@@ -111,6 +117,8 @@ namespace MemoAnchor.UI
             _memoCreatePeriodColumn.RegisterCallback<PointerCancelEvent>(OnMemoCreatePeriodColumnPointerCancel);
             _memoCreateResetButton.clicked += RequestResetMemoCreateForm;
             _memoCreateSubmitButton.clicked += OnClickMemoCreateSubmit;
+            _memoCreateTitleInput.RegisterValueChangedCallback(OnMemoCreateTitleValueChanged);
+            _memoCreateBodyInput.RegisterValueChangedCallback(OnMemoCreateBodyValueChanged);
             _memoCreateUrgencyHighButton.clicked += () => SetMemoCreateUrgency("high");
             _memoCreateUrgencyMiddleButton.clicked += () => SetMemoCreateUrgency("middle");
             _memoCreateUrgencyLowButton.clicked += () => SetMemoCreateUrgency("low");
@@ -141,13 +149,58 @@ namespace MemoAnchor.UI
             _memoCreatePeriodColumn.UnregisterCallback<PointerCancelEvent>(OnMemoCreatePeriodColumnPointerCancel);
             _memoCreateResetButton.clicked -= RequestResetMemoCreateForm;
             _memoCreateSubmitButton.clicked -= OnClickMemoCreateSubmit;
+            _memoCreateTitleInput.UnregisterValueChangedCallback(OnMemoCreateTitleValueChanged);
+            _memoCreateBodyInput.UnregisterValueChangedCallback(OnMemoCreateBodyValueChanged);
+            foreach (TextField input in _memoCreateChecklistInputs)
+            {
+                input.UnregisterValueChangedCallback(OnMemoCreateChecklistValueChanged);
+            }
         }
 
         private void ShowMapMemoCreatePage(ScanMapItem map, string kind)
         {
+            _memoCreateEditingItem = null;
+            _memoCreateOriginalDueText = string.Empty;
+            _memoCreateDueChanged = true;
             _memoCreateTargetMap = map;
             RequestTabSwitch(1);
             ResetMemoCreateForm(kind);
+            _ = RebuildMemoCreateRepairerListAsync();
+            HideMemoDetailPage();
+            SetVisible(_memoCreatePage, true);
+            SetMemoCreateNavMode(true);
+        }
+
+        private void ShowMemoEditPage(MemoDetailItem item)
+        {
+            if (item.Kind != MemoDetailKind.Text && item.Kind != MemoDetailKind.Checklist)
+            {
+                PopupManager.ShowMessage("수정할 수 없음", "현재는 텍스트와 체크리스트 메모만 수정할 수 있습니다.", "확인");
+                return;
+            }
+
+            ScanMapItem map = _scanMaps.Find(scanMap => string.Equals(scanMap.id, item.MapId, StringComparison.OrdinalIgnoreCase));
+            if (map == null)
+            {
+                PopupManager.ShowMessage("메모 수정 실패", "메모가 연결된 맵을 찾을 수 없습니다.", "확인");
+                return;
+            }
+
+            _memoCreateEditingItem = item;
+            _memoCreateTargetMap = map;
+            RequestTabSwitch(1);
+            ResetMemoCreateForm(item.Kind == MemoDetailKind.Checklist ? "checklist" : "text");
+            _memoCreateTitleInput.SetValueWithoutNotify(item.Title);
+            _memoCreateBodyInput.SetValueWithoutNotify(item.Body);
+            PopulateMemoCreateChecklistInputs(item.ChecklistItems);
+            _memoCreateRepairerPlayerId = item.AssigneePlayerId;
+            _memoCreateRepairerLabel.text = string.IsNullOrWhiteSpace(item.Assignee) ? _memoCreateDefaultRepairerLabel : item.Assignee;
+            SetMemoCreateUrgency(ToMemoCreateUrgency(item.Urgency));
+            ApplyMemoEditDueText(item.DueText);
+            _memoCreateOriginalDueText = item.DueText;
+            _memoCreateDueChanged = false;
+            BuildMemoCreateCalendar();
+            BuildMemoCreateTimePicker();
             _ = RebuildMemoCreateRepairerListAsync();
             HideMemoDetailPage();
             SetVisible(_memoCreatePage, true);
@@ -162,8 +215,17 @@ namespace MemoAnchor.UI
 
         private void OnClickMemoCreateBack()
         {
+            MemoDetailItem editingItem = _memoCreateEditingItem;
+            _memoCreateEditingItem = null;
             HideMapMemoCreatePage();
-            RequestTabSwitch(3);
+            if (editingItem == null)
+            {
+                RequestTabSwitch(3);
+                return;
+            }
+
+            RequestTabSwitch(1);
+            ShowMemoDetailPage(editingItem);
         }
 
         private void ResetMemoCreateForm()
@@ -185,15 +247,27 @@ namespace MemoAnchor.UI
         {
             _memoCreateTitleInput.SetValueWithoutNotify(string.Empty);
             _memoCreateBodyInput.SetValueWithoutNotify(string.Empty);
+            InputValidationFeedback.ClearError(_memoCreateTitleContent);
+            InputValidationFeedback.ClearError(_memoCreateTextContent);
+            ClearMemoCreateChecklistInputErrors();
             SetMemoCreateKind(kind);
             RebuildMemoCreateChecklistInputs();
             _memoCreateRepairerPlayerId = string.Empty;
-            _memoCreateRepairerLabel.text = "수리자 선택하기";
+            _memoCreateRepairerLabel.text = _memoCreateDefaultRepairerLabel;
             SetMemoCreateRepairerExpanded(false);
             SetMemoCreateDateTimeToNow();
             SetVisible(_memoCreateCalendar, false);
             SetVisible(_memoCreateTimePicker, false);
             SetMemoCreateUrgency("middle");
+            _memoCreateDueChanged = _memoCreateEditingItem != null;
+            RefreshMemoCreateModeText();
+        }
+
+        private void RefreshMemoCreateModeText()
+        {
+            bool isEditing = _memoCreateEditingItem != null;
+            _memoCreatePageTitle.text = isEditing ? "메모 수정" : "메모 생성";
+            _memoCreateSubmitButton.text = isEditing ? "수정하기" : "생성하기";
         }
 
         private void SetMemoCreateDateTimeToNow()
@@ -267,25 +341,41 @@ namespace MemoAnchor.UI
                 return;
             }
 
+            string title = _memoCreateTitleInput.value.Trim();
+            string body = _memoCreateBodyInput.value.Trim();
+            List<MemoChecklistEntry> checklistItems = BuildMemoCreateChecklistItems();
+            if (!ValidateMemoCreateInputs(title, body, checklistItems))
+            {
+                return;
+            }
+
             _isMemoCreateSubmitting = true;
             SetMemoCreateSubmitting(true);
 
             try
             {
-                string title = _memoCreateTitleInput.value.Trim();
-                string body = _memoCreateBodyInput.value.Trim();
-                if (string.IsNullOrWhiteSpace(title))
+                string assigneeName = string.IsNullOrWhiteSpace(_memoCreateRepairerPlayerId) ? string.Empty : _memoCreateRepairerLabel.text;
+                string dueText = _memoCreateEditingItem != null && !_memoCreateDueChanged
+                    ? _memoCreateOriginalDueText
+                    : BuildMemoCreateDueText();
+                if (_memoCreateKind == "checklist")
                 {
-                    title = "새 메모";
+                    body = string.Empty;
                 }
 
-                string assigneeName = string.IsNullOrWhiteSpace(_memoCreateRepairerPlayerId) ? string.Empty : _memoCreateRepairerLabel.text;
-                string dueText = BuildMemoCreateDueText();
-                List<MemoChecklistEntry> checklistItems = BuildMemoCreateChecklistItems();
-                if (_memoCreateKind == "checklist" && checklistItems.Count > 0)
+                if (_memoCreateEditingItem != null)
                 {
-                    title = checklistItems[0].text;
-                    body = string.Empty;
+                    MemoDetailItem updatedItem = await UpdateMemoForMapAsync(_memoCreateEditingItem, _memoCreateTargetMap, _memoCreateKind, title, body, _memoCreateUrgency, _memoCreateRepairerPlayerId, assigneeName, dueText, checklistItems);
+                    if (updatedItem == null)
+                    {
+                        return;
+                    }
+
+                    _memoCreateEditingItem = null;
+                    HideMapMemoCreatePage();
+                    RequestTabSwitch(1);
+                    ShowMemoDetailPage(updatedItem);
+                    return;
                 }
 
                 bool isCreated = await CreateMemoForMapAsync(_memoCreateTargetMap, _memoCreateKind, title, body, _memoCreateUrgency, _memoCreateRepairerPlayerId, assigneeName, dueText, checklistItems);
@@ -304,6 +394,65 @@ namespace MemoAnchor.UI
             }
         }
 
+        private bool ValidateMemoCreateInputs(string title, string body, List<MemoChecklistEntry> checklistItems)
+        {
+            InputValidationFeedback.ClearError(_memoCreateTitleContent);
+            InputValidationFeedback.ClearError(_memoCreateTextContent);
+            ClearMemoCreateChecklistInputErrors();
+
+            bool isTitleMissing = string.IsNullOrWhiteSpace(title);
+            bool isContentMissing = _memoCreateKind == "checklist"
+                ? checklistItems.Count == 0
+                : string.IsNullOrWhiteSpace(body);
+
+            if (isTitleMissing)
+            {
+                InputValidationFeedback.ShowError(_memoCreateTitleContent);
+            }
+
+            if (isContentMissing)
+            {
+                if (_memoCreateKind == "checklist")
+                {
+                    if (_memoCreateChecklistInputs.Count == 0)
+                    {
+                        AddMemoCreateChecklistInput();
+                    }
+
+                    foreach (TextField input in _memoCreateChecklistInputs)
+                    {
+                        InputValidationFeedback.ShowError(input.parent);
+                    }
+                }
+                else
+                {
+                    InputValidationFeedback.ShowError(_memoCreateTextContent);
+                }
+            }
+
+            if (!isTitleMissing && !isContentMissing)
+            {
+                return true;
+            }
+
+            List<VisualElement> invalidInputs = new();
+            InputValidationFeedback.AddIfError(invalidInputs, _memoCreateTitleContent);
+            InputValidationFeedback.AddIfError(invalidInputs, _memoCreateTextContent);
+            foreach (TextField input in _memoCreateChecklistInputs)
+            {
+                InputValidationFeedback.AddIfError(invalidInputs, input.parent);
+            }
+            _ = InputValidationFeedback.ShakeAsync(invalidInputs);
+            string contentPrompt = _memoCreateKind == "checklist" ? "체크리스트를" : "내용을";
+            string message = isTitleMissing && isContentMissing
+                ? $"제목과 {contentPrompt} 입력해주세요."
+                : isTitleMissing
+                    ? "제목을 입력해주세요."
+                    : $"{contentPrompt} 입력해주세요.";
+            PopupManager.ShowMessage("입력 확인", message, "확인");
+            return false;
+        }
+
         private void SetMemoCreateSubmitting(bool isSubmitting)
         {
             if (isSubmitting)
@@ -316,7 +465,10 @@ namespace MemoAnchor.UI
             }
 
             _memoCreateSubmitButton.SetEnabled(!isSubmitting);
-            _memoCreateSubmitButton.text = isSubmitting ? "생성 중..." : "생성하기";
+            bool isEditing = _memoCreateEditingItem != null;
+            _memoCreateSubmitButton.text = isSubmitting
+                ? isEditing ? "수정 중..." : "생성 중..."
+                : isEditing ? "수정하기" : "생성하기";
         }
 
         private void ToggleMemoCreateRepairerList()
@@ -344,12 +496,42 @@ namespace MemoAnchor.UI
 
         private void RebuildMemoCreateChecklistInputs()
         {
+            foreach (TextField input in _memoCreateChecklistInputs)
+            {
+                input.UnregisterValueChangedCallback(OnMemoCreateChecklistValueChanged);
+            }
+
             _memoCreateChecklistList.Clear();
             _memoCreateChecklistInputs.Clear();
             AddMemoCreateChecklistInput();
         }
 
+        private void PopulateMemoCreateChecklistInputs(List<MemoChecklistItem> checklistItems)
+        {
+            foreach (TextField input in _memoCreateChecklistInputs)
+            {
+                input.UnregisterValueChangedCallback(OnMemoCreateChecklistValueChanged);
+            }
+
+            _memoCreateChecklistList.Clear();
+            _memoCreateChecklistInputs.Clear();
+            foreach (MemoChecklistItem item in checklistItems)
+            {
+                AddMemoCreateChecklistInput(item.Text);
+            }
+
+            if (_memoCreateChecklistInputs.Count == 0)
+            {
+                AddMemoCreateChecklistInput();
+            }
+        }
+
         private void AddMemoCreateChecklistInput()
+        {
+            AddMemoCreateChecklistInput(string.Empty);
+        }
+
+        private void AddMemoCreateChecklistInput(string value)
         {
             if (_memoCreateChecklistInputs.Count >= 10)
             {
@@ -361,7 +543,8 @@ namespace MemoAnchor.UI
             TextField input = item.Q<TextField>("memo-create-checklist-input");
             input.label = string.Empty;
             input.textEdition.placeholder = "체크리스트 내용을 작성해주세요.";
-            input.SetValueWithoutNotify(string.Empty);
+            input.SetValueWithoutNotify(value);
+            input.RegisterValueChangedCallback(OnMemoCreateChecklistValueChanged);
 
             Button removeButton = item.Q<Button>("memo-create-checklist-remove");
             removeButton.clicked += () => RemoveMemoCreateChecklistInput(row, input);
@@ -372,22 +555,50 @@ namespace MemoAnchor.UI
 
         private void RemoveMemoCreateChecklistInput(VisualElement row, TextField input)
         {
+            input.UnregisterValueChangedCallback(OnMemoCreateChecklistValueChanged);
             _memoCreateChecklistInputs.Remove(input);
             row.RemoveFromHierarchy();
+        }
+
+        private void OnMemoCreateTitleValueChanged(ChangeEvent<string> evt)
+        {
+            InputValidationFeedback.ClearError(_memoCreateTitleContent);
+        }
+
+        private void OnMemoCreateBodyValueChanged(ChangeEvent<string> evt)
+        {
+            InputValidationFeedback.ClearError(_memoCreateTextContent);
+        }
+
+        private void OnMemoCreateChecklistValueChanged(ChangeEvent<string> evt)
+        {
+            InputValidationFeedback.ClearError(((VisualElement)evt.target).parent);
+        }
+
+        private void ClearMemoCreateChecklistInputErrors()
+        {
+            foreach (TextField input in _memoCreateChecklistInputs)
+            {
+                InputValidationFeedback.ClearError(input.parent);
+            }
         }
 
         private List<MemoChecklistEntry> BuildMemoCreateChecklistItems()
         {
             List<MemoChecklistEntry> items = new();
-            foreach (TextField input in _memoCreateChecklistInputs)
+            for (int i = 0; i < _memoCreateChecklistInputs.Count; i++)
             {
+                TextField input = _memoCreateChecklistInputs[i];
                 string text = input.value.Trim();
                 if (string.IsNullOrWhiteSpace(text))
                 {
                     continue;
                 }
 
-                items.Add(new MemoChecklistEntry { text = text, done = false });
+                bool done = _memoCreateEditingItem != null
+                    && i < _memoCreateEditingItem.ChecklistItems.Count
+                    && _memoCreateEditingItem.ChecklistItems[i].Done;
+                items.Add(new MemoChecklistEntry { text = text, done = done });
             }
 
             return items;
@@ -462,6 +673,30 @@ namespace MemoAnchor.UI
             _memoCreateUrgencyLowButton.EnableInClassList(SELECTED_CLASS, urgency == "low");
         }
 
+        private static string ToMemoCreateUrgency(MemoUrgency urgency)
+        {
+            return urgency switch
+            {
+                MemoUrgency.High => "high",
+                MemoUrgency.Low => "low",
+                _ => "middle"
+            };
+        }
+
+        private void ApplyMemoEditDueText(string dueText)
+        {
+            string value = dueText.StartsWith("마감 ", StringComparison.Ordinal) ? dueText[3..] : dueText;
+            if (value.EndsWith("일 전", StringComparison.Ordinal)
+                && int.TryParse(value[..^3], out int dayCount)
+                && dayCount >= 0
+                && dayCount <= 3650)
+            {
+                _memoCreateSelectedDate = DateTime.Today.AddDays(dayCount);
+                _memoCreateCalendarMonth = new DateTime(_memoCreateSelectedDate.Year, _memoCreateSelectedDate.Month, 1);
+                RefreshMemoCreateDateTimeLabels();
+            }
+        }
+
         private void BuildMemoCreateCalendar()
         {
             RebuildMemoCreateCalendarForMonth();
@@ -476,6 +711,7 @@ namespace MemoAnchor.UI
         {
             _memoCreateSelectedDate = selectedDate;
             _memoCreateCalendarMonth = new DateTime(selectedDate.Year, selectedDate.Month, 1);
+            _memoCreateDueChanged = true;
             RefreshMemoCreateDateTimeLabels();
             BuildMemoCreateCalendar();
             HideMemoCreateCalendar();
@@ -693,6 +929,7 @@ namespace MemoAnchor.UI
             }
 
             _memoCreateSelectedHour = hour;
+            _memoCreateDueChanged = true;
             RefreshMemoCreateDateTimeLabels();
             RefreshMemoCreateTimeColumnSelection(_memoCreateHourColumn, hour - 1);
             if (shouldSnap)
@@ -714,6 +951,7 @@ namespace MemoAnchor.UI
             }
 
             _memoCreateSelectedMinute = minute;
+            _memoCreateDueChanged = true;
             RefreshMemoCreateDateTimeLabels();
             int minuteIndex = minute / 5;
             RefreshMemoCreateTimeColumnSelection(_memoCreateMinuteColumn, minuteIndex);
@@ -736,6 +974,7 @@ namespace MemoAnchor.UI
             }
 
             _memoCreateIsPm = isPm;
+            _memoCreateDueChanged = true;
             RefreshMemoCreateDateTimeLabels();
             int periodIndex = isPm ? 1 : 0;
             RefreshMemoCreateTimeColumnSelection(_memoCreatePeriodColumn, periodIndex);

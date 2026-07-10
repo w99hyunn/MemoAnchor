@@ -63,11 +63,23 @@ namespace MemoAnchor
 
         public static UnityWebRequest CreateJsonPostRequest(string path, string json)
         {
-            UnityWebRequest request = new(BuildServerUrl(path), UnityWebRequest.kHttpVerbPOST);
+            return CreateJsonRequest(path, json, UnityWebRequest.kHttpVerbPOST);
+        }
+
+        public static UnityWebRequest CreateJsonRequest(string path, string json, string method)
+        {
+            UnityWebRequest request = new(BuildServerUrl(path), method);
             byte[] bodyRaw = Encoding.UTF8.GetBytes(json);
             request.uploadHandler = new UploadHandlerRaw(bodyRaw);
             request.downloadHandler = new DownloadHandlerBuffer();
             request.SetRequestHeader(CONTENT_TYPE_HEADER, JSON_CONTENT_TYPE);
+            return request;
+        }
+
+        public static UnityWebRequest CreateAuthorizedJsonRequest(string path, string json, string method)
+        {
+            UnityWebRequest request = CreateJsonRequest(path, json, method);
+            Authorize(request);
             return request;
         }
 

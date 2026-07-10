@@ -12,10 +12,6 @@ namespace MemoAnchor.UI
         private const string DIALOG_OPEN_CLASS = "is-open";
         private const string DIALOG_ANIM_READY_CLASS = "is-anim-ready";
         private const string HIDDEN_CLASS = "is-hidden";
-        private const string INPUT_ERROR_CLASS = "is-error";
-        private const int SHAKE_FRAME_COUNT = 12;
-        private const float SHAKE_OFFSET = 40f;
-
         private Button _addressButton;
         private TextField _addressButtonText;
         private VisualElement _addressInputBox;
@@ -283,38 +279,24 @@ namespace MemoAnchor.UI
 
         public void HighlightSpaceNameError()
         {
-            _spaceNameInputBox.AddToClassList(INPUT_ERROR_CLASS);
-            _ = ShakeInputAsync(_spaceNameInputBox);
+            InputValidationFeedback.ShowError(_spaceNameInputBox);
+            _ = InputValidationFeedback.ShakeAsync(_spaceNameInputBox);
         }
 
         public void HighlightAddressError()
         {
-            _addressInputBox.AddToClassList(INPUT_ERROR_CLASS);
-            _ = ShakeInputAsync(_addressInputBox);
+            InputValidationFeedback.ShowError(_addressInputBox);
+            _ = InputValidationFeedback.ShakeAsync(_addressInputBox);
         }
 
         private void ClearAddressError()
         {
-            _addressInputBox.RemoveFromClassList(INPUT_ERROR_CLASS);
-            _addressInputBox.style.translate = new Translate(0, 0, 0);
+            InputValidationFeedback.ClearError(_addressInputBox);
         }
 
         private void ClearSpaceNameError()
         {
-            _spaceNameInputBox.RemoveFromClassList(INPUT_ERROR_CLASS);
-            _spaceNameInputBox.style.translate = new Translate(0, 0, 0);
-        }
-
-        private static async Awaitable ShakeInputAsync(VisualElement inputBox)
-        {
-            for (int i = 0; i < SHAKE_FRAME_COUNT; i++)
-            {
-                float offset = i % 2 == 0 ? -SHAKE_OFFSET : SHAKE_OFFSET;
-                inputBox.style.translate = new Translate(offset, 0, 0);
-                await Awaitable.NextFrameAsync();
-            }
-
-            inputBox.style.translate = new Translate(0, 0, 0);
+            InputValidationFeedback.ClearError(_spaceNameInputBox);
         }
 
         private static void DisableSelectTextFieldFocus(TextField textField)

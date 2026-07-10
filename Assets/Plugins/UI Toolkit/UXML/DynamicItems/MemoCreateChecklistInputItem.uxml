@@ -2,6 +2,7 @@
     <ui:VisualElement name="memo-create-checklist-row" class="memo-create-checklist-row">
         <ui:VisualElement class="scan-input-box memo-create-checklist-input-box">
             <ui:TextField name="memo-create-checklist-input" class="scan-input-field"/>
+            <ui:VisualElement picking-mode="Ignore" class="signup-input-border"/>
         </ui:VisualElement>
         <ui:Button name="memo-create-checklist-remove" class="memo-filter-calendar-close">
             <ui:VisualElement class="memo-calendar-close-icon"/>
