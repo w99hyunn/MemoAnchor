@@ -113,6 +113,7 @@ namespace MemoAnchor.UI
             SetMemoCreateDateTimeToNow();
             BuildMemoCreateCalendar();
             BuildMemoCreateTimePicker();
+            RegisterMemoVoiceCreatePage();
             SetVisible(_memoCreateLoadingOverlay, false);
             HideMapMemoCreatePage();
 
@@ -153,6 +154,7 @@ namespace MemoAnchor.UI
 
         private void UnregisterMapMemoCreatePage()
         {
+            UnregisterMemoVoiceCreatePage();
             _memoCreateBackButton.clicked -= OnClickMemoCreateBack;
             _memoCreateRepairerButton.clicked -= ToggleMemoCreateRepairerList;
             _memoCreateChecklistAddButton.clicked -= AddMemoCreateChecklistInput;
@@ -207,9 +209,9 @@ namespace MemoAnchor.UI
 
         private void ShowMemoEditPage(MemoDetailItem item)
         {
-            if (item.Kind != MemoDetailKind.Text && item.Kind != MemoDetailKind.Checklist && item.Kind != MemoDetailKind.Image)
+            if (item.Kind != MemoDetailKind.Text && item.Kind != MemoDetailKind.Checklist && item.Kind != MemoDetailKind.Voice && item.Kind != MemoDetailKind.Image)
             {
-                PopupManager.ShowMessage("수정할 수 없음", "현재는 텍스트, 체크리스트, 사진 / 동영상 메모만 수정할 수 있습니다.", "확인");
+                PopupManager.ShowMessage("수정할 수 없음", "현재 메모 형식은 수정할 수 없습니다.", "확인");
                 return;
             }
 
@@ -223,11 +225,12 @@ namespace MemoAnchor.UI
             _memoCreateEditingItem = item;
             _memoCreateTargetMap = map;
             RequestTabSwitch(1);
-            string kind = item.Kind == MemoDetailKind.Checklist ? "checklist" : item.Kind == MemoDetailKind.Image ? "image" : "text";
+            string kind = item.Kind == MemoDetailKind.Checklist ? "checklist" : item.Kind == MemoDetailKind.Voice ? "voice" : item.Kind == MemoDetailKind.Image ? "image" : "text";
             ResetMemoCreateForm(kind);
             _memoCreateTitleInput.SetValueWithoutNotify(item.Title);
             _memoCreateBodyInput.SetValueWithoutNotify(item.Body);
             PopulateMemoCreateChecklistInputs(item.ChecklistItems);
+            PopulateMemoCreateVoiceSelections(item.VoiceItems);
             PopulateMemoCreateMediaSelections(item.ImageUrls);
             _memoCreateRepairerPlayerId = item.AssigneePlayerId;
             _memoCreateRepairerLabel.text = string.IsNullOrWhiteSpace(item.Assignee) ? _memoCreateDefaultRepairerLabel : item.Assignee;
@@ -246,7 +249,9 @@ namespace MemoAnchor.UI
         private void HideMapMemoCreatePage()
         {
             HideMemoCreateMediaSourceDialog();
+            HideMemoVoiceRecorderPage();
             ClearMemoCreateMediaSelections();
+            ClearMemoCreateVoiceSelections();
             SetVisible(_memoCreatePage, false);
             SetMemoCreateNavMode(false);
         }
@@ -288,8 +293,10 @@ namespace MemoAnchor.UI
             InputValidationFeedback.ClearError(_memoCreateTitleContent);
             InputValidationFeedback.ClearError(_memoCreateTextContent);
             InputValidationFeedback.ClearError(_memoCreateMediaBox);
+            InputValidationFeedback.ClearError(_memoCreateVoiceAddButton);
             ClearMemoCreateChecklistInputErrors();
             ClearMemoCreateMediaSelections();
+            ClearMemoCreateVoiceSelections();
             SetMemoCreateKind(kind);
             RebuildMemoCreateChecklistInputs();
             _memoCreateRepairerPlayerId = string.Empty;
@@ -398,9 +405,16 @@ namespace MemoAnchor.UI
                 string dueText = _memoCreateEditingItem != null && !_memoCreateDueChanged
                     ? _memoCreateOriginalDueText
                     : BuildMemoCreateDueText();
-                if (_memoCreateKind == "checklist")
+                if (_memoCreateKind == "checklist" || _memoCreateKind == "voice")
                 {
                     body = string.Empty;
+                }
+
+                List<MemoVoiceEntry> voiceItems = await UploadMemoCreateVoiceAsync();
+                if (voiceItems == null)
+                {
+                    PopupManager.ShowMessage("파일 업로드 실패", "음성 녹음을 서버에 저장하지 못했습니다.", "확인");
+                    return;
                 }
 
                 List<string> imageUrls = await UploadMemoCreateMediaAsync();
@@ -412,7 +426,7 @@ namespace MemoAnchor.UI
 
                 if (_memoCreateEditingItem != null)
                 {
-                    MemoDetailItem updatedItem = await UpdateMemoForMapAsync(_memoCreateEditingItem, _memoCreateTargetMap, _memoCreateKind, title, body, _memoCreateUrgency, _memoCreateRepairerPlayerId, assigneeName, dueText, checklistItems, imageUrls);
+                    MemoDetailItem updatedItem = await UpdateMemoForMapAsync(_memoCreateEditingItem, _memoCreateTargetMap, _memoCreateKind, title, body, _memoCreateUrgency, _memoCreateRepairerPlayerId, assigneeName, dueText, checklistItems, voiceItems, imageUrls);
                     if (updatedItem == null)
                     {
                         return;
@@ -425,7 +439,7 @@ namespace MemoAnchor.UI
                     return;
                 }
 
-                bool isCreated = await CreateMemoForMapAsync(_memoCreateTargetMap, _memoCreateKind, title, body, _memoCreateUrgency, _memoCreateRepairerPlayerId, assigneeName, dueText, checklistItems, imageUrls);
+                bool isCreated = await CreateMemoForMapAsync(_memoCreateTargetMap, _memoCreateKind, title, body, _memoCreateUrgency, _memoCreateRepairerPlayerId, assigneeName, dueText, checklistItems, voiceItems, imageUrls);
                 if (!isCreated)
                 {
                     return;
@@ -446,12 +460,15 @@ namespace MemoAnchor.UI
             InputValidationFeedback.ClearError(_memoCreateTitleContent);
             InputValidationFeedback.ClearError(_memoCreateTextContent);
             InputValidationFeedback.ClearError(_memoCreateMediaBox);
+            InputValidationFeedback.ClearError(_memoCreateVoiceAddButton);
             ClearMemoCreateChecklistInputErrors();
 
             bool isTitleMissing = string.IsNullOrWhiteSpace(title);
             bool isContentMissing = _memoCreateKind == "checklist"
                 ? checklistItems.Count == 0
-                : string.IsNullOrWhiteSpace(body);
+                : _memoCreateKind == "voice"
+                    ? _memoCreateVoiceSelections.Count == 0
+                    : string.IsNullOrWhiteSpace(body);
             bool isMediaMissing = _memoCreateKind == "image" && _memoCreateMediaSelections.Count == 0;
 
             if (isTitleMissing)
@@ -461,7 +478,11 @@ namespace MemoAnchor.UI
 
             if (isContentMissing)
             {
-                if (_memoCreateKind == "checklist")
+                if (_memoCreateKind == "voice")
+                {
+                    InputValidationFeedback.ShowError(_memoCreateVoiceAddButton);
+                }
+                else if (_memoCreateKind == "checklist")
                 {
                     if (_memoCreateChecklistInputs.Count == 0)
                     {
@@ -493,12 +514,13 @@ namespace MemoAnchor.UI
             InputValidationFeedback.AddIfError(invalidInputs, _memoCreateTitleContent);
             InputValidationFeedback.AddIfError(invalidInputs, _memoCreateTextContent);
             InputValidationFeedback.AddIfError(invalidInputs, _memoCreateMediaBox);
+            InputValidationFeedback.AddIfError(invalidInputs, _memoCreateVoiceAddButton);
             foreach (TextField input in _memoCreateChecklistInputs)
             {
                 InputValidationFeedback.AddIfError(invalidInputs, input.parent);
             }
             _ = InputValidationFeedback.ShakeAsync(invalidInputs);
-            string contentPrompt = _memoCreateKind == "checklist" ? "체크리스트를" : "내용을";
+            string contentPrompt = _memoCreateKind == "checklist" ? "체크리스트를" : _memoCreateKind == "voice" ? "음성 녹음을" : "내용을";
             if (isMediaMissing)
             {
                 PopupManager.ShowMessage("입력 확인", "제목, 내용, 사진 또는 동영상을 확인해주세요.", "확인");
@@ -542,13 +564,15 @@ namespace MemoAnchor.UI
 
         private void SetMemoCreateKind(string kind)
         {
-            _memoCreateKind = kind == "checklist" ? "checklist" : kind == "image" ? "image" : "text";
+            _memoCreateKind = kind == "checklist" ? "checklist" : kind == "voice" ? "voice" : kind == "image" ? "image" : "text";
             bool isChecklist = _memoCreateKind == "checklist";
+            bool isVoice = _memoCreateKind == "voice";
             bool isMedia = _memoCreateKind == "image";
-            _memoCreateContentTitle.text = isChecklist ? "체크리스트 (최대 10개)" : isMedia ? "메모 내용" : "타이핑";
+            _memoCreateContentTitle.text = isChecklist ? "체크리스트 (최대 10개)" : isVoice ? "음성녹음 (최대 3개)" : isMedia ? "메모 내용" : "타이핑";
             SetVisible(_memoCreateTitleContent, true);
-            SetVisible(_memoCreateTextContent, !isChecklist);
+            SetVisible(_memoCreateTextContent, !isChecklist && !isVoice);
             SetVisible(_memoCreateChecklistContent, isChecklist);
+            SetVisible(_memoCreateVoiceContent, isVoice);
             SetVisible(_memoCreateMediaDivider, isMedia);
             SetVisible(_memoCreateMediaContent, isMedia);
             if (isChecklist && _memoCreateChecklistInputs.Count == 0)

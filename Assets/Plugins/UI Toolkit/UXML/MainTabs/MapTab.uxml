@@ -17,6 +17,7 @@
                 <ui:Button name="map-create-text-memo-button" text="타이핑 메모 생성" class="map-create-memo-button"/>
                 <ui:Button name="map-create-checklist-memo-button" text="체크리스트 메모 생성" class="map-create-memo-button"/>
                 <ui:Button name="map-create-media-memo-button" text="사진 / 동영상 메모 생성" class="map-create-memo-button"/>
+                <ui:Button name="map-create-voice-memo-button" text="음성 메모 생성" class="map-create-memo-button"/>
             </ui:VisualElement>
             <ui:Label name="map-scan-time-label" text="" class="map-scan-time-label"/>
             <ui:VisualElement name="map-empty-state" class="map-empty-state is-hidden">

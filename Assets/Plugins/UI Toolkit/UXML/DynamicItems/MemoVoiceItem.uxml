@@ -1,0 +1,28 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements">
+    <ui:VisualElement name="memo-voice-item" class="memo-create-voice-item">
+        <ui:VisualElement name="memo-voice-item-row" class="scan-input-box memo-create-voice-item-row">
+            <ui:TextField name="memo-voice-item-name" class="scan-input-field"/>
+            <ui:Button name="memo-voice-item-play-button" class="memo-filter-calendar-close memo-create-voice-play-button">
+                <ui:VisualElement picking-mode="Ignore" class="memo-create-voice-icon"/>
+            </ui:Button>
+            <ui:Button name="memo-voice-item-remove-button" class="memo-filter-calendar-close memo-create-voice-remove-button">
+                <ui:VisualElement class="memo-calendar-close-icon"/>
+            </ui:Button>
+            <ui:VisualElement picking-mode="Ignore" class="signup-input-border"/>
+        </ui:VisualElement>
+        <ui:VisualElement name="memo-voice-preview-player" class="memo-voice-preview-player is-hidden">
+            <ui:VisualElement name="memo-voice-preview-slider-bar" class="memo-voice-preview-slider-bar">
+                <ui:VisualElement picking-mode="Ignore" class="memo-voice-preview-track">
+                    <ui:VisualElement name="memo-voice-preview-progress" picking-mode="Ignore" class="memo-voice-preview-progress"/>
+                </ui:VisualElement>
+            </ui:VisualElement>
+            <ui:VisualElement class="memo-voice-preview-controls">
+                <ui:Label name="memo-voice-preview-current-label" text="0:00" class="memo-voice-preview-time"/>
+                <ui:Button name="memo-voice-preview-toggle-button" class="common-icon-button memo-voice-preview-toggle-button">
+                    <ui:VisualElement name="memo-voice-preview-toggle-icon" picking-mode="Ignore" class="common-icon-button-icon memo-playback-toggle-icon"/>
+                </ui:Button>
+                <ui:Label name="memo-voice-preview-duration-label" text="0:00" class="memo-voice-preview-time memo-voice-preview-duration"/>
+            </ui:VisualElement>
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>

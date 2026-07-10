@@ -212,6 +212,13 @@
                             <ui:Label text="+" class="scan-address-add-icon"/>
                         </ui:Button>
                     </ui:VisualElement>
+                    <ui:VisualElement name="memo-create-voice-content" class="memo-create-checklist-content is-hidden">
+                        <ui:VisualElement name="memo-create-voice-list" class="content-list"/>
+                        <ui:Button name="memo-create-voice-add-button" text="" class="memo-create-checklist-add-button">
+                            <ui:Label text="음성녹음 추가하기" class="memo-create-checklist-add-label"/>
+                            <ui:Label text="+" class="scan-address-add-icon"/>
+                        </ui:Button>
+                    </ui:VisualElement>
                 </ui:VisualElement>
                 <ui:VisualElement name="memo-create-media-divider" class="memo-filter-divider is-hidden"/>
                 <ui:VisualElement name="memo-create-media-content" class="memo-create-section is-hidden">
@@ -283,6 +290,42 @@
                 </ui:VisualElement>
             </ui:ScrollView>
         </ui:VisualElement>
+        <ui:VisualElement name="memo-voice-recorder-page" class="page-overlay memo-voice-recorder-page is-hidden">
+            <ui:VisualElement class="page-header">
+                <ui:Button name="memo-voice-recorder-back-button" text="" class="page-back-button common-icon-button">
+                    <ui:VisualElement class="common-icon-button-icon" style="background-image: url(&quot;project://database/Assets/00_MemoAnchor/03_Media/Icon/chevron_forward.png?fileID=2800000&amp;guid=3ca432206e7cabb45abd1dfc722e509d&amp;type=3#chevron_forward&quot;);"/>
+                </ui:Button>
+                <ui:Button name="memo-voice-recorder-list-button" text="녹음목록" class="memo-voice-recorder-list-button"/>
+            </ui:VisualElement>
+            <ui:VisualElement class="memo-voice-recorder-content">
+                <ui:Button name="memo-voice-recorder-mic-button" class="memo-voice-recorder-mic-button">
+                    <ui:VisualElement name="memo-voice-recorder-mic-icon" picking-mode="Ignore" class="memo-voice-recorder-mic-icon"/>
+                </ui:Button>
+                <ui:VisualElement name="memo-voice-recorder-waveform" class="memo-voice-recorder-waveform is-hidden"/>
+                <ui:Label name="memo-voice-recorder-time-label" text="00:00:00" class="memo-voice-recorder-time-label is-hidden"/>
+                <ui:Label name="memo-voice-recorder-guide-label" text="마이크 아이콘을 눌러 시작하십시오." class="memo-voice-recorder-guide-label"/>
+                <ui:VisualElement name="memo-voice-recorder-actions" class="memo-voice-recorder-actions is-hidden">
+                    <ui:Button name="memo-voice-recorder-delete-button" class="memo-voice-recorder-action-button">
+                        <ui:VisualElement picking-mode="Ignore" class="memo-voice-recorder-action-icon">
+                            <ui:VisualElement class="common-icon-button-icon memo-voice-recorder-action-glyph memo-voice-recorder-trash-icon"/>
+                        </ui:VisualElement>
+                        <ui:Label text="삭제" class="memo-voice-recorder-action-label"/>
+                    </ui:Button>
+                    <ui:Button name="memo-voice-recorder-pause-button" class="memo-voice-recorder-action-button">
+                        <ui:VisualElement picking-mode="Ignore" class="memo-voice-recorder-action-icon">
+                            <ui:VisualElement name="memo-voice-recorder-pause-icon" class="common-icon-button-icon memo-voice-recorder-action-glyph memo-voice-recorder-pause-icon"/>
+                        </ui:VisualElement>
+                        <ui:Label name="memo-voice-recorder-pause-label" text="일시정지" class="memo-voice-recorder-action-label"/>
+                    </ui:Button>
+                    <ui:Button name="memo-voice-recorder-save-button" class="memo-voice-recorder-action-button">
+                        <ui:VisualElement picking-mode="Ignore" class="memo-voice-recorder-action-icon">
+                            <ui:VisualElement class="common-icon-button-icon memo-voice-recorder-action-glyph memo-voice-recorder-save-icon"/>
+                        </ui:VisualElement>
+                        <ui:Label text="저장" class="memo-voice-recorder-action-label"/>
+                    </ui:Button>
+                </ui:VisualElement>
+            </ui:VisualElement>
+        </ui:VisualElement>
         <ui:VisualElement name="memo-create-media-source-overlay" class="scan-action-dialog-overlay memo-media-source-overlay is-hidden">
             <ui:VisualElement name="memo-create-media-source-sheet" class="scan-action-dialog-sheet memo-media-source-sheet">
                 <ui:VisualElement class="wrap-row memo-media-source-actions">
@@ -306,7 +349,9 @@
                     <ui:VisualElement class="memo-calendar-close-icon"/>
                 </ui:Button>
                 <ui:VisualElement name="memo-media-viewer-video-controls" class="memo-media-viewer-video-controls is-hidden">
-                    <ui:Button name="memo-media-viewer-play-button" text="Ⅱ" class="memo-media-viewer-play-button"/>
+                    <ui:Button name="memo-media-viewer-play-button" class="common-icon-button memo-media-viewer-play-button">
+                        <ui:VisualElement name="memo-media-viewer-play-icon" picking-mode="Ignore" class="common-icon-button-icon memo-playback-toggle-icon"/>
+                    </ui:Button>
                     <ui:Slider name="memo-media-viewer-seek-slider" low-value="0" high-value="1" value="0" show-input-field="false" class="memo-media-viewer-seek-slider"/>
                     <ui:Label name="memo-media-viewer-time-label" text="00:00 / 00:00" class="memo-media-viewer-time-label"/>
                 </ui:VisualElement>

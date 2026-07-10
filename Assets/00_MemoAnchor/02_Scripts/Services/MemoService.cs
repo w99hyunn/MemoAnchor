@@ -15,6 +15,13 @@ namespace MemoAnchor
     }
 
     [Serializable]
+    public class MemoVoiceEntry
+    {
+        public string name;
+        public string url;
+    }
+
+    [Serializable]
     public class MemoItem
     {
         public string id;
@@ -34,7 +41,7 @@ namespace MemoAnchor
         public string createdAt;
         public string deletedAt;
         public List<MemoChecklistEntry> checklistItems = new();
-        public List<string> voiceItems = new();
+        public List<MemoVoiceEntry> voiceItems = new();
         public List<string> imageUrls = new();
     }
 
@@ -57,6 +64,7 @@ namespace MemoAnchor
         public string assigneeName;
         public string dueText;
         public List<MemoChecklistEntry> checklistItems = new();
+        public List<MemoVoiceEntry> voiceItems = new();
         public List<string> imageUrls = new();
     }
 
@@ -96,6 +104,7 @@ namespace MemoAnchor
         private bool _isCreating;
         private bool _isMutating;
         private bool _isUploadingMedia;
+        private bool _isUploadingVoice;
 
         public async Awaitable<MemoListResponse> LoadMemosAsync()
         {
@@ -270,6 +279,52 @@ namespace MemoAnchor
             finally
             {
                 _isUploadingMedia = false;
+            }
+        }
+
+        public async Awaitable<MemoMediaUploadResult> UploadMemoVoiceAsync(List<string> filePaths)
+        {
+            if (filePaths.Count == 0)
+            {
+                return new MemoMediaUploadResult(true, new List<string>());
+            }
+
+            if (_isUploadingVoice || !AuthenticationService.Instance.IsSignedIn)
+            {
+                return new MemoMediaUploadResult(false, new List<string>());
+            }
+
+            _isUploadingVoice = true;
+            var urls = new List<string>(filePaths.Count);
+
+            try
+            {
+                foreach (string filePath in filePaths)
+                {
+                    string path = $"{MEMOS_API_PATH}/voice";
+                    using UnityWebRequest request = ServicesManager.CreateAuthorizedFileUploadRequest(path, filePath, "audio/wav");
+                    await ServicesManager.SendRequestAsync(request);
+
+                    if (request.result != UnityWebRequest.Result.Success)
+                    {
+                        Debug.LogWarning($"Memo voice upload failed: {request.error}");
+                        return new MemoMediaUploadResult(false, urls);
+                    }
+
+                    MemoMediaUploadResponse response = JsonUtility.FromJson<MemoMediaUploadResponse>(request.downloadHandler.text);
+                    if (string.IsNullOrWhiteSpace(response.url))
+                    {
+                        return new MemoMediaUploadResult(false, urls);
+                    }
+
+                    urls.Add(response.url);
+                }
+
+                return new MemoMediaUploadResult(true, urls);
+            }
+            finally
+            {
+                _isUploadingVoice = false;
             }
         }
 

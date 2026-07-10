@@ -22,6 +22,7 @@ namespace MemoAnchor.UI
         private VisualElement _memoListContainer, _memoDetailPage, _memoDetailMenu, _memoDetailContent, _memoTrashPage, _memoTrashListContainer, _memoLoadingOverlay, _memoLoadingSpinner;
         private VisualElement _memoMediaViewerOverlay, _memoMediaViewerPanel, _memoMediaViewerSpinner, _memoMediaViewerVideoControls;
         private Image _memoMediaViewerImage;
+        private VisualElement _memoMediaViewerPlayIcon;
         private Button _memoDetailBackButton, _memoDetailMenuButton, _memoDetailEditButton, _memoDetailDeleteButton, _memoDetailExportButton, _memoTrashButton, _memoTrashBackButton, _memoTrashSelectButton;
         private Button _memoTrashPermanentDeleteButton, _memoTrashRestoreButton, _memoMediaViewerCloseButton, _memoMediaViewerRotateButton, _memoMediaViewerPlayButton;
         private Label _memoDetailPlaceLabel, _memoMediaViewerTimeLabel;
@@ -76,6 +77,7 @@ namespace MemoAnchor.UI
             _memoMediaViewerRotateButton = _root.Q<Button>("memo-media-viewer-rotate-button");
             _memoMediaViewerVideoControls = _root.Q<VisualElement>("memo-media-viewer-video-controls");
             _memoMediaViewerPlayButton = _root.Q<Button>("memo-media-viewer-play-button");
+            _memoMediaViewerPlayIcon = _root.Q<VisualElement>("memo-media-viewer-play-icon");
             _memoMediaViewerSeekSlider = _root.Q<Slider>("memo-media-viewer-seek-slider");
             _memoMediaViewerTimeLabel = _root.Q<Label>("memo-media-viewer-time-label");
 
@@ -126,6 +128,7 @@ namespace MemoAnchor.UI
 
         private void UnregisterMemoDetailPage()
         {
+            StopMemoVoicePreview();
             ClearMemoDetailMediaTextures();
             HideMemoMediaViewer();
             _memoDetailBackButton.clicked -= HideMemoDetailPage;
@@ -171,7 +174,7 @@ namespace MemoAnchor.UI
             }
         }
 
-        private async Awaitable<bool> CreateMemoForMapAsync(ScanMapItem map, string kind, string title, string body, string urgency, string assigneePlayerId, string assigneeName, string dueText, List<MemoChecklistEntry> checklistItems, List<string> imageUrls)
+        private async Awaitable<bool> CreateMemoForMapAsync(ScanMapItem map, string kind, string title, string body, string urgency, string assigneePlayerId, string assigneeName, string dueText, List<MemoChecklistEntry> checklistItems, List<MemoVoiceEntry> voiceItems, List<string> imageUrls)
         {
             if (_isCreatingMemo)
             {
@@ -182,7 +185,7 @@ namespace MemoAnchor.UI
 
             try
             {
-                MemoCreateRequest payload = BuildMemoRequest(map, kind, title, body, urgency, assigneePlayerId, assigneeName, dueText, checklistItems, imageUrls);
+                MemoCreateRequest payload = BuildMemoRequest(map, kind, title, body, urgency, assigneePlayerId, assigneeName, dueText, checklistItems, voiceItems, imageUrls);
 
                 MemoCreateResult result = await _memoService.CreateMemoAsync(payload);
                 if (!result.IsSuccess)
@@ -206,7 +209,7 @@ namespace MemoAnchor.UI
             }
         }
 
-        private async Awaitable<MemoDetailItem> UpdateMemoForMapAsync(MemoDetailItem item, ScanMapItem map, string kind, string title, string body, string urgency, string assigneePlayerId, string assigneeName, string dueText, List<MemoChecklistEntry> checklistItems, List<string> imageUrls)
+        private async Awaitable<MemoDetailItem> UpdateMemoForMapAsync(MemoDetailItem item, ScanMapItem map, string kind, string title, string body, string urgency, string assigneePlayerId, string assigneeName, string dueText, List<MemoChecklistEntry> checklistItems, List<MemoVoiceEntry> voiceItems, List<string> imageUrls)
         {
             if (_isCreatingMemo)
             {
@@ -217,7 +220,7 @@ namespace MemoAnchor.UI
 
             try
             {
-                MemoCreateRequest payload = BuildMemoRequest(map, kind, title, body, urgency, assigneePlayerId, assigneeName, dueText, checklistItems, imageUrls);
+                MemoCreateRequest payload = BuildMemoRequest(map, kind, title, body, urgency, assigneePlayerId, assigneeName, dueText, checklistItems, voiceItems, imageUrls);
                 MemoCreateResult result = await _memoService.UpdateMemoAsync(item.Id, payload);
                 if (!result.IsSuccess)
                 {
@@ -240,7 +243,7 @@ namespace MemoAnchor.UI
             }
         }
 
-        private static MemoCreateRequest BuildMemoRequest(ScanMapItem map, string kind, string title, string body, string urgency, string assigneePlayerId, string assigneeName, string dueText, List<MemoChecklistEntry> checklistItems, List<string> imageUrls)
+        private static MemoCreateRequest BuildMemoRequest(ScanMapItem map, string kind, string title, string body, string urgency, string assigneePlayerId, string assigneeName, string dueText, List<MemoChecklistEntry> checklistItems, List<MemoVoiceEntry> voiceItems, List<string> imageUrls)
         {
             return new MemoCreateRequest
             {
@@ -254,6 +257,7 @@ namespace MemoAnchor.UI
                 assigneeName = assigneeName,
                 dueText = dueText,
                 checklistItems = checklistItems,
+                voiceItems = voiceItems,
                 imageUrls = imageUrls
             };
         }
@@ -402,6 +406,7 @@ namespace MemoAnchor.UI
         private void HideMemoDetailPage()
         {
             _currentMemoDetailItem = null;
+            StopMemoVoicePreview();
             HideMemoMediaViewer();
             ClearMemoDetailMediaTextures();
             SetVisible(_memoDetailPage, false);
@@ -896,7 +901,7 @@ namespace MemoAnchor.UI
             }
             else if (item.Kind == MemoDetailKind.Voice)
             {
-                foreach (string voiceItem in item.VoiceItems)
+                foreach (MemoVoiceEntry voiceItem in item.VoiceItems)
                 {
                     bodyCard.Add(CreateMemoVoiceRow(voiceItem));
                 }
@@ -1119,6 +1124,7 @@ namespace MemoAnchor.UI
         {
             _memoMediaViewerControlsSchedule.Pause();
             _memoMediaViewerVideoPlayer.Stop();
+            _memoMediaViewerPlayIcon.RemoveFromClassList("is-playing");
             _memoMediaViewerVideoPlayer.targetTexture = null;
             _memoMediaViewerVideoPlayer.url = string.Empty;
             if (_memoMediaViewerVideoTexture != null)
@@ -1172,13 +1178,18 @@ namespace MemoAnchor.UI
 
             float duration = (float)_memoMediaViewerVideoPlayer.length;
             float currentTime = Mathf.Clamp((float)_memoMediaViewerVideoPlayer.time, 0f, duration);
-            _memoMediaViewerSeekSlider.highValue = Mathf.Max(0.01f, duration);
-            _memoMediaViewerSeekSlider.SetValueWithoutNotify(currentTime);
-            _memoMediaViewerPlayButton.text = _memoMediaViewerVideoPlayer.isPlaying ? "Ⅱ" : "▶";
-            _memoMediaViewerTimeLabel.text = $"{FormatMemoMediaViewerTime(currentTime)} / {FormatMemoMediaViewerTime(duration)}";
+            UpdateMemoPlaybackSlider(_memoMediaViewerSeekSlider, currentTime, duration);
+            _memoMediaViewerPlayIcon.EnableInClassList("is-playing", _memoMediaViewerVideoPlayer.isPlaying);
+            _memoMediaViewerTimeLabel.text = $"{FormatMemoPlaybackTime(currentTime)} / {FormatMemoPlaybackTime(duration)}";
         }
 
-        private static string FormatMemoMediaViewerTime(float seconds)
+        private static void UpdateMemoPlaybackSlider(Slider slider, float currentTime, float duration)
+        {
+            slider.highValue = Mathf.Max(0.01f, duration);
+            slider.SetValueWithoutNotify(Mathf.Clamp(currentTime, 0f, duration));
+        }
+
+        private static string FormatMemoPlaybackTime(float seconds)
         {
             int totalSeconds = Mathf.Max(0, Mathf.FloorToInt(seconds));
             int hours = totalSeconds / 3600;
@@ -1344,16 +1355,20 @@ namespace MemoAnchor.UI
             return row;
         }
 
-        private static VisualElement CreateMemoVoiceRow(string text)
+        private VisualElement CreateMemoVoiceRow(MemoVoiceEntry voiceItem)
         {
-            VisualElement row = new();
-            row.AddToClassList("memo-voice-row");
-            Label label = new(text);
-            label.AddToClassList("memo-voice-label");
-            VisualElement icon = new();
-            icon.AddToClassList("memo-voice-icon");
-            row.Add(label);
-            row.Add(icon);
+            TemplateContainer template = _memoVoiceItemAsset.Instantiate();
+            VisualElement row = template.Q<VisualElement>("memo-voice-item");
+            row.AddToClassList("is-detail");
+            TextField nameInput = template.Q<TextField>("memo-voice-item-name");
+            Button playButton = template.Q<Button>("memo-voice-item-play-button");
+            Button removeButton = template.Q<Button>("memo-voice-item-remove-button");
+            nameInput.SetValueWithoutNotify(voiceItem.name);
+            nameInput.textEdition.isReadOnly = true;
+            nameInput.pickingMode = PickingMode.Ignore;
+            SetVisible(removeButton, false);
+            playButton.SetEnabled(!string.IsNullOrWhiteSpace(voiceItem.url));
+            ConfigureMemoVoicePreview(template, voiceItem.url, true, playButton);
             return row;
         }
 
@@ -1541,7 +1556,7 @@ namespace MemoAnchor.UI
             public string Author;
             public string DeletedAt;
             public List<MemoChecklistItem> ChecklistItems = new();
-            public List<string> VoiceItems = new();
+            public List<MemoVoiceEntry> VoiceItems = new();
             public List<string> ImageUrls = new();
         }
 

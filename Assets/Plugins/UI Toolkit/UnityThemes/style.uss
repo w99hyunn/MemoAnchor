@@ -673,7 +673,7 @@
     top: 50%;
     width: 360px;
     margin-left: -180px;
-    margin-top: -184px;
+    margin-top: -252px;
 }
 
 .map-create-memo-button {
@@ -2642,6 +2642,20 @@
     background-color: rgba(255, 255, 255, 0.32);
 }
 
+.memo-playback-toggle-icon.common-icon-button-icon {
+    background-image: url("project://database/Assets/00_MemoAnchor/03_Media/Icon/play.png?fileID=2800000&guid=c0a462ddd8ebcf64f963b285bb286e6d&type=3#play");
+}
+
+.memo-playback-toggle-icon.common-icon-button-icon.is-playing {
+    background-image: url("project://database/Assets/00_MemoAnchor/03_Media/Icon/pause.png?fileID=2800000&guid=8e54f62ba593d724499d9bcf12b2a5c1&type=3#pause");
+}
+
+.memo-media-viewer-play-button .memo-playback-toggle-icon {
+    width: 38px;
+    height: 38px;
+    -unity-background-image-tint-color: rgb(255, 255, 255);
+}
+
 .memo-media-viewer-seek-slider {
     flex-grow: 1;
     height: 48px;
@@ -2668,6 +2682,266 @@
     color: rgb(255, 255, 255);
     font-size: 26px;
     -unity-text-align: middle-right;
+}
+
+.memo-create-voice-item {
+    margin-bottom: 18px;
+}
+
+.memo-create-voice-item-row.scan-input-box {
+    height: 104px;
+    padding-right: 180px;
+}
+
+.memo-create-voice-play-button.memo-filter-calendar-close {
+    right: 92px;
+    top: 20px;
+    align-items: center;
+    justify-content: center;
+}
+
+.memo-create-voice-icon {
+    width: 42px;
+    height: 42px;
+    margin: 0;
+    background-image: url("project://database/Assets/00_MemoAnchor/03_Media/Icon/memo-list/mic.png?fileID=2800000&guid=e1f4d2312692f9349895fec4b29840df&type=3#mic");
+    -unity-background-scale-mode: scale-to-fit;
+    -unity-background-image-tint-color: rgb(184, 184, 184);
+}
+
+.memo-create-voice-play-button:hover:enabled .memo-create-voice-icon {
+    -unity-background-image-tint-color: rgb(112, 112, 112);
+}
+
+.memo-create-voice-play-button:active:enabled .memo-create-voice-icon {
+    -unity-background-image-tint-color: rgb(55, 55, 55);
+}
+
+.memo-create-voice-remove-button.memo-filter-calendar-close {
+    right: 4px;
+    top: 20px;
+}
+
+.memo-create-voice-item.is-detail .memo-create-voice-item-row.scan-input-box {
+    padding-right: 88px;
+    border-radius: 52px;
+}
+
+.memo-create-voice-item.is-detail .memo-create-voice-item-row .signup-input-border {
+    border-radius: 52px;
+}
+
+.memo-create-voice-item.is-detail .memo-create-voice-play-button.memo-filter-calendar-close {
+    right: 4px;
+}
+
+.memo-create-voice-item.is-detail .memo-voice-preview-player {
+    border-radius: 52px;
+}
+
+.memo-voice-preview-player {
+    height: 220px;
+    margin-top: 16px;
+    padding-top: 28px;
+    padding-right: 34px;
+    padding-bottom: 24px;
+    padding-left: 34px;
+    border-width: 2px;
+    border-color: rgb(224, 224, 224);
+    border-radius: 32px;
+    background-color: rgb(255, 255, 255);
+}
+
+.memo-voice-preview-slider-bar {
+    width: 100%;
+    height: 46px;
+    position: relative;
+    justify-content: center;
+}
+
+.memo-voice-preview-track {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 11px;
+    height: 24px;
+    border-radius: 12px;
+    overflow: hidden;
+    background-color: rgb(196, 196, 196);
+}
+
+.memo-voice-preview-progress {
+    width: 0;
+    height: 100%;
+    border-top-left-radius: 12px;
+    border-bottom-left-radius: 12px;
+    background-color: rgb(43, 43, 43);
+}
+
+.memo-voice-preview-controls {
+    flex-grow: 1;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 10px;
+    padding-left: 6px;
+    padding-right: 6px;
+}
+
+.memo-voice-preview-time {
+    width: 110px;
+    color: rgb(183, 183, 183);
+    font-size: 32px;
+    -unity-text-align: middle-left;
+}
+
+.memo-voice-preview-duration {
+    -unity-text-align: middle-right;
+}
+
+.memo-voice-preview-toggle-button.common-icon-button {
+    width: 66px;
+    height: 66px;
+    margin: 0;
+}
+
+.memo-voice-preview-toggle-button .memo-playback-toggle-icon {
+    width: 40px;
+    height: 40px;
+}
+
+.memo-voice-recorder-content {
+    flex-grow: 1;
+    min-height: 0;
+    align-items: center;
+    justify-content: center;
+    padding-left: 20px;
+    padding-right: 20px;
+    padding-bottom: 90px;
+}
+
+.memo-voice-recorder-list-button {
+    position: absolute;
+    right: 36px;
+    top: 35px;
+    height: 64px;
+    padding-left: 28px;
+    padding-right: 28px;
+    border-width: 2px;
+    border-color: rgb(130, 130, 130);
+    border-radius: 32px;
+    background-color: rgba(255, 255, 255, 0);
+    color: rgb(80, 80, 80);
+    font-size: 28px;
+}
+
+.memo-voice-recorder-mic-button {
+    width: 160px;
+    height: 160px;
+    margin: 0 0 90px 0;
+    padding: 0;
+    border-width: 0;
+    border-radius: 80px;
+    background-color: rgba(0, 0, 0, 0);
+}
+
+.memo-voice-recorder-mic-icon {
+    width: 132px;
+    height: 132px;
+    align-self: center;
+    background-image: url("project://database/Assets/00_MemoAnchor/03_Media/Icon/record.png?fileID=2800000&guid=bab2b719f1f1ce34e81d59e5db8fb498&type=3#record");
+    -unity-background-scale-mode: scale-to-fit;
+    -unity-background-image-tint-color: rgb(83, 100, 151);
+}
+
+.memo-voice-recorder-page.is-recording .memo-voice-recorder-mic-icon {
+    -unity-background-image-tint-color: rgb(178, 27, 66);
+}
+
+.memo-voice-recorder-waveform {
+    width: 100%;
+    height: 220px;
+    margin-bottom: 20px;
+}
+
+.memo-voice-recorder-time-label {
+    color: rgb(132, 158, 244);
+    font-size: 56px;
+    margin-bottom: 120px;
+    -unity-text-align: middle-center;
+}
+
+.memo-voice-recorder-guide-label {
+    position: absolute;
+    bottom: 190px;
+    color: rgb(92, 92, 92);
+    font-size: 34px;
+    -unity-text-align: middle-center;
+}
+
+.memo-voice-recorder-actions {
+    position: absolute;
+    left: 230px;
+    right: 230px;
+    bottom: 200px;
+    height: 240px;
+    flex-direction: row;
+    justify-content: space-between;
+}
+
+.memo-voice-recorder-action-button {
+    width: 180px;
+    height: 240px;
+    margin: 0;
+    padding: 0;
+    border-width: 0;
+    background-color: rgba(0, 0, 0, 0);
+    align-items: center;
+}
+
+.memo-voice-recorder-action-icon {
+    width: 160px;
+    height: 160px;
+    margin-bottom: 18px;
+    border-width: 6px;
+    border-color: rgb(100, 100, 100);
+    border-radius: 80px;
+    align-items: center;
+    justify-content: center;
+}
+
+.memo-voice-recorder-action-glyph.common-icon-button-icon {
+    width: 64px;
+    height: 64px;
+    -unity-background-image-tint-color: rgb(96, 96, 96);
+}
+
+.memo-voice-recorder-trash-icon {
+    background-image: url("project://database/Assets/00_MemoAnchor/03_Media/Icon/record_trash.png?fileID=2800000&guid=f63bb95a5af5e7d46baa0c2775484002&type=3#record_trash");
+}
+
+.memo-voice-recorder-pause-icon {
+    background-image: url("project://database/Assets/00_MemoAnchor/03_Media/Icon/record_pause.png?fileID=2800000&guid=71f63b0b834cfba4bbe2eac9774a3576&type=3#record_pause");
+}
+
+.memo-voice-recorder-pause-icon.is-paused {
+    background-image: url("project://database/Assets/00_MemoAnchor/03_Media/Icon/play.png?fileID=2800000&guid=c0a462ddd8ebcf64f963b285bb286e6d&type=3#play");
+}
+
+.memo-voice-recorder-save-icon {
+    background-image: url("project://database/Assets/00_MemoAnchor/03_Media/Icon/record_save.png?fileID=2800000&guid=d3d4baa84404600439c7192942dc6d0c&type=3#record_save");
+}
+
+.memo-voice-recorder-action-glyph.memo-voice-recorder-pause-icon,
+.memo-voice-recorder-action-glyph.memo-voice-recorder-save-icon {
+    width: 48px;
+    height: 48px;
+}
+
+.memo-voice-recorder-action-label {
+    color: rgb(90, 90, 90);
+    font-size: 34px;
+    -unity-text-align: middle-center;
 }
 
 .memo-create-checklist-row {
