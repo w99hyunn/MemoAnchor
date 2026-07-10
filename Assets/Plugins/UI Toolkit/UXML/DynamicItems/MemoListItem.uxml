@@ -5,8 +5,8 @@
             <ui:VisualElement class="memo-list-delete-icon"/>
         </ui:Button>
         <ui:VisualElement name="memo-list-item-foreground" class="memo-list-item" style="justify-content: center;">
-            <ui:Button name="memo-trash-check-button" text="" class="memo-trash-check-button">
-                <ui:VisualElement class="memo-trash-check-icon"/>
+            <ui:Button name="memo-trash-check-button" text="" class="list-select-button">
+                <ui:VisualElement class="list-select-icon"/>
             </ui:Button>
             <ui:VisualElement class="memo-list-item-body">
                 <ui:VisualElement style="flex-grow: 1; flex-direction: row; align-items: center; margin-bottom: 50px;">

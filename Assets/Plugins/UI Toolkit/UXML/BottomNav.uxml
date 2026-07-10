@@ -8,19 +8,19 @@
             </ui:Button>
             <ui:Button name="nav-menu" class="nav-item">
                 <ui:VisualElement class="nav-press-bg"/>
-                <ui:VisualElement class="nav-icon nav-icon-menu" style="background-image: url(&quot;project://database/Assets/00_MemoAnchor/03_Media/Icon/memo_list.png?fileID=2800000&amp;guid=71b687c27d6ed9e459d50d724752da37&amp;type=3#memo_list&quot;);"/>
+                <ui:VisualElement class="nav-icon" style="background-image: url(&quot;project://database/Assets/00_MemoAnchor/03_Media/Icon/memo_list.png?fileID=2800000&amp;guid=71b687c27d6ed9e459d50d724752da37&amp;type=3#memo_list&quot;);"/>
             </ui:Button>
             <ui:Button name="nav-scan" class="nav-item">
                 <ui:VisualElement class="nav-press-bg"/>
-                <ui:VisualElement class="nav-icon nav-icon-scan" style="background-image: url(&quot;project://database/Assets/00_MemoAnchor/03_Media/Icon/scan.png?fileID=2800000&amp;guid=ea32a5cc2c56260458012ba9f4ed5518&amp;type=3#scan&quot;);"/>
+                <ui:VisualElement class="nav-icon" style="background-image: url(&quot;project://database/Assets/00_MemoAnchor/03_Media/Icon/scan.png?fileID=2800000&amp;guid=ea32a5cc2c56260458012ba9f4ed5518&amp;type=3#scan&quot;);"/>
             </ui:Button>
             <ui:Button name="nav-map" class="nav-item">
                 <ui:VisualElement class="nav-press-bg"/>
-                <ui:VisualElement class="nav-icon nav-icon-map" style="background-image: url(&quot;project://database/Assets/00_MemoAnchor/03_Media/Icon/map.png?fileID=2800000&amp;guid=369495be6ce1bdd429d49be8dc257664&amp;type=3#map&quot;);"/>
+                <ui:VisualElement class="nav-icon" style="background-image: url(&quot;project://database/Assets/00_MemoAnchor/03_Media/Icon/map.png?fileID=2800000&amp;guid=369495be6ce1bdd429d49be8dc257664&amp;type=3#map&quot;);"/>
             </ui:Button>
             <ui:Button name="nav-profile" class="nav-item">
                 <ui:VisualElement class="nav-press-bg"/>
-                <ui:VisualElement class="nav-icon nav-icon-profile" style="background-image: url(&quot;project://database/Assets/00_MemoAnchor/03_Media/Icon/profile.png?fileID=2800000&amp;guid=5049c0bf482af2549afeca45a3efd61c&amp;type=3#profile&quot;);"/>
+                <ui:VisualElement class="nav-icon" style="background-image: url(&quot;project://database/Assets/00_MemoAnchor/03_Media/Icon/profile.png?fileID=2800000&amp;guid=5049c0bf482af2549afeca45a3efd61c&amp;type=3#profile&quot;);"/>
             </ui:Button>
         </ui:VisualElement>
         <ui:VisualElement name="scan-start-bg" class="scan-start-bg">
@@ -38,7 +38,7 @@
             <ui:Button name="memo-create-reset-button" text="초기화" class="nav-action-button nav-action-secondary"/>
             <ui:Button name="memo-create-submit-button" text="생성하기" class="nav-action-button nav-action-primary"/>
         </ui:VisualElement>
-        <ui:VisualElement name="memo-trash-bottom-bar" class="nav-action-bar memo-trash-bottom-bar is-hidden">
+        <ui:VisualElement name="memo-trash-bottom-bar" class="nav-action-bar nav-action-equal is-hidden">
             <ui:Button name="memo-trash-permanent-delete-button" text="영구 삭제" class="nav-action-button nav-action-secondary"/>
             <ui:Button name="memo-trash-restore-button" text="복구" class="nav-action-button nav-action-primary"/>
         </ui:VisualElement>

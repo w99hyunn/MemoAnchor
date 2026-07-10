@@ -259,7 +259,9 @@ namespace MemoAnchor.UI
             row.Q<Label>("memo-list-item-title").text = item.Title;
             row.Q<Label>("memo-list-item-location-label").text = item.Location;
             row.Q<Label>("memo-list-item-empty-label").text = string.Empty;
-            row.Q<Label>("memo-list-item-due-label").text = item.DueText;
+            row.Q<Label>("memo-list-item-due-label").text = string.IsNullOrEmpty(item.DueText)
+                ? string.Empty
+                : $"마감 {item.DueText}";
             row.Q<Label>("memo-list-item-assignee-label").text = item.Assignee;
         }
 

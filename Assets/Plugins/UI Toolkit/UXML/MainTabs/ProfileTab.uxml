@@ -1,11 +1,11 @@
 <ui:UXML xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" noNamespaceSchemaLocation="../../../../../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
     <Style src="project://database/Assets/Plugins/UI%20Toolkit/UnityThemes/style.uss?fileID=7433441132597879392&amp;guid=c3edbd9c191f92b49aa6a3ce9ffd69d5&amp;type=3#style"/>
     <ui:VisualElement name="tab-profile" class="tab-page tab-page-layout profile-tab-page">
-        <ui:VisualElement name="profile-main-content" class="profile-main-content">
+        <ui:VisualElement name="profile-main-content">
             <ui:VisualElement class="home-header tab-fixed-header">
                 <ui:Label text="프로필" class="profile-page-title"/>
             </ui:VisualElement>
-            <ui:VisualElement class="profile-content">
+            <ui:VisualElement class="content-list">
                 <ui:VisualElement class="profile-card profile-summary-card">
                     <ui:VisualElement class="profile-summary-header">
                         <ui:Label name="profile-name-label" text="사용자이름" class="profile-name-label"/>
@@ -13,7 +13,7 @@
                             <ui:VisualElement class="common-icon-button-icon" style="background-image: url(&quot;project://database/Assets/00_MemoAnchor/03_Media/Icon/setting.png?fileID=2800000&amp;guid=f824cbaf9b3fbdc4791da7a367b1aea3&amp;type=3#setting&quot;);"/>
                         </ui:Button>
                     </ui:VisualElement>
-                    <ui:VisualElement class="profile-meta-row">
+                    <ui:VisualElement class="horizontal-row">
                         <ui:Label name="profile-company-label" text="소속 회사명" class="profile-company-label"/>
                         <ui:VisualElement class="profile-meta-divider"/>
                         <ui:Label text="관리자" class="profile-role-chip"/>
@@ -23,7 +23,7 @@
                 <ui:VisualElement name="profile-friend-list-card" class="profile-card profile-friend-list-card">
                     <ui:Button name="profile-friend-list-button" class="profile-menu-row profile-friend-list-button">
                         <ui:Label text="친구목록" class="profile-row-title"/>
-                        <ui:VisualElement class="profile-friend-list-actions">
+                        <ui:VisualElement class="horizontal-row">
                             <ui:Button name="profile-friend-add-button" text="" class="profile-friend-add-button common-icon-button">
                                 <ui:VisualElement class="common-icon-button-icon" style="background-image: url(&quot;project://database/Assets/00_MemoAnchor/03_Media/Icon/add-friends.png?fileID=2800000&amp;guid=eeb4dd80732196947a3f80fa2f81f643&amp;type=3#add-friends&quot;);"/>
                             </ui:Button>
@@ -31,7 +31,7 @@
                         </ui:VisualElement>
                     </ui:Button>
                     <ui:VisualElement name="profile-friend-list" class="profile-friend-list is-hidden">
-                        <ui:VisualElement name="profile-friend-items-list" class="profile-friend-items-list"/>
+                        <ui:VisualElement name="profile-friend-items-list" class="content-list"/>
                     </ui:VisualElement>
                 </ui:VisualElement>
                 <ui:VisualElement class="profile-card profile-toggle-row">
@@ -48,9 +48,9 @@
                 </ui:VisualElement>
             </ui:VisualElement>
         </ui:VisualElement>
-        <ui:VisualElement name="profile-account-settings-page" class="memo-filter-page profile-account-settings-page is-hidden">
-            <ui:VisualElement class="memo-filter-header">
-                <ui:Button name="profile-account-settings-back-button" text="" class="memo-filter-back-button common-icon-button">
+        <ui:VisualElement name="profile-account-settings-page" class="page-overlay profile-account-settings-page is-hidden">
+            <ui:VisualElement class="page-header">
+                <ui:Button name="profile-account-settings-back-button" text="" class="page-back-button common-icon-button">
                     <ui:VisualElement class="common-icon-button-icon" style="background-image: url(&quot;project://database/Assets/00_MemoAnchor/03_Media/Icon/chevron_forward.png?fileID=2800000&amp;guid=3ca432206e7cabb45abd1dfc722e509d&amp;type=3#chevron_forward&quot;);"/>
                 </ui:Button>
                 <ui:Label text="계정 설정" class="page-header-title"/>

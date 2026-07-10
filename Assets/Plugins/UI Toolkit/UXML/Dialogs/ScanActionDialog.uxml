@@ -9,7 +9,7 @@
                     <ui:VisualElement class="scan-action-option-icon-slot">
                         <ui:VisualElement class="scan-action-option-icon-placeholder"/>
                     </ui:VisualElement>
-                    <ui:VisualElement class="scan-action-option-texts">
+                    <ui:VisualElement class="flex-text-column">
                         <ui:Label text="참여하기" class="scan-action-option-title"/>
                         <ui:Label text="참여코드를 받았다면 참여할 수 있어요." class="scan-action-option-description"/>
                     </ui:VisualElement>
@@ -19,7 +19,7 @@
                     <ui:VisualElement class="scan-action-option-icon-slot">
                         <ui:VisualElement class="scan-action-option-icon-placeholder"/>
                     </ui:VisualElement>
-                    <ui:VisualElement class="scan-action-option-texts">
+                    <ui:VisualElement class="flex-text-column">
                         <ui:Label text="생성하기" class="scan-action-option-title"/>
                         <ui:Label text="새로운 맵을 스캔할 수 있어요." class="scan-action-option-description"/>
                     </ui:VisualElement>

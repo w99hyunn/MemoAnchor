@@ -2,10 +2,10 @@
     <ui:Template name="MemoItem" src="project://database/Assets/Plugins/UI%20Toolkit/UXML/DynamicItems/MemoItem.uxml?fileID=9197481963319205126&amp;guid=25071315ed99feb41aa0d3bb9bcc60cf&amp;type=3#MemoItem"/>
     <ui:Template name="ScanMapItem" src="project://database/Assets/Plugins/UI%20Toolkit/UXML/DynamicItems/ScanMapItem.uxml?fileID=9197481963319205126&amp;guid=d4b216a9f54568546832867b7a98c94b&amp;type=3#ScanMapItem"/>
     <Style src="project://database/Assets/Plugins/UI%20Toolkit/UnityThemes/style.uss?fileID=7433441132597879392&amp;guid=c3edbd9c191f92b49aa6a3ce9ffd69d5&amp;type=3#style"/>
-    <ui:VisualElement name="tab-home" class="tab-page tab-page-layout is-visible">
+    <ui:VisualElement name="tab-home" class="tab-page tab-page-layout">
         <ui:VisualElement class="home-header tab-fixed-header" style="align-items: center;">
             <ui:Label name="home-greeting-label" text="관리자님, 안녕하세요!" class="home-greeting"/>
-            <ui:Button text="" name="alert" class="home-right-icon-button common-icon-button">
+            <ui:Button text="" name="alert" class="header-icon-button common-icon-button">
                 <ui:VisualElement class="common-icon-button-icon" style="background-image: url(&quot;project://database/Assets/00_MemoAnchor/03_Media/Icon/alert.png?fileID=2800000&amp;guid=a8ce16252c0ae1d46840a9dfaf22b609&amp;type=3#alert&quot;);"/>
             </ui:Button>
         </ui:VisualElement>
@@ -14,7 +14,7 @@
                 <ui:VisualElement name="mode-back" class="memo-section" style="flex-grow: 0; margin-bottom: 50px;">
                     <ui:VisualElement class="memo-section-content" style="flex-grow: 0;">
                         <ui:VisualElement class="memo-section-header">
-                            <ui:VisualElement class="home-mode-title-row">
+                            <ui:VisualElement class="horizontal-row">
                                 <ui:Label text="내 업무" name="home-mode-title" class="memo-section-title home-mode-title"/>
                                 <ui:Button text="" name="home-mode-toggle" class="home-mode-toggle is-work-mode">
                                     <ui:VisualElement class="home-mode-toggle-thumb"/>
@@ -23,7 +23,7 @@
                             <ui:Button text="전체보기" class="memo-section-more"/>
                         </ui:VisualElement>
                         <ui:ScrollView name="memo-scroll" mode="Horizontal" horizontal-scroller-visibility="Hidden" vertical-scroller-visibility="Hidden" touch-scroll-type="Elastic" class="memo-scroll" style="flex-grow: 0;">
-                            <ui:VisualElement class="memo-scroll-content">
+                            <ui:VisualElement class="horizontal-card-scroll-content">
                                 <ui:Instance template="MemoItem"/>
                                 <ui:Instance template="MemoItem"/>
                                 <ui:Instance template="MemoItem"/>
@@ -37,7 +37,7 @@
                             <ui:Label text="스캔 완료된 맵" class="memo-section-title"/>
                         </ui:VisualElement>
                         <ui:ScrollView name="scan-map-scroll" mode="Horizontal" horizontal-scroller-visibility="Hidden" vertical-scroller-visibility="Hidden" touch-scroll-type="Elastic" class="memo-scroll" style="flex-grow: 0; height: 900px;">
-                            <ui:VisualElement class="scan-map-scroll-content">
+                            <ui:VisualElement class="horizontal-card-scroll-content">
                                 <ui:Instance template="ScanMapItem"/>
                                 <ui:Instance template="ScanMapItem"/>
                             </ui:VisualElement>
@@ -46,10 +46,10 @@
                 </ui:VisualElement>
             </ui:VisualElement>
         </ui:ScrollView>
-        <ui:VisualElement name="alert-dialog-page" class="memo-filter-page alert-dialog-page is-hidden">
-            <ui:VisualElement class="memo-filter-header">
+        <ui:VisualElement name="alert-dialog-page" class="page-overlay is-hidden">
+            <ui:VisualElement class="page-header">
                 <ui:Label text="알림" class="page-header-title" style="width: 100%; -unity-text-align: upper-center;"/>
-                <ui:Button name="alert-back-button" text="" class="memo-filter-back-button common-icon-button">
+                <ui:Button name="alert-back-button" text="" class="page-back-button common-icon-button">
                     <ui:VisualElement class="common-icon-button-icon" style="background-image: url(&quot;project://database/Assets/00_MemoAnchor/03_Media/Icon/chevron_forward.png?fileID=2800000&amp;guid=3ca432206e7cabb45abd1dfc722e509d&amp;type=3#chevron_forward&quot;);"/>
                 </ui:Button>
             </ui:VisualElement>

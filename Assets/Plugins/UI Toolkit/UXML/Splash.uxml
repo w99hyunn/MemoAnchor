@@ -52,8 +52,8 @@
                 <ui:Button name="signup-submit-button" text="시작하기" class="nav-action-button splash-action-button splash-primary-button"/>
             </ui:VisualElement>
         </ui:VisualElement>
-        <ui:VisualElement name="splash-login-loading-overlay" class="memo-create-loading-overlay is-hidden">
-            <ui:VisualElement name="splash-login-loading-spinner" class="memo-create-loading-spinner"/>
+        <ui:VisualElement name="splash-login-loading-overlay" class="loading-overlay is-hidden">
+            <ui:VisualElement name="splash-login-loading-spinner" class="loading-spinner"/>
         </ui:VisualElement>
     </ui:VisualElement>
 </ui:UXML>

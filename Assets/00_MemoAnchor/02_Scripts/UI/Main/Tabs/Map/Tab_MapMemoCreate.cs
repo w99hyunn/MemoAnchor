@@ -33,9 +33,9 @@ namespace MemoAnchor.UI
         private string _memoCreateRepairerPlayerId = string.Empty;
         private bool _memoCreateRepairerExpanded;
         private bool _isMemoCreateSubmitting;
-        private DateTime _memoCreateSelectedDate = new(2026, 1, 1);
-        private DateTime _memoCreateCalendarMonth = new(2026, 1, 1);
-        private int _memoCreateSelectedHour = 9;
+        private DateTime _memoCreateSelectedDate;
+        private DateTime _memoCreateCalendarMonth;
+        private int _memoCreateSelectedHour;
         private int _memoCreateSelectedMinute;
         private bool _memoCreateIsPm;
         private bool _isMemoCreateTimeScrollSyncing;
@@ -82,6 +82,7 @@ namespace MemoAnchor.UI
             _memoCreateUrgencyMiddleButton = _root.Q<Button>("memo-create-urgency-middle");
             _memoCreateUrgencyLowButton = _root.Q<Button>("memo-create-urgency-low");
 
+            SetMemoCreateDateTimeToNow();
             BuildMemoCreateCalendar();
             BuildMemoCreateTimePicker();
             SetVisible(_memoCreateLoadingOverlay, false);
@@ -99,6 +100,9 @@ namespace MemoAnchor.UI
             _memoCreateHourColumn.RegisterCallback<WheelEvent>(OnMemoCreateHourColumnWheel);
             _memoCreateMinuteColumn.RegisterCallback<WheelEvent>(OnMemoCreateMinuteColumnWheel);
             _memoCreatePeriodColumn.RegisterCallback<WheelEvent>(OnMemoCreatePeriodColumnWheel);
+            _memoCreateHourColumn.verticalScroller.valueChanged += OnMemoCreateHourColumnScrollValueChanged;
+            _memoCreateMinuteColumn.verticalScroller.valueChanged += OnMemoCreateMinuteColumnScrollValueChanged;
+            _memoCreatePeriodColumn.verticalScroller.valueChanged += OnMemoCreatePeriodColumnScrollValueChanged;
             _memoCreateHourColumn.RegisterCallback<PointerUpEvent>(OnMemoCreateHourColumnPointerUp);
             _memoCreateMinuteColumn.RegisterCallback<PointerUpEvent>(OnMemoCreateMinuteColumnPointerUp);
             _memoCreatePeriodColumn.RegisterCallback<PointerUpEvent>(OnMemoCreatePeriodColumnPointerUp);
@@ -126,6 +130,9 @@ namespace MemoAnchor.UI
             _memoCreateHourColumn.UnregisterCallback<WheelEvent>(OnMemoCreateHourColumnWheel);
             _memoCreateMinuteColumn.UnregisterCallback<WheelEvent>(OnMemoCreateMinuteColumnWheel);
             _memoCreatePeriodColumn.UnregisterCallback<WheelEvent>(OnMemoCreatePeriodColumnWheel);
+            _memoCreateHourColumn.verticalScroller.valueChanged -= OnMemoCreateHourColumnScrollValueChanged;
+            _memoCreateMinuteColumn.verticalScroller.valueChanged -= OnMemoCreateMinuteColumnScrollValueChanged;
+            _memoCreatePeriodColumn.verticalScroller.valueChanged -= OnMemoCreatePeriodColumnScrollValueChanged;
             _memoCreateHourColumn.UnregisterCallback<PointerUpEvent>(OnMemoCreateHourColumnPointerUp);
             _memoCreateMinuteColumn.UnregisterCallback<PointerUpEvent>(OnMemoCreateMinuteColumnPointerUp);
             _memoCreatePeriodColumn.UnregisterCallback<PointerUpEvent>(OnMemoCreatePeriodColumnPointerUp);
@@ -183,15 +190,21 @@ namespace MemoAnchor.UI
             _memoCreateRepairerPlayerId = string.Empty;
             _memoCreateRepairerLabel.text = "수리자 선택하기";
             SetMemoCreateRepairerExpanded(false);
-            _memoCreateSelectedDate = new DateTime(2026, 1, 1);
-            _memoCreateCalendarMonth = new DateTime(_memoCreateSelectedDate.Year, _memoCreateSelectedDate.Month, 1);
-            _memoCreateSelectedHour = 9;
-            _memoCreateSelectedMinute = 0;
-            _memoCreateIsPm = false;
-            RefreshMemoCreateDateTimeLabels();
+            SetMemoCreateDateTimeToNow();
             SetVisible(_memoCreateCalendar, false);
             SetVisible(_memoCreateTimePicker, false);
             SetMemoCreateUrgency("middle");
+        }
+
+        private void SetMemoCreateDateTimeToNow()
+        {
+            DateTime now = DateTime.Now;
+            _memoCreateSelectedDate = now.Date;
+            _memoCreateCalendarMonth = new DateTime(now.Year, now.Month, 1);
+            _memoCreateSelectedHour = now.Hour % 12 == 0 ? 12 : now.Hour % 12;
+            _memoCreateSelectedMinute = now.Minute / 5 * 5;
+            _memoCreateIsPm = now.Hour >= 12;
+            RefreshMemoCreateDateTimeLabels();
         }
 
         private void ShowMemoCreateCalendar()
@@ -529,6 +542,21 @@ namespace MemoAnchor.UI
             ScheduleMemoCreatePeriodColumnSnap();
         }
 
+        private void OnMemoCreateHourColumnScrollValueChanged(float value)
+        {
+            SelectMemoCreateHourFromOffset(value, false);
+        }
+
+        private void OnMemoCreateMinuteColumnScrollValueChanged(float value)
+        {
+            SelectMemoCreateMinuteFromOffset(value, false);
+        }
+
+        private void OnMemoCreatePeriodColumnScrollValueChanged(float value)
+        {
+            SelectMemoCreatePeriodFromOffset(value, false);
+        }
+
         private void OnMemoCreateHourColumnPointerUp(PointerUpEvent evt)
         {
             SnapMemoCreateHourColumnFromScroll();
@@ -581,8 +609,7 @@ namespace MemoAnchor.UI
                 return;
             }
 
-            int hour = Mathf.Clamp(Mathf.RoundToInt(_memoCreateHourColumn.scrollOffset.y / 70f) + 1, 1, 12);
-            SelectMemoCreateHour(hour, true);
+            SelectMemoCreateHourFromScroll(true);
         }
 
         private void SnapMemoCreateMinuteColumnFromScroll()
@@ -592,8 +619,7 @@ namespace MemoAnchor.UI
                 return;
             }
 
-            int minuteIndex = Mathf.Clamp(Mathf.RoundToInt(_memoCreateMinuteColumn.scrollOffset.y / 70f), 0, 11);
-            SelectMemoCreateMinute(minuteIndex * 5, true);
+            SelectMemoCreateMinuteFromScroll(true);
         }
 
         private void SnapMemoCreatePeriodColumnFromScroll()
@@ -603,12 +629,69 @@ namespace MemoAnchor.UI
                 return;
             }
 
-            int periodIndex = Mathf.Clamp(Mathf.RoundToInt(_memoCreatePeriodColumn.scrollOffset.y / 70f), 0, 1);
-            SelectMemoCreatePeriod(periodIndex == 1, true);
+            SelectMemoCreatePeriodFromScroll(true);
+        }
+
+        private void SelectMemoCreateHourFromScroll(bool shouldSnap)
+        {
+            SelectMemoCreateHourFromOffset(_memoCreateHourColumn.scrollOffset.y, shouldSnap);
+        }
+
+        private void SelectMemoCreateMinuteFromScroll(bool shouldSnap)
+        {
+            SelectMemoCreateMinuteFromOffset(_memoCreateMinuteColumn.scrollOffset.y, shouldSnap);
+        }
+
+        private void SelectMemoCreatePeriodFromScroll(bool shouldSnap)
+        {
+            SelectMemoCreatePeriodFromOffset(_memoCreatePeriodColumn.scrollOffset.y, shouldSnap);
+        }
+
+        private void SelectMemoCreateHourFromOffset(float offsetY, bool shouldSnap)
+        {
+            if (_isMemoCreateTimeScrollSyncing)
+            {
+                return;
+            }
+
+            int hour = Mathf.Clamp(Mathf.RoundToInt(offsetY / 70f) + 1, 1, 12);
+            SelectMemoCreateHour(hour, shouldSnap);
+        }
+
+        private void SelectMemoCreateMinuteFromOffset(float offsetY, bool shouldSnap)
+        {
+            if (_isMemoCreateTimeScrollSyncing)
+            {
+                return;
+            }
+
+            int minuteIndex = Mathf.Clamp(Mathf.RoundToInt(offsetY / 70f), 0, 11);
+            SelectMemoCreateMinute(minuteIndex * 5, shouldSnap);
+        }
+
+        private void SelectMemoCreatePeriodFromOffset(float offsetY, bool shouldSnap)
+        {
+            if (_isMemoCreateTimeScrollSyncing)
+            {
+                return;
+            }
+
+            int periodIndex = Mathf.Clamp(Mathf.RoundToInt(offsetY / 70f), 0, 1);
+            SelectMemoCreatePeriod(periodIndex == 1, shouldSnap);
         }
 
         private void SelectMemoCreateHour(int hour, bool shouldSnap)
         {
+            if (_memoCreateSelectedHour == hour)
+            {
+                if (shouldSnap)
+                {
+                    SetMemoCreateTimeColumnOffset(_memoCreateHourColumn, hour - 1);
+                }
+
+                return;
+            }
+
             _memoCreateSelectedHour = hour;
             RefreshMemoCreateDateTimeLabels();
             RefreshMemoCreateTimeColumnSelection(_memoCreateHourColumn, hour - 1);
@@ -620,6 +703,16 @@ namespace MemoAnchor.UI
 
         private void SelectMemoCreateMinute(int minute, bool shouldSnap)
         {
+            if (_memoCreateSelectedMinute == minute)
+            {
+                if (shouldSnap)
+                {
+                    SetMemoCreateTimeColumnOffset(_memoCreateMinuteColumn, minute / 5);
+                }
+
+                return;
+            }
+
             _memoCreateSelectedMinute = minute;
             RefreshMemoCreateDateTimeLabels();
             int minuteIndex = minute / 5;
@@ -632,6 +725,16 @@ namespace MemoAnchor.UI
 
         private void SelectMemoCreatePeriod(bool isPm, bool shouldSnap)
         {
+            if (_memoCreateIsPm == isPm)
+            {
+                if (shouldSnap)
+                {
+                    SetMemoCreateTimeColumnOffset(_memoCreatePeriodColumn, isPm ? 1 : 0);
+                }
+
+                return;
+            }
+
             _memoCreateIsPm = isPm;
             RefreshMemoCreateDateTimeLabels();
             int periodIndex = isPm ? 1 : 0;

@@ -254,7 +254,7 @@ namespace MemoAnchor.UI
             titleRow.AddToClassList("memo-search-result-title-row");
 
             VisualElement titleWrap = new();
-            titleWrap.AddToClassList("memo-search-result-title-wrap");
+            titleWrap.AddToClassList("flex-title-row");
 
             VisualElement icon = new();
             icon.AddToClassList("memo-list-item-icon");
