@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using Unity.Services.Authentication;
 using UnityEngine;
 using UnityEngine.Networking;
@@ -56,6 +57,7 @@ namespace MemoAnchor
         public string assigneeName;
         public string dueText;
         public List<MemoChecklistEntry> checklistItems = new();
+        public List<string> imageUrls = new();
     }
 
     public readonly struct MemoCreateResult
@@ -72,6 +74,18 @@ namespace MemoAnchor
         }
     }
 
+    public readonly struct MemoMediaUploadResult
+    {
+        public readonly bool IsSuccess;
+        public readonly List<string> Urls;
+
+        public MemoMediaUploadResult(bool isSuccess, List<string> urls)
+        {
+            IsSuccess = isSuccess;
+            Urls = urls;
+        }
+    }
+
     public sealed class MemoService
     {
         private const string MEMOS_API_PATH = "/api/memos";
@@ -81,6 +95,7 @@ namespace MemoAnchor
         private bool _isLoading;
         private bool _isCreating;
         private bool _isMutating;
+        private bool _isUploadingMedia;
 
         public async Awaitable<MemoListResponse> LoadMemosAsync()
         {
@@ -211,6 +226,53 @@ namespace MemoAnchor
             }
         }
 
+        public async Awaitable<MemoMediaUploadResult> UploadMemoMediaAsync(List<string> filePaths)
+        {
+            if (filePaths.Count == 0)
+            {
+                return new MemoMediaUploadResult(true, new List<string>());
+            }
+
+            if (_isUploadingMedia || !AuthenticationService.Instance.IsSignedIn)
+            {
+                return new MemoMediaUploadResult(false, new List<string>());
+            }
+
+            _isUploadingMedia = true;
+            var urls = new List<string>(filePaths.Count);
+
+            try
+            {
+                foreach (string filePath in filePaths)
+                {
+                    string extension = Path.GetExtension(filePath).ToLowerInvariant();
+                    string path = $"{MEMOS_API_PATH}/media?extension={UnityWebRequest.EscapeURL(extension)}";
+                    using UnityWebRequest request = ServicesManager.CreateAuthorizedFileUploadRequest(path, filePath, GetMediaContentType(extension));
+                    await ServicesManager.SendRequestAsync(request);
+
+                    if (request.result != UnityWebRequest.Result.Success)
+                    {
+                        Debug.LogWarning($"Memo media upload failed: {request.error}");
+                        return new MemoMediaUploadResult(false, urls);
+                    }
+
+                    MemoMediaUploadResponse response = JsonUtility.FromJson<MemoMediaUploadResponse>(request.downloadHandler.text);
+                    if (string.IsNullOrWhiteSpace(response.url))
+                    {
+                        return new MemoMediaUploadResult(false, urls);
+                    }
+
+                    urls.Add(response.url);
+                }
+
+                return new MemoMediaUploadResult(true, urls);
+            }
+            finally
+            {
+                _isUploadingMedia = false;
+            }
+        }
+
         public async Awaitable<MemoListResponse> MoveMemoToTrashAsync(string memoId)
         {
             return await MutateMemoAsync($"{MEMOS_API_PATH}/{UnityWebRequest.EscapeURL(memoId)}", UnityWebRequest.kHttpVerbDELETE, _lastResponse, response => _lastResponse = response);
@@ -256,11 +318,55 @@ namespace MemoAnchor
             }
         }
 
+        private static string GetMediaContentType(string extension)
+        {
+            switch (extension)
+            {
+                case ".jpg":
+                case ".jpeg":
+                    return "image/jpeg";
+                case ".png":
+                    return "image/png";
+                case ".gif":
+                    return "image/gif";
+                case ".webp":
+                    return "image/webp";
+                case ".heic":
+                case ".heif":
+                    return "image/heic";
+                case ".bmp":
+                    return "image/bmp";
+                case ".tif":
+                case ".tiff":
+                    return "image/tiff";
+                case ".mov":
+                    return "video/quicktime";
+                case ".avi":
+                    return "video/x-msvideo";
+                case ".webm":
+                    return "video/webm";
+                case ".m4v":
+                    return "video/x-m4v";
+                case ".3gp":
+                    return "video/3gpp";
+                case ".mkv":
+                    return "video/x-matroska";
+                default:
+                    return "video/mp4";
+            }
+        }
+
         [Serializable]
         private sealed class MemoCreateResponse
         {
             public MemoItem memo;
             public List<MemoItem> memos = new();
+        }
+
+        [Serializable]
+        private sealed class MemoMediaUploadResponse
+        {
+            public string url;
         }
     }
 }

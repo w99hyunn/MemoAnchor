@@ -1,0 +1,10 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements">
+    <ui:VisualElement name="memo-create-media-item" class="memo-media-item">
+        <ui:VisualElement name="memo-create-media-preview" picking-mode="Ignore" class="memo-media-preview memo-list-item-icon-gallery"/>
+        <ui:VisualElement name="memo-create-media-spinner" picking-mode="Ignore" class="loading-spinner memo-media-thumbnail-spinner is-hidden"/>
+        <ui:Label name="memo-create-media-video-label" text="동영상" class="memo-media-video-label is-hidden"/>
+        <ui:Button name="memo-create-media-remove" class="memo-filter-calendar-close memo-media-remove-button">
+            <ui:VisualElement class="memo-calendar-close-icon"/>
+        </ui:Button>
+    </ui:VisualElement>
+</ui:UXML>

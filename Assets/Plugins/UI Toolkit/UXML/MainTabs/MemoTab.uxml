@@ -213,6 +213,19 @@
                         </ui:Button>
                     </ui:VisualElement>
                 </ui:VisualElement>
+                <ui:VisualElement name="memo-create-media-divider" class="memo-filter-divider is-hidden"/>
+                <ui:VisualElement name="memo-create-media-content" class="memo-create-section is-hidden">
+                    <ui:Label text="사진 / 동영상 (최대 3개)" class="memo-filter-section-title"/>
+                    <ui:VisualElement name="memo-create-media-box" class="scan-input-box memo-create-media-box">
+                        <ui:VisualElement class="wrap-row">
+                            <ui:VisualElement name="memo-create-media-list" class="wrap-row"/>
+                            <ui:Button name="memo-create-media-add-button" class="memo-media-item">
+                                <ui:VisualElement picking-mode="Ignore" class="memo-create-media-add-icon"/>
+                            </ui:Button>
+                        </ui:VisualElement>
+                        <ui:VisualElement picking-mode="Ignore" class="signup-input-border"/>
+                    </ui:VisualElement>
+                </ui:VisualElement>
                 <ui:VisualElement class="memo-filter-divider"/>
                 <ui:VisualElement class="memo-create-section">
                     <ui:Label text="마감 기한" class="memo-filter-section-title"/>
@@ -269,6 +282,35 @@
                     </ui:VisualElement>
                 </ui:VisualElement>
             </ui:ScrollView>
+        </ui:VisualElement>
+        <ui:VisualElement name="memo-create-media-source-overlay" class="scan-action-dialog-overlay memo-media-source-overlay is-hidden">
+            <ui:VisualElement name="memo-create-media-source-sheet" class="scan-action-dialog-sheet memo-media-source-sheet">
+                <ui:VisualElement class="wrap-row memo-media-source-actions">
+                    <ui:Button name="memo-create-media-gallery-button" class="memo-media-source-button">
+                        <ui:VisualElement picking-mode="Ignore" class="memo-media-source-icon memo-media-source-gallery-icon"/>
+                        <ui:Label text="갤러리" class="memo-media-source-label"/>
+                    </ui:Button>
+                    <ui:Button name="memo-create-media-camera-button" class="memo-media-source-button">
+                        <ui:VisualElement picking-mode="Ignore" class="memo-media-source-icon memo-media-source-camera-icon"/>
+                        <ui:Label text="카메라" class="memo-media-source-label"/>
+                    </ui:Button>
+                </ui:VisualElement>
+            </ui:VisualElement>
+        </ui:VisualElement>
+        <ui:VisualElement name="memo-media-viewer-overlay" class="common-confirm-popup-overlay memo-media-viewer-overlay is-hidden">
+            <ui:VisualElement name="memo-media-viewer-panel" class="memo-media-viewer-panel">
+                <ui:Image name="memo-media-viewer-image" scale-mode="ScaleToFit" class="memo-media-viewer-image is-hidden"/>
+                <ui:VisualElement name="memo-media-viewer-spinner" class="loading-spinner"/>
+                <ui:Button name="memo-media-viewer-rotate-button" text="↻" class="memo-media-viewer-rotate-button"/>
+                <ui:Button name="memo-media-viewer-close-button" class="memo-filter-calendar-close memo-media-viewer-close-button">
+                    <ui:VisualElement class="memo-calendar-close-icon"/>
+                </ui:Button>
+                <ui:VisualElement name="memo-media-viewer-video-controls" class="memo-media-viewer-video-controls is-hidden">
+                    <ui:Button name="memo-media-viewer-play-button" text="Ⅱ" class="memo-media-viewer-play-button"/>
+                    <ui:Slider name="memo-media-viewer-seek-slider" low-value="0" high-value="1" value="0" show-input-field="false" class="memo-media-viewer-seek-slider"/>
+                    <ui:Label name="memo-media-viewer-time-label" text="00:00 / 00:00" class="memo-media-viewer-time-label"/>
+                </ui:VisualElement>
+            </ui:VisualElement>
         </ui:VisualElement>
         <ui:VisualElement name="memo-loading-overlay" class="loading-overlay is-hidden">
             <ui:VisualElement name="memo-loading-spinner" class="loading-spinner"/>

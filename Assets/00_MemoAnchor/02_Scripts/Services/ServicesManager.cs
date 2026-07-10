@@ -98,6 +98,16 @@ namespace MemoAnchor
             return request;
         }
 
+        public static UnityWebRequest CreateAuthorizedFileUploadRequest(string path, string filePath, string contentType)
+        {
+            UnityWebRequest request = new(BuildServerUrl(path), UnityWebRequest.kHttpVerbPOST);
+            request.uploadHandler = new UploadHandlerFile(filePath);
+            request.downloadHandler = new DownloadHandlerBuffer();
+            request.SetRequestHeader(CONTENT_TYPE_HEADER, contentType);
+            Authorize(request);
+            return request;
+        }
+
         public static void Authorize(UnityWebRequest request)
         {
             request.SetRequestHeader(AUTHORIZATION_HEADER, $"{BEARER_PREFIX}{AuthenticationService.Instance.AccessToken}");

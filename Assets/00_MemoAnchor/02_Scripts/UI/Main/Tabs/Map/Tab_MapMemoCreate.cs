@@ -1,8 +1,10 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using Unity.Services.Friends;
 using Unity.Services.Friends.Models;
 using UnityEngine;
+using UnityEngine.Networking;
 using UnityEngine.UIElements;
 
 namespace MemoAnchor.UI
@@ -10,23 +12,28 @@ namespace MemoAnchor.UI
     public partial class MainView
     {
         [SerializeField] private VisualTreeAsset _memoCreateChecklistInputAsset;
+        [SerializeField] private VisualTreeAsset _memoCreateMediaItemAsset;
         [SerializeField] private VisualTreeAsset _memoCreateRepairerRowAsset;
         [SerializeField] private VisualTreeAsset _memoCreateRepairerStatusAsset;
         [SerializeField] private VisualTreeAsset _memoCreateTimeOptionAsset;
 
         private VisualElement _memoCreatePage, _memoCreateCalendar, _memoCreateCalendarGrid, _memoCreateTimePicker, _memoCreateLoadingOverlay, _memoCreateLoadingSpinner;
         private VisualElement _memoCreateRepairerCard, _memoCreateRepairerList, _memoCreateRepairerItemsList, _memoCreateRepairerChevron;
+        private VisualElement _memoCreateMediaDivider, _memoCreateMediaContent, _memoCreateMediaBox, _memoCreateMediaList;
+        private VisualElement _memoCreateMediaSourceOverlay, _memoCreateMediaSourceSheet;
         private ScrollView _memoCreateScroll;
         private ScrollView _memoCreateHourColumn, _memoCreateMinuteColumn, _memoCreatePeriodColumn;
         private Button _memoCreateBackButton, _memoCreateResetButton, _memoCreateSubmitButton, _memoCreateRepairerButton;
         private Button _memoCreateCalendarCloseButton, _memoCreateCalendarPrevButton, _memoCreateCalendarNextButton;
         private Button _memoCreateDateButton, _memoCreateTimeButton, _memoCreateTimeCloseButton;
-        private Button _memoCreateChecklistAddButton;
+        private Button _memoCreateChecklistAddButton, _memoCreateMediaAddButton, _memoCreateMediaGalleryButton, _memoCreateMediaCameraButton;
         private Button _memoCreateUrgencyHighButton, _memoCreateUrgencyMiddleButton, _memoCreateUrgencyLowButton;
         private Label _memoCreateDateLabel, _memoCreateTimeLabel, _memoCreateCalendarTitle, _memoCreateContentTitle, _memoCreateRepairerLabel, _memoCreatePageTitle;
         private TextField _memoCreateTitleInput, _memoCreateBodyInput;
         private VisualElement _memoCreateTitleContent, _memoCreateTextContent, _memoCreateChecklistContent, _memoCreateChecklistList;
         private readonly List<TextField> _memoCreateChecklistInputs = new();
+        private readonly List<MemoCreateMediaSelection> _memoCreateMediaSelections = new();
+        private readonly List<VisualElement> _memoCreateMediaSpinners = new();
         private ScanMapItem _memoCreateTargetMap;
         private string _memoCreateKind = "text";
         private string _memoCreateUrgency = "middle";
@@ -43,9 +50,11 @@ namespace MemoAnchor.UI
         private int _memoCreateSelectedMinute;
         private bool _memoCreateIsPm;
         private bool _isMemoCreateTimeScrollSyncing;
+        private int _memoCreateMediaSourceTransitionToken;
 
         private void RegisterMapMemoCreatePage()
         {
+            VisualElement mainRoot = _root.Q<VisualElement>("main-root");
             _memoCreatePage = _root.Q<VisualElement>("memo-create-page");
             _memoCreateLoadingOverlay = _root.Q<VisualElement>("memo-create-loading-overlay");
             _memoCreateLoadingSpinner = _root.Q<VisualElement>("memo-create-loading-spinner");
@@ -71,6 +80,15 @@ namespace MemoAnchor.UI
             _memoCreateTextContent = _root.Q<VisualElement>("memo-create-text-content");
             _memoCreateChecklistContent = _root.Q<VisualElement>("memo-create-checklist-content");
             _memoCreateChecklistList = _root.Q<VisualElement>("memo-create-checklist-list");
+            _memoCreateMediaDivider = _root.Q<VisualElement>("memo-create-media-divider");
+            _memoCreateMediaContent = _root.Q<VisualElement>("memo-create-media-content");
+            _memoCreateMediaBox = _root.Q<VisualElement>("memo-create-media-box");
+            _memoCreateMediaList = _root.Q<VisualElement>("memo-create-media-list");
+            _memoCreateMediaAddButton = _root.Q<Button>("memo-create-media-add-button");
+            _memoCreateMediaSourceOverlay = _root.Q<VisualElement>("memo-create-media-source-overlay");
+            _memoCreateMediaSourceSheet = _root.Q<VisualElement>("memo-create-media-source-sheet");
+            _memoCreateMediaGalleryButton = _root.Q<Button>("memo-create-media-gallery-button");
+            _memoCreateMediaCameraButton = _root.Q<Button>("memo-create-media-camera-button");
             _memoCreateBackButton = _root.Q<Button>("memo-create-back-button");
             _memoCreateRepairerButton = _root.Q<Button>("memo-create-repairer-button");
             _memoCreateRepairerCard = _root.Q<VisualElement>("memo-create-repairer-card");
@@ -88,6 +106,10 @@ namespace MemoAnchor.UI
             _memoCreateUrgencyLowButton = _root.Q<Button>("memo-create-urgency-low");
             _memoCreateDefaultRepairerLabel = _memoCreateRepairerLabel.text;
 
+            mainRoot.Add(_memoCreateMediaSourceOverlay);
+            _memoCreateMediaSourceOverlay.BringToFront();
+            _memoCreateMediaSourceOverlay.AddToClassList(DIALOG_ANIM_READY_CLASS);
+            _memoCreateMediaSourceOverlay.AddToClassList(HIDDEN_CLASS);
             SetMemoCreateDateTimeToNow();
             BuildMemoCreateCalendar();
             BuildMemoCreateTimePicker();
@@ -97,6 +119,11 @@ namespace MemoAnchor.UI
             _memoCreateBackButton.clicked += OnClickMemoCreateBack;
             _memoCreateRepairerButton.clicked += ToggleMemoCreateRepairerList;
             _memoCreateChecklistAddButton.clicked += AddMemoCreateChecklistInput;
+            _memoCreateMediaAddButton.clicked += ShowMemoCreateMediaSourceDialog;
+            _memoCreateMediaGalleryButton.clicked += ShowMemoCreateGalleryPicker;
+            _memoCreateMediaCameraButton.clicked += ShowMemoCreateCamera;
+            _memoCreateMediaSourceOverlay.RegisterCallback<ClickEvent>(OnClickMemoCreateMediaSourceOverlay);
+            _memoCreateMediaSourceSheet.RegisterCallback<ClickEvent>(OnClickMemoCreateMediaSourceSheet);
             _memoCreateDateButton.clicked += ShowMemoCreateCalendar;
             _memoCreateTimeButton.clicked += ShowMemoCreateTimePicker;
             _memoCreateCalendarCloseButton.clicked += HideMemoCreateCalendar;
@@ -129,6 +156,11 @@ namespace MemoAnchor.UI
             _memoCreateBackButton.clicked -= OnClickMemoCreateBack;
             _memoCreateRepairerButton.clicked -= ToggleMemoCreateRepairerList;
             _memoCreateChecklistAddButton.clicked -= AddMemoCreateChecklistInput;
+            _memoCreateMediaAddButton.clicked -= ShowMemoCreateMediaSourceDialog;
+            _memoCreateMediaGalleryButton.clicked -= ShowMemoCreateGalleryPicker;
+            _memoCreateMediaCameraButton.clicked -= ShowMemoCreateCamera;
+            _memoCreateMediaSourceOverlay.UnregisterCallback<ClickEvent>(OnClickMemoCreateMediaSourceOverlay);
+            _memoCreateMediaSourceSheet.UnregisterCallback<ClickEvent>(OnClickMemoCreateMediaSourceSheet);
             _memoCreateDateButton.clicked -= ShowMemoCreateCalendar;
             _memoCreateTimeButton.clicked -= ShowMemoCreateTimePicker;
             _memoCreateCalendarCloseButton.clicked -= HideMemoCreateCalendar;
@@ -155,6 +187,8 @@ namespace MemoAnchor.UI
             {
                 input.UnregisterValueChangedCallback(OnMemoCreateChecklistValueChanged);
             }
+
+            ClearMemoCreateMediaSelections();
         }
 
         private void ShowMapMemoCreatePage(ScanMapItem map, string kind)
@@ -173,9 +207,9 @@ namespace MemoAnchor.UI
 
         private void ShowMemoEditPage(MemoDetailItem item)
         {
-            if (item.Kind != MemoDetailKind.Text && item.Kind != MemoDetailKind.Checklist)
+            if (item.Kind != MemoDetailKind.Text && item.Kind != MemoDetailKind.Checklist && item.Kind != MemoDetailKind.Image)
             {
-                PopupManager.ShowMessage("수정할 수 없음", "현재는 텍스트와 체크리스트 메모만 수정할 수 있습니다.", "확인");
+                PopupManager.ShowMessage("수정할 수 없음", "현재는 텍스트, 체크리스트, 사진 / 동영상 메모만 수정할 수 있습니다.", "확인");
                 return;
             }
 
@@ -189,10 +223,12 @@ namespace MemoAnchor.UI
             _memoCreateEditingItem = item;
             _memoCreateTargetMap = map;
             RequestTabSwitch(1);
-            ResetMemoCreateForm(item.Kind == MemoDetailKind.Checklist ? "checklist" : "text");
+            string kind = item.Kind == MemoDetailKind.Checklist ? "checklist" : item.Kind == MemoDetailKind.Image ? "image" : "text";
+            ResetMemoCreateForm(kind);
             _memoCreateTitleInput.SetValueWithoutNotify(item.Title);
             _memoCreateBodyInput.SetValueWithoutNotify(item.Body);
             PopulateMemoCreateChecklistInputs(item.ChecklistItems);
+            PopulateMemoCreateMediaSelections(item.ImageUrls);
             _memoCreateRepairerPlayerId = item.AssigneePlayerId;
             _memoCreateRepairerLabel.text = string.IsNullOrWhiteSpace(item.Assignee) ? _memoCreateDefaultRepairerLabel : item.Assignee;
             SetMemoCreateUrgency(ToMemoCreateUrgency(item.Urgency));
@@ -209,6 +245,8 @@ namespace MemoAnchor.UI
 
         private void HideMapMemoCreatePage()
         {
+            HideMemoCreateMediaSourceDialog();
+            ClearMemoCreateMediaSelections();
             SetVisible(_memoCreatePage, false);
             SetMemoCreateNavMode(false);
         }
@@ -249,7 +287,9 @@ namespace MemoAnchor.UI
             _memoCreateBodyInput.SetValueWithoutNotify(string.Empty);
             InputValidationFeedback.ClearError(_memoCreateTitleContent);
             InputValidationFeedback.ClearError(_memoCreateTextContent);
+            InputValidationFeedback.ClearError(_memoCreateMediaBox);
             ClearMemoCreateChecklistInputErrors();
+            ClearMemoCreateMediaSelections();
             SetMemoCreateKind(kind);
             RebuildMemoCreateChecklistInputs();
             _memoCreateRepairerPlayerId = string.Empty;
@@ -363,9 +403,16 @@ namespace MemoAnchor.UI
                     body = string.Empty;
                 }
 
+                List<string> imageUrls = await UploadMemoCreateMediaAsync();
+                if (imageUrls == null)
+                {
+                    PopupManager.ShowMessage("파일 업로드 실패", "사진 또는 동영상을 서버에 저장하지 못했습니다.", "확인");
+                    return;
+                }
+
                 if (_memoCreateEditingItem != null)
                 {
-                    MemoDetailItem updatedItem = await UpdateMemoForMapAsync(_memoCreateEditingItem, _memoCreateTargetMap, _memoCreateKind, title, body, _memoCreateUrgency, _memoCreateRepairerPlayerId, assigneeName, dueText, checklistItems);
+                    MemoDetailItem updatedItem = await UpdateMemoForMapAsync(_memoCreateEditingItem, _memoCreateTargetMap, _memoCreateKind, title, body, _memoCreateUrgency, _memoCreateRepairerPlayerId, assigneeName, dueText, checklistItems, imageUrls);
                     if (updatedItem == null)
                     {
                         return;
@@ -378,7 +425,7 @@ namespace MemoAnchor.UI
                     return;
                 }
 
-                bool isCreated = await CreateMemoForMapAsync(_memoCreateTargetMap, _memoCreateKind, title, body, _memoCreateUrgency, _memoCreateRepairerPlayerId, assigneeName, dueText, checklistItems);
+                bool isCreated = await CreateMemoForMapAsync(_memoCreateTargetMap, _memoCreateKind, title, body, _memoCreateUrgency, _memoCreateRepairerPlayerId, assigneeName, dueText, checklistItems, imageUrls);
                 if (!isCreated)
                 {
                     return;
@@ -398,12 +445,14 @@ namespace MemoAnchor.UI
         {
             InputValidationFeedback.ClearError(_memoCreateTitleContent);
             InputValidationFeedback.ClearError(_memoCreateTextContent);
+            InputValidationFeedback.ClearError(_memoCreateMediaBox);
             ClearMemoCreateChecklistInputErrors();
 
             bool isTitleMissing = string.IsNullOrWhiteSpace(title);
             bool isContentMissing = _memoCreateKind == "checklist"
                 ? checklistItems.Count == 0
                 : string.IsNullOrWhiteSpace(body);
+            bool isMediaMissing = _memoCreateKind == "image" && _memoCreateMediaSelections.Count == 0;
 
             if (isTitleMissing)
             {
@@ -430,7 +479,12 @@ namespace MemoAnchor.UI
                 }
             }
 
-            if (!isTitleMissing && !isContentMissing)
+            if (isMediaMissing)
+            {
+                InputValidationFeedback.ShowError(_memoCreateMediaBox);
+            }
+
+            if (!isTitleMissing && !isContentMissing && !isMediaMissing)
             {
                 return true;
             }
@@ -438,12 +492,18 @@ namespace MemoAnchor.UI
             List<VisualElement> invalidInputs = new();
             InputValidationFeedback.AddIfError(invalidInputs, _memoCreateTitleContent);
             InputValidationFeedback.AddIfError(invalidInputs, _memoCreateTextContent);
+            InputValidationFeedback.AddIfError(invalidInputs, _memoCreateMediaBox);
             foreach (TextField input in _memoCreateChecklistInputs)
             {
                 InputValidationFeedback.AddIfError(invalidInputs, input.parent);
             }
             _ = InputValidationFeedback.ShakeAsync(invalidInputs);
             string contentPrompt = _memoCreateKind == "checklist" ? "체크리스트를" : "내용을";
+            if (isMediaMissing)
+            {
+                PopupManager.ShowMessage("입력 확인", "제목, 내용, 사진 또는 동영상을 확인해주세요.", "확인");
+                return false;
+            }
             string message = isTitleMissing && isContentMissing
                 ? $"제목과 {contentPrompt} 입력해주세요."
                 : isTitleMissing
@@ -482,12 +542,15 @@ namespace MemoAnchor.UI
 
         private void SetMemoCreateKind(string kind)
         {
-            _memoCreateKind = kind == "checklist" ? "checklist" : "text";
+            _memoCreateKind = kind == "checklist" ? "checklist" : kind == "image" ? "image" : "text";
             bool isChecklist = _memoCreateKind == "checklist";
-            _memoCreateContentTitle.text = isChecklist ? "체크리스트 (최대 10개)" : "타이핑";
+            bool isMedia = _memoCreateKind == "image";
+            _memoCreateContentTitle.text = isChecklist ? "체크리스트 (최대 10개)" : isMedia ? "메모 내용" : "타이핑";
             SetVisible(_memoCreateTitleContent, true);
             SetVisible(_memoCreateTextContent, !isChecklist);
             SetVisible(_memoCreateChecklistContent, isChecklist);
+            SetVisible(_memoCreateMediaDivider, isMedia);
+            SetVisible(_memoCreateMediaContent, isMedia);
             if (isChecklist && _memoCreateChecklistInputs.Count == 0)
             {
                 AddMemoCreateChecklistInput();
@@ -524,6 +587,283 @@ namespace MemoAnchor.UI
             {
                 AddMemoCreateChecklistInput();
             }
+        }
+
+        private void ShowMemoCreateMediaSourceDialog()
+        {
+            if (_memoCreateMediaSelections.Count >= 3)
+            {
+                return;
+            }
+
+            _memoCreateMediaSourceTransitionToken++;
+            _memoCreateMediaSourceOverlay.RemoveFromClassList(HIDDEN_CLASS);
+            _memoCreateMediaSourceOverlay.RemoveFromClassList(DIALOG_OPEN_CLASS);
+            int token = _memoCreateMediaSourceTransitionToken;
+            _memoCreateMediaSourceOverlay.schedule.Execute(() =>
+            {
+                if (token == _memoCreateMediaSourceTransitionToken)
+                {
+                    _memoCreateMediaSourceOverlay.AddToClassList(DIALOG_OPEN_CLASS);
+                }
+            }).ExecuteLater(16);
+        }
+
+        private void HideMemoCreateMediaSourceDialog()
+        {
+            _memoCreateMediaSourceTransitionToken++;
+            int token = _memoCreateMediaSourceTransitionToken;
+            _memoCreateMediaSourceOverlay.RemoveFromClassList(DIALOG_OPEN_CLASS);
+            _memoCreateMediaSourceOverlay.schedule.Execute(() =>
+            {
+                if (token == _memoCreateMediaSourceTransitionToken)
+                {
+                    _memoCreateMediaSourceOverlay.AddToClassList(HIDDEN_CLASS);
+                }
+            }).ExecuteLater(240);
+        }
+
+        private void OnClickMemoCreateMediaSourceOverlay(ClickEvent evt)
+        {
+            HideMemoCreateMediaSourceDialog();
+        }
+
+        private static void OnClickMemoCreateMediaSourceSheet(ClickEvent evt)
+        {
+            evt.StopPropagation();
+        }
+
+        private void ShowMemoCreateGalleryPicker()
+        {
+            HideMemoCreateMediaSourceDialog();
+            if (NativeGallery.IsMediaPickerBusy())
+            {
+                return;
+            }
+
+            NativeGallery.GetMixedMediasFromGallery(
+                OnMemoCreateMediaSelected,
+                NativeGallery.MediaType.Image | NativeGallery.MediaType.Video,
+                "사진 또는 동영상 선택");
+        }
+
+        private void ShowMemoCreateCamera()
+        {
+            HideMemoCreateMediaSourceDialog();
+            if (NativeCamera.IsCameraBusy())
+            {
+                return;
+            }
+
+            NativeCamera.TakePicture(OnMemoCreateCameraPhotoSelected, 2048);
+        }
+
+        private void OnMemoCreateCameraPhotoSelected(string path)
+        {
+            if (!string.IsNullOrWhiteSpace(path))
+            {
+                OnMemoCreateMediaSelected(new[] { path });
+            }
+        }
+
+        private void OnMemoCreateMediaSelected(string[] paths)
+        {
+            if (paths == null || paths.Length == 0)
+            {
+                return;
+            }
+
+            int remainingCount = 3 - _memoCreateMediaSelections.Count;
+            int addedCount = 0;
+            foreach (string path in paths)
+            {
+                if (addedCount >= remainingCount || string.IsNullOrWhiteSpace(path))
+                {
+                    break;
+                }
+
+                if (_memoCreateMediaSelections.Exists(item => string.Equals(item.Path, path, StringComparison.OrdinalIgnoreCase)))
+                {
+                    continue;
+                }
+
+                NativeGallery.MediaType mediaType = NativeGallery.GetMediaTypeOfFile(path);
+                if ((mediaType != NativeGallery.MediaType.Image && mediaType != NativeGallery.MediaType.Video)
+                    || !IsSupportedMemoMediaPath(path))
+                {
+                    continue;
+                }
+
+                Texture2D previewTexture = mediaType == NativeGallery.MediaType.Image
+                    ? NativeGallery.LoadImageAtPath(path, 512)
+                    : NativeGallery.GetVideoThumbnail(path, 512);
+                _memoCreateMediaSelections.Add(new MemoCreateMediaSelection(path, false, mediaType == NativeGallery.MediaType.Video, previewTexture));
+                addedCount++;
+            }
+
+            InputValidationFeedback.ClearError(_memoCreateMediaBox);
+            RebuildMemoCreateMediaItems();
+            if (paths.Length > remainingCount)
+            {
+                PopupManager.ShowMessage("첨부 개수 확인", "사진과 동영상은 최대 3개까지 추가할 수 있습니다.", "확인");
+            }
+        }
+
+        private void PopulateMemoCreateMediaSelections(List<string> imageUrls)
+        {
+            ClearMemoCreateMediaSelections();
+            foreach (string imageUrl in imageUrls)
+            {
+                _memoCreateMediaSelections.Add(new MemoCreateMediaSelection(imageUrl, true, IsVideoMediaPath(imageUrl), null));
+            }
+
+            RebuildMemoCreateMediaItems();
+        }
+
+        private void RebuildMemoCreateMediaItems()
+        {
+            StopAllMemoCreateMediaSpinners();
+            _memoCreateMediaList.Clear();
+            foreach (MemoCreateMediaSelection selection in _memoCreateMediaSelections)
+            {
+                TemplateContainer template = _memoCreateMediaItemAsset.Instantiate();
+                VisualElement item = template.Q<VisualElement>("memo-create-media-item");
+                VisualElement preview = template.Q<VisualElement>("memo-create-media-preview");
+                VisualElement spinner = template.Q<VisualElement>("memo-create-media-spinner");
+                Label videoLabel = template.Q<Label>("memo-create-media-video-label");
+                Button removeButton = template.Q<Button>("memo-create-media-remove");
+                if (selection.PreviewTexture != null)
+                {
+                    preview.style.backgroundImage = new StyleBackground(selection.PreviewTexture);
+                    preview.AddToClassList("has-preview");
+                }
+                else if (selection.IsRemote && !selection.IsVideo)
+                {
+                    SetVisible(preview, false);
+                    SetVisible(spinner, true);
+                    _memoCreateMediaSpinners.Add(spinner);
+                    LoadingSpinnerController.Start(spinner);
+                    _ = LoadMemoCreateRemoteMediaPreviewAsync(selection, preview, spinner);
+                }
+
+                SetVisible(videoLabel, selection.IsVideo);
+                item.tooltip = Path.GetFileName(selection.Path);
+                removeButton.clicked += () => RemoveMemoCreateMediaSelection(selection);
+                _memoCreateMediaList.Add(item);
+            }
+
+            SetVisible(_memoCreateMediaAddButton, _memoCreateMediaSelections.Count < 3);
+        }
+
+        private async Awaitable LoadMemoCreateRemoteMediaPreviewAsync(MemoCreateMediaSelection selection, VisualElement preview, VisualElement spinner)
+        {
+            using UnityWebRequest request = UnityWebRequestTexture.GetTexture(GetMemoMediaUrl(selection.Path));
+            await ServicesManager.SendRequestAsync(request);
+            if (request.result != UnityWebRequest.Result.Success)
+            {
+                StopMemoCreateMediaSpinner(spinner);
+                SetVisible(preview, true);
+                return;
+            }
+
+            Texture2D texture = DownloadHandlerTexture.GetContent(request);
+            if (preview.panel == null || !_memoCreateMediaSelections.Contains(selection))
+            {
+                Destroy(texture);
+                StopMemoCreateMediaSpinner(spinner);
+                return;
+            }
+
+            selection.PreviewTexture = texture;
+            preview.style.backgroundImage = new StyleBackground(texture);
+            preview.AddToClassList("has-preview");
+            StopMemoCreateMediaSpinner(spinner);
+            SetVisible(preview, true);
+        }
+
+        private void StopMemoCreateMediaSpinner(VisualElement spinner)
+        {
+            LoadingSpinnerController.Stop(spinner);
+            SetVisible(spinner, false);
+            _memoCreateMediaSpinners.Remove(spinner);
+        }
+
+        private void RemoveMemoCreateMediaSelection(MemoCreateMediaSelection selection)
+        {
+            if (selection.PreviewTexture != null)
+            {
+                Destroy(selection.PreviewTexture);
+            }
+
+            _memoCreateMediaSelections.Remove(selection);
+            RebuildMemoCreateMediaItems();
+        }
+
+        private void ClearMemoCreateMediaSelections()
+        {
+            StopAllMemoCreateMediaSpinners();
+            foreach (MemoCreateMediaSelection selection in _memoCreateMediaSelections)
+            {
+                if (selection.PreviewTexture != null)
+                {
+                    Destroy(selection.PreviewTexture);
+                }
+            }
+
+            _memoCreateMediaSelections.Clear();
+            _memoCreateMediaList.Clear();
+        }
+
+        private void StopAllMemoCreateMediaSpinners()
+        {
+            foreach (VisualElement spinner in _memoCreateMediaSpinners)
+            {
+                LoadingSpinnerController.Stop(spinner);
+            }
+
+            _memoCreateMediaSpinners.Clear();
+        }
+
+        private async Awaitable<List<string>> UploadMemoCreateMediaAsync()
+        {
+            var imageUrls = new List<string>();
+            var localPaths = new List<string>();
+            foreach (MemoCreateMediaSelection selection in _memoCreateMediaSelections)
+            {
+                if (selection.IsRemote)
+                {
+                    imageUrls.Add(selection.Path);
+                }
+                else
+                {
+                    localPaths.Add(selection.Path);
+                }
+            }
+
+            MemoMediaUploadResult uploadResult = await _memoService.UploadMemoMediaAsync(localPaths);
+            if (!uploadResult.IsSuccess)
+            {
+                return null;
+            }
+
+            imageUrls.AddRange(uploadResult.Urls);
+            return imageUrls;
+        }
+
+        private static bool IsVideoMediaPath(string path)
+        {
+            string extension = Path.GetExtension(path.Split('?')[0]).ToLowerInvariant();
+            return extension == ".mp4" || extension == ".mov" || extension == ".avi" || extension == ".webm"
+                || extension == ".m4v" || extension == ".3gp" || extension == ".mkv";
+        }
+
+        private static bool IsSupportedMemoMediaPath(string path)
+        {
+            string extension = Path.GetExtension(path).ToLowerInvariant();
+            return IsVideoMediaPath(path)
+                || extension == ".jpg" || extension == ".jpeg" || extension == ".png" || extension == ".gif"
+                || extension == ".webp" || extension == ".heic" || extension == ".heif" || extension == ".bmp"
+                || extension == ".tif" || extension == ".tiff";
         }
 
         private void AddMemoCreateChecklistInput()
@@ -1026,6 +1366,22 @@ namespace MemoAnchor.UI
             }
 
             return "지남";
+        }
+
+        private sealed class MemoCreateMediaSelection
+        {
+            public readonly string Path;
+            public readonly bool IsRemote;
+            public readonly bool IsVideo;
+            public Texture2D PreviewTexture;
+
+            public MemoCreateMediaSelection(string path, bool isRemote, bool isVideo, Texture2D previewTexture)
+            {
+                Path = path;
+                IsRemote = isRemote;
+                IsVideo = isVideo;
+                PreviewTexture = previewTexture;
+            }
         }
     }
 }

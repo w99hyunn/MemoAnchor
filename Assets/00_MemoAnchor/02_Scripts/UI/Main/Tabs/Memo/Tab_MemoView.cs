@@ -3,7 +3,9 @@ using System;
 using System.Text;
 using Unity.Services.Authentication;
 using UnityEngine;
+using UnityEngine.Networking;
 using UnityEngine.UIElements;
+using UnityEngine.Video;
 
 namespace MemoAnchor.UI
 {
@@ -14,19 +16,39 @@ namespace MemoAnchor.UI
         private readonly MemoService _memoService = new();
         private readonly List<MemoDetailItem> _memoDetailItems = new();
         private readonly List<MemoDetailItem> _memoTrashItems = new();
+        private readonly List<Texture2D> _memoDetailMediaTextures = new();
+        private readonly List<VisualElement> _memoDetailMediaSpinners = new();
         private readonly HashSet<string> _selectedTrashMemoIds = new(StringComparer.OrdinalIgnoreCase);
         private VisualElement _memoListContainer, _memoDetailPage, _memoDetailMenu, _memoDetailContent, _memoTrashPage, _memoTrashListContainer, _memoLoadingOverlay, _memoLoadingSpinner;
+        private VisualElement _memoMediaViewerOverlay, _memoMediaViewerPanel, _memoMediaViewerSpinner, _memoMediaViewerVideoControls;
+        private Image _memoMediaViewerImage;
         private Button _memoDetailBackButton, _memoDetailMenuButton, _memoDetailEditButton, _memoDetailDeleteButton, _memoDetailExportButton, _memoTrashButton, _memoTrashBackButton, _memoTrashSelectButton;
-        private Button _memoTrashPermanentDeleteButton, _memoTrashRestoreButton;
-        private Label _memoDetailPlaceLabel;
+        private Button _memoTrashPermanentDeleteButton, _memoTrashRestoreButton, _memoMediaViewerCloseButton, _memoMediaViewerRotateButton, _memoMediaViewerPlayButton;
+        private Label _memoDetailPlaceLabel, _memoMediaViewerTimeLabel;
+        private Slider _memoMediaViewerSeekSlider;
         private MemoDetailItem _currentMemoDetailItem;
         private bool _isMemoListLoading;
         private bool _isMemoTrashLoading;
         private bool _isCreatingMemo;
         private bool _isMemoTrashSelecting;
+        private Texture2D _memoMediaViewerTexture;
+        private RenderTexture _memoMediaViewerVideoTexture;
+        private VideoPlayer _memoMediaViewerVideoPlayer;
+        private string _memoMediaViewerVideoError = string.Empty;
+        private IVisualElementScheduledItem _memoMediaViewerControlsSchedule;
+        private int _memoMediaViewerLoadToken;
+        private int _memoMediaViewerRotation;
+        private int _memoMediaViewerFirstPointerId = -1;
+        private int _memoMediaViewerSecondPointerId = -1;
+        private Vector2 _memoMediaViewerFirstPointerPosition;
+        private Vector2 _memoMediaViewerSecondPointerPosition;
+        private float _memoMediaViewerZoom = 1f;
+        private float _memoMediaViewerPinchStartDistance;
+        private float _memoMediaViewerPinchStartZoom = 1f;
 
         private void RegisterMemoDetailPage()
         {
+            VisualElement mainRoot = _root.Q<VisualElement>("main-root");
             _memoListContainer = _root.Q<VisualElement>("memo-list-container");
             _memoDetailPage = _root.Q<VisualElement>("memo-detail-page");
             _memoDetailMenu = _root.Q<VisualElement>("memo-detail-menu");
@@ -46,7 +68,35 @@ namespace MemoAnchor.UI
             _memoTrashPermanentDeleteButton = _root.Q<Button>("memo-trash-permanent-delete-button");
             _memoTrashRestoreButton = _root.Q<Button>("memo-trash-restore-button");
             _memoDetailPlaceLabel = _root.Q<Label>("memo-detail-place-label");
+            _memoMediaViewerOverlay = _root.Q<VisualElement>("memo-media-viewer-overlay");
+            _memoMediaViewerPanel = _root.Q<VisualElement>("memo-media-viewer-panel");
+            _memoMediaViewerImage = _root.Q<Image>("memo-media-viewer-image");
+            _memoMediaViewerSpinner = _root.Q<VisualElement>("memo-media-viewer-spinner");
+            _memoMediaViewerCloseButton = _root.Q<Button>("memo-media-viewer-close-button");
+            _memoMediaViewerRotateButton = _root.Q<Button>("memo-media-viewer-rotate-button");
+            _memoMediaViewerVideoControls = _root.Q<VisualElement>("memo-media-viewer-video-controls");
+            _memoMediaViewerPlayButton = _root.Q<Button>("memo-media-viewer-play-button");
+            _memoMediaViewerSeekSlider = _root.Q<Slider>("memo-media-viewer-seek-slider");
+            _memoMediaViewerTimeLabel = _root.Q<Label>("memo-media-viewer-time-label");
 
+            if (!TryGetComponent<VideoPlayer>(out _memoMediaViewerVideoPlayer))
+            {
+                _memoMediaViewerVideoPlayer = gameObject.AddComponent<VideoPlayer>();
+            }
+
+            _memoMediaViewerVideoPlayer.playOnAwake = false;
+            _memoMediaViewerVideoPlayer.renderMode = VideoRenderMode.RenderTexture;
+            _memoMediaViewerVideoPlayer.audioOutputMode = VideoAudioOutputMode.Direct;
+            _memoMediaViewerVideoPlayer.aspectRatio = VideoAspectRatio.FitInside;
+            _memoMediaViewerVideoPlayer.waitForFirstFrame = true;
+            _memoMediaViewerVideoPlayer.skipOnDrop = true;
+            _memoMediaViewerVideoPlayer.errorReceived += OnMemoMediaViewerVideoError;
+            _memoMediaViewerControlsSchedule = _memoMediaViewerVideoControls.schedule.Execute(UpdateMemoMediaViewerControls).Every(100);
+            _memoMediaViewerControlsSchedule.Pause();
+
+            mainRoot.Add(_memoMediaViewerOverlay);
+            _memoMediaViewerOverlay.BringToFront();
+            SetVisible(_memoMediaViewerOverlay, false);
             RebuildMemoList();
             HideMemoDetailPage();
             SetVisible(_memoLoadingOverlay, false);
@@ -61,11 +111,23 @@ namespace MemoAnchor.UI
             _memoTrashSelectButton.clicked += ToggleMemoTrashSelectMode;
             _memoTrashPermanentDeleteButton.clicked += ShowSelectedTrashDeleteConfirm;
             _memoTrashRestoreButton.clicked += ShowSelectedTrashRestoreConfirm;
+            _memoMediaViewerCloseButton.clicked += HideMemoMediaViewer;
+            _memoMediaViewerRotateButton.clicked += RotateMemoMediaViewer;
+            _memoMediaViewerPlayButton.clicked += ToggleMemoMediaViewerVideoPlayback;
+            _memoMediaViewerSeekSlider.RegisterValueChangedCallback(OnMemoMediaViewerSeekChanged);
+            _memoMediaViewerOverlay.RegisterCallback<ClickEvent>(OnClickMemoMediaViewerOverlay);
+            _memoMediaViewerPanel.RegisterCallback<ClickEvent>(OnClickMemoMediaViewerPanel);
+            _memoMediaViewerPanel.RegisterCallback<PointerDownEvent>(OnMemoMediaViewerPointerDown);
+            _memoMediaViewerPanel.RegisterCallback<PointerMoveEvent>(OnMemoMediaViewerPointerMove);
+            _memoMediaViewerPanel.RegisterCallback<PointerUpEvent>(OnMemoMediaViewerPointerUp);
+            _memoMediaViewerPanel.RegisterCallback<PointerCancelEvent>(OnMemoMediaViewerPointerCancel);
             _ = RefreshMemoListAsync();
         }
 
         private void UnregisterMemoDetailPage()
         {
+            ClearMemoDetailMediaTextures();
+            HideMemoMediaViewer();
             _memoDetailBackButton.clicked -= HideMemoDetailPage;
             _memoDetailMenuButton.clicked -= ToggleMemoDetailMenu;
             _memoDetailEditButton.clicked -= ShowCurrentMemoEditPage;
@@ -76,6 +138,17 @@ namespace MemoAnchor.UI
             _memoTrashSelectButton.clicked -= ToggleMemoTrashSelectMode;
             _memoTrashPermanentDeleteButton.clicked -= ShowSelectedTrashDeleteConfirm;
             _memoTrashRestoreButton.clicked -= ShowSelectedTrashRestoreConfirm;
+            _memoMediaViewerCloseButton.clicked -= HideMemoMediaViewer;
+            _memoMediaViewerRotateButton.clicked -= RotateMemoMediaViewer;
+            _memoMediaViewerPlayButton.clicked -= ToggleMemoMediaViewerVideoPlayback;
+            _memoMediaViewerSeekSlider.UnregisterValueChangedCallback(OnMemoMediaViewerSeekChanged);
+            _memoMediaViewerOverlay.UnregisterCallback<ClickEvent>(OnClickMemoMediaViewerOverlay);
+            _memoMediaViewerPanel.UnregisterCallback<ClickEvent>(OnClickMemoMediaViewerPanel);
+            _memoMediaViewerPanel.UnregisterCallback<PointerDownEvent>(OnMemoMediaViewerPointerDown);
+            _memoMediaViewerPanel.UnregisterCallback<PointerMoveEvent>(OnMemoMediaViewerPointerMove);
+            _memoMediaViewerPanel.UnregisterCallback<PointerUpEvent>(OnMemoMediaViewerPointerUp);
+            _memoMediaViewerPanel.UnregisterCallback<PointerCancelEvent>(OnMemoMediaViewerPointerCancel);
+            _memoMediaViewerVideoPlayer.errorReceived -= OnMemoMediaViewerVideoError;
         }
 
         public async Awaitable RefreshMemoListAsync()
@@ -98,7 +171,7 @@ namespace MemoAnchor.UI
             }
         }
 
-        private async Awaitable<bool> CreateMemoForMapAsync(ScanMapItem map, string kind, string title, string body, string urgency, string assigneePlayerId, string assigneeName, string dueText, List<MemoChecklistEntry> checklistItems)
+        private async Awaitable<bool> CreateMemoForMapAsync(ScanMapItem map, string kind, string title, string body, string urgency, string assigneePlayerId, string assigneeName, string dueText, List<MemoChecklistEntry> checklistItems, List<string> imageUrls)
         {
             if (_isCreatingMemo)
             {
@@ -109,7 +182,7 @@ namespace MemoAnchor.UI
 
             try
             {
-                MemoCreateRequest payload = BuildMemoRequest(map, kind, title, body, urgency, assigneePlayerId, assigneeName, dueText, checklistItems);
+                MemoCreateRequest payload = BuildMemoRequest(map, kind, title, body, urgency, assigneePlayerId, assigneeName, dueText, checklistItems, imageUrls);
 
                 MemoCreateResult result = await _memoService.CreateMemoAsync(payload);
                 if (!result.IsSuccess)
@@ -133,7 +206,7 @@ namespace MemoAnchor.UI
             }
         }
 
-        private async Awaitable<MemoDetailItem> UpdateMemoForMapAsync(MemoDetailItem item, ScanMapItem map, string kind, string title, string body, string urgency, string assigneePlayerId, string assigneeName, string dueText, List<MemoChecklistEntry> checklistItems)
+        private async Awaitable<MemoDetailItem> UpdateMemoForMapAsync(MemoDetailItem item, ScanMapItem map, string kind, string title, string body, string urgency, string assigneePlayerId, string assigneeName, string dueText, List<MemoChecklistEntry> checklistItems, List<string> imageUrls)
         {
             if (_isCreatingMemo)
             {
@@ -144,7 +217,7 @@ namespace MemoAnchor.UI
 
             try
             {
-                MemoCreateRequest payload = BuildMemoRequest(map, kind, title, body, urgency, assigneePlayerId, assigneeName, dueText, checklistItems);
+                MemoCreateRequest payload = BuildMemoRequest(map, kind, title, body, urgency, assigneePlayerId, assigneeName, dueText, checklistItems, imageUrls);
                 MemoCreateResult result = await _memoService.UpdateMemoAsync(item.Id, payload);
                 if (!result.IsSuccess)
                 {
@@ -167,7 +240,7 @@ namespace MemoAnchor.UI
             }
         }
 
-        private static MemoCreateRequest BuildMemoRequest(ScanMapItem map, string kind, string title, string body, string urgency, string assigneePlayerId, string assigneeName, string dueText, List<MemoChecklistEntry> checklistItems)
+        private static MemoCreateRequest BuildMemoRequest(ScanMapItem map, string kind, string title, string body, string urgency, string assigneePlayerId, string assigneeName, string dueText, List<MemoChecklistEntry> checklistItems, List<string> imageUrls)
         {
             return new MemoCreateRequest
             {
@@ -180,7 +253,8 @@ namespace MemoAnchor.UI
                 assigneePlayerId = assigneePlayerId,
                 assigneeName = assigneeName,
                 dueText = dueText,
-                checklistItems = checklistItems
+                checklistItems = checklistItems,
+                imageUrls = imageUrls
             };
         }
 
@@ -328,6 +402,8 @@ namespace MemoAnchor.UI
         private void HideMemoDetailPage()
         {
             _currentMemoDetailItem = null;
+            HideMemoMediaViewer();
+            ClearMemoDetailMediaTextures();
             SetVisible(_memoDetailPage, false);
             HideMemoDetailMenu();
             SetMemoDetailNavMode(false);
@@ -449,7 +525,7 @@ namespace MemoAnchor.UI
 
                 if (item.ImageUrls.Count > 0)
                 {
-                    builder.AppendLine($"• 이미지 {item.ImageUrls.Count}개");
+                    builder.AppendLine($"• 사진 / 동영상 {item.ImageUrls.Count}개");
                 }
             }
 
@@ -782,6 +858,7 @@ namespace MemoAnchor.UI
 
         private void BuildMemoDetailContent(MemoDetailItem item)
         {
+            ClearMemoDetailMediaTextures();
             VisualElement preview = new();
             preview.AddToClassList("memo-preview-box");
             _memoDetailContent.Add(preview);
@@ -826,20 +903,429 @@ namespace MemoAnchor.UI
             }
             else if (item.Kind == MemoDetailKind.Image)
             {
-                VisualElement gallery = new();
-                gallery.AddToClassList("memo-image-grid");
-                int imageCount = item.ImageUrls.Count > 0 ? item.ImageUrls.Count : 6;
-                for (int i = 0; i < imageCount; i++)
+                if (!string.IsNullOrWhiteSpace(item.Body))
                 {
-                    VisualElement image = new();
-                    image.AddToClassList("memo-image-thumb");
-                    gallery.Add(image);
+                    Label body = new(item.Body);
+                    body.AddToClassList("memo-body-text");
+                    bodyCard.Add(body);
+                }
+
+                VisualElement gallery = new();
+                gallery.AddToClassList("wrap-row");
+                foreach (string imageUrl in item.ImageUrls)
+                {
+                    TemplateContainer template = _memoCreateMediaItemAsset.Instantiate();
+                    VisualElement mediaItem = template.Q<VisualElement>("memo-create-media-item");
+                    VisualElement mediaPreview = template.Q<VisualElement>("memo-create-media-preview");
+                    VisualElement mediaSpinner = template.Q<VisualElement>("memo-create-media-spinner");
+                    Label videoLabel = template.Q<Label>("memo-create-media-video-label");
+                    Button removeButton = template.Q<Button>("memo-create-media-remove");
+                    bool isVideo = IsVideoMediaPath(imageUrl);
+                    SetVisible(videoLabel, isVideo);
+                    SetVisible(removeButton, false);
+                    mediaItem.RegisterCallback<ClickEvent>(_ =>
+                    {
+                        ShowMemoMediaViewer(imageUrl, isVideo);
+                    });
+                    if (!isVideo)
+                    {
+                        SetVisible(mediaPreview, false);
+                        SetVisible(mediaSpinner, true);
+                        _memoDetailMediaSpinners.Add(mediaSpinner);
+                        LoadingSpinnerController.Start(mediaSpinner);
+                        _ = LoadMemoDetailMediaPreviewAsync(mediaPreview, mediaSpinner, imageUrl);
+                    }
+
+                    gallery.Add(mediaItem);
                 }
 
                 bodyCard.Add(gallery);
             }
 
             AddMemoDetailFooter(bodyCard, item);
+        }
+
+        private async Awaitable LoadMemoDetailMediaPreviewAsync(VisualElement preview, VisualElement spinner, string imageUrl)
+        {
+            using UnityWebRequest request = UnityWebRequestTexture.GetTexture(GetMemoMediaUrl(imageUrl));
+            await ServicesManager.SendRequestAsync(request);
+            if (request.result != UnityWebRequest.Result.Success)
+            {
+                StopMemoDetailMediaSpinner(spinner);
+                SetVisible(preview, true);
+                return;
+            }
+
+            Texture2D texture = DownloadHandlerTexture.GetContent(request);
+            if (preview.panel == null)
+            {
+                Destroy(texture);
+                StopMemoDetailMediaSpinner(spinner);
+                return;
+            }
+
+            _memoDetailMediaTextures.Add(texture);
+            preview.style.backgroundImage = new StyleBackground(texture);
+            preview.AddToClassList("has-preview");
+            StopMemoDetailMediaSpinner(spinner);
+            SetVisible(preview, true);
+        }
+
+        private void StopMemoDetailMediaSpinner(VisualElement spinner)
+        {
+            LoadingSpinnerController.Stop(spinner);
+            SetVisible(spinner, false);
+            _memoDetailMediaSpinners.Remove(spinner);
+        }
+
+        private void ShowMemoMediaViewer(string mediaUrl, bool isVideo)
+        {
+            if (isVideo)
+            {
+                _ = LoadMemoMediaViewerVideoAsync(mediaUrl);
+            }
+            else
+            {
+                _ = LoadMemoMediaViewerImageAsync(mediaUrl);
+            }
+        }
+
+        private async Awaitable LoadMemoMediaViewerImageAsync(string imageUrl)
+        {
+            _memoMediaViewerLoadToken++;
+            int token = _memoMediaViewerLoadToken;
+            StopMemoMediaViewerVideo();
+            ClearMemoMediaViewerTexture();
+            ResetMemoMediaViewerTransform();
+            _memoMediaViewerImage.image = null;
+            SetVisible(_memoMediaViewerImage, false);
+            StartMemoMediaViewerSpinner();
+            SetVisible(_memoMediaViewerRotateButton, true);
+            SetVisible(_memoMediaViewerVideoControls, false);
+            SetVisible(_memoMediaViewerOverlay, true);
+            _memoMediaViewerOverlay.BringToFront();
+
+            using UnityWebRequest request = UnityWebRequestTexture.GetTexture(GetMemoMediaUrl(imageUrl));
+            await ServicesManager.SendRequestAsync(request);
+            if (token != _memoMediaViewerLoadToken)
+            {
+                return;
+            }
+
+            if (request.result != UnityWebRequest.Result.Success)
+            {
+                HideMemoMediaViewer();
+                PopupManager.ShowMessage("사진 불러오기 실패", "사진을 불러오지 못했습니다.", "확인");
+                return;
+            }
+
+            _memoMediaViewerTexture = DownloadHandlerTexture.GetContent(request);
+            _memoMediaViewerImage.image = _memoMediaViewerTexture;
+            StopMemoMediaViewerSpinner();
+            SetVisible(_memoMediaViewerImage, true);
+        }
+
+        private async Awaitable LoadMemoMediaViewerVideoAsync(string videoUrl)
+        {
+            _memoMediaViewerLoadToken++;
+            int token = _memoMediaViewerLoadToken;
+            ClearMemoMediaViewerTexture();
+            StopMemoMediaViewerVideo();
+            ResetMemoMediaViewerTransform();
+            _memoMediaViewerImage.image = null;
+            SetVisible(_memoMediaViewerImage, false);
+            StartMemoMediaViewerSpinner();
+            SetVisible(_memoMediaViewerRotateButton, false);
+            SetVisible(_memoMediaViewerVideoControls, false);
+            SetVisible(_memoMediaViewerOverlay, true);
+            _memoMediaViewerOverlay.BringToFront();
+
+            _memoMediaViewerVideoError = string.Empty;
+            _memoMediaViewerVideoPlayer.source = VideoSource.Url;
+            _memoMediaViewerVideoPlayer.url = GetMemoMediaUrl(videoUrl);
+            _memoMediaViewerVideoPlayer.Prepare();
+            float prepareStartedAt = Time.realtimeSinceStartup;
+            while (token == _memoMediaViewerLoadToken
+                && !_memoMediaViewerVideoPlayer.isPrepared
+                && string.IsNullOrEmpty(_memoMediaViewerVideoError)
+                && Time.realtimeSinceStartup - prepareStartedAt < 30f)
+            {
+                await Awaitable.NextFrameAsync();
+            }
+
+            if (token != _memoMediaViewerLoadToken)
+            {
+                return;
+            }
+
+            if (!_memoMediaViewerVideoPlayer.isPrepared)
+            {
+                HideMemoMediaViewer();
+                PopupManager.ShowMessage("동영상 불러오기 실패", "동영상을 재생하지 못했습니다.", "확인");
+                return;
+            }
+
+            int sourceWidth = _memoMediaViewerVideoPlayer.width > 0 ? (int)_memoMediaViewerVideoPlayer.width : Screen.width;
+            int sourceHeight = _memoMediaViewerVideoPlayer.height > 0 ? (int)_memoMediaViewerVideoPlayer.height : Screen.height;
+            float renderScale = Mathf.Min(1f, 1920f / Mathf.Max(sourceWidth, sourceHeight));
+            int renderWidth = Mathf.Max(2, Mathf.RoundToInt(sourceWidth * renderScale));
+            int renderHeight = Mathf.Max(2, Mathf.RoundToInt(sourceHeight * renderScale));
+            _memoMediaViewerVideoTexture = new RenderTexture(renderWidth, renderHeight, 0, RenderTextureFormat.ARGB32);
+            _memoMediaViewerVideoTexture.Create();
+            _memoMediaViewerVideoPlayer.targetTexture = _memoMediaViewerVideoTexture;
+            _memoMediaViewerImage.image = _memoMediaViewerVideoTexture;
+            StopMemoMediaViewerSpinner();
+            SetVisible(_memoMediaViewerImage, true);
+            _memoMediaViewerVideoPlayer.Play();
+            SetVisible(_memoMediaViewerVideoControls, true);
+            UpdateMemoMediaViewerControls();
+            _memoMediaViewerControlsSchedule.Resume();
+        }
+
+        private void HideMemoMediaViewer()
+        {
+            _memoMediaViewerLoadToken++;
+            StopMemoMediaViewerSpinner();
+            ClearMemoMediaViewerTexture();
+            StopMemoMediaViewerVideo();
+            ResetMemoMediaViewerTransform();
+            _memoMediaViewerImage.image = null;
+            SetVisible(_memoMediaViewerVideoControls, false);
+            SetVisible(_memoMediaViewerOverlay, false);
+        }
+
+        private void StartMemoMediaViewerSpinner()
+        {
+            SetVisible(_memoMediaViewerSpinner, true);
+            LoadingSpinnerController.Start(_memoMediaViewerSpinner);
+        }
+
+        private void StopMemoMediaViewerSpinner()
+        {
+            LoadingSpinnerController.Stop(_memoMediaViewerSpinner);
+            SetVisible(_memoMediaViewerSpinner, false);
+        }
+
+        private void ClearMemoMediaViewerTexture()
+        {
+            if (_memoMediaViewerTexture != null)
+            {
+                Destroy(_memoMediaViewerTexture);
+                _memoMediaViewerTexture = null;
+            }
+        }
+
+        private void StopMemoMediaViewerVideo()
+        {
+            _memoMediaViewerControlsSchedule.Pause();
+            _memoMediaViewerVideoPlayer.Stop();
+            _memoMediaViewerVideoPlayer.targetTexture = null;
+            _memoMediaViewerVideoPlayer.url = string.Empty;
+            if (_memoMediaViewerVideoTexture != null)
+            {
+                _memoMediaViewerVideoTexture.Release();
+                Destroy(_memoMediaViewerVideoTexture);
+                _memoMediaViewerVideoTexture = null;
+            }
+        }
+
+        private void ToggleMemoMediaViewerVideoPlayback()
+        {
+            if (!_memoMediaViewerVideoPlayer.isPrepared)
+            {
+                return;
+            }
+
+            if (_memoMediaViewerVideoPlayer.isPlaying)
+            {
+                _memoMediaViewerVideoPlayer.Pause();
+            }
+            else
+            {
+                if (_memoMediaViewerVideoPlayer.length > 0
+                    && _memoMediaViewerVideoPlayer.time >= _memoMediaViewerVideoPlayer.length - 0.05d)
+                {
+                    _memoMediaViewerVideoPlayer.time = 0d;
+                }
+
+                _memoMediaViewerVideoPlayer.Play();
+            }
+
+            UpdateMemoMediaViewerControls();
+        }
+
+        private void OnMemoMediaViewerSeekChanged(ChangeEvent<float> evt)
+        {
+            if (_memoMediaViewerVideoPlayer.isPrepared)
+            {
+                _memoMediaViewerVideoPlayer.time = evt.newValue;
+                UpdateMemoMediaViewerControls();
+            }
+        }
+
+        private void UpdateMemoMediaViewerControls()
+        {
+            if (!_memoMediaViewerVideoPlayer.isPrepared)
+            {
+                return;
+            }
+
+            float duration = (float)_memoMediaViewerVideoPlayer.length;
+            float currentTime = Mathf.Clamp((float)_memoMediaViewerVideoPlayer.time, 0f, duration);
+            _memoMediaViewerSeekSlider.highValue = Mathf.Max(0.01f, duration);
+            _memoMediaViewerSeekSlider.SetValueWithoutNotify(currentTime);
+            _memoMediaViewerPlayButton.text = _memoMediaViewerVideoPlayer.isPlaying ? "Ⅱ" : "▶";
+            _memoMediaViewerTimeLabel.text = $"{FormatMemoMediaViewerTime(currentTime)} / {FormatMemoMediaViewerTime(duration)}";
+        }
+
+        private static string FormatMemoMediaViewerTime(float seconds)
+        {
+            int totalSeconds = Mathf.Max(0, Mathf.FloorToInt(seconds));
+            int hours = totalSeconds / 3600;
+            int minutes = totalSeconds % 3600 / 60;
+            int remainingSeconds = totalSeconds % 60;
+            return hours > 0
+                ? $"{hours:00}:{minutes:00}:{remainingSeconds:00}"
+                : $"{minutes:00}:{remainingSeconds:00}";
+        }
+
+        private void OnMemoMediaViewerVideoError(VideoPlayer source, string message)
+        {
+            _memoMediaViewerVideoError = message;
+        }
+
+        private void OnClickMemoMediaViewerOverlay(ClickEvent evt)
+        {
+            HideMemoMediaViewer();
+        }
+
+        private static void OnClickMemoMediaViewerPanel(ClickEvent evt)
+        {
+            evt.StopPropagation();
+        }
+
+        private void RotateMemoMediaViewer()
+        {
+            _memoMediaViewerRotation = (_memoMediaViewerRotation + 90) % 360;
+            ApplyMemoMediaViewerTransform();
+        }
+
+        private void OnMemoMediaViewerPointerDown(PointerDownEvent evt)
+        {
+            if (_memoMediaViewerFirstPointerId < 0)
+            {
+                _memoMediaViewerFirstPointerId = evt.pointerId;
+                _memoMediaViewerFirstPointerPosition = evt.position;
+                return;
+            }
+
+            if (_memoMediaViewerSecondPointerId < 0 && evt.pointerId != _memoMediaViewerFirstPointerId)
+            {
+                _memoMediaViewerSecondPointerId = evt.pointerId;
+                _memoMediaViewerSecondPointerPosition = evt.position;
+                _memoMediaViewerPinchStartDistance = Vector2.Distance(_memoMediaViewerFirstPointerPosition, _memoMediaViewerSecondPointerPosition);
+                _memoMediaViewerPinchStartZoom = _memoMediaViewerZoom;
+            }
+        }
+
+        private void OnMemoMediaViewerPointerMove(PointerMoveEvent evt)
+        {
+            if (evt.pointerId == _memoMediaViewerFirstPointerId)
+            {
+                _memoMediaViewerFirstPointerPosition = evt.position;
+            }
+            else if (evt.pointerId == _memoMediaViewerSecondPointerId)
+            {
+                _memoMediaViewerSecondPointerPosition = evt.position;
+            }
+            else
+            {
+                return;
+            }
+
+            if (_memoMediaViewerSecondPointerId < 0 || _memoMediaViewerPinchStartDistance <= 0f)
+            {
+                return;
+            }
+
+            float distance = Vector2.Distance(_memoMediaViewerFirstPointerPosition, _memoMediaViewerSecondPointerPosition);
+            _memoMediaViewerZoom = Mathf.Clamp(_memoMediaViewerPinchStartZoom * distance / _memoMediaViewerPinchStartDistance, 1f, 4f);
+            ApplyMemoMediaViewerTransform();
+        }
+
+        private void OnMemoMediaViewerPointerUp(PointerUpEvent evt)
+        {
+            RemoveMemoMediaViewerPointer(evt.pointerId);
+        }
+
+        private void OnMemoMediaViewerPointerCancel(PointerCancelEvent evt)
+        {
+            RemoveMemoMediaViewerPointer(evt.pointerId);
+        }
+
+        private void RemoveMemoMediaViewerPointer(int pointerId)
+        {
+            if (pointerId == _memoMediaViewerFirstPointerId)
+            {
+                _memoMediaViewerFirstPointerId = _memoMediaViewerSecondPointerId;
+                _memoMediaViewerFirstPointerPosition = _memoMediaViewerSecondPointerPosition;
+                _memoMediaViewerSecondPointerId = -1;
+            }
+            else if (pointerId == _memoMediaViewerSecondPointerId)
+            {
+                _memoMediaViewerSecondPointerId = -1;
+            }
+
+            _memoMediaViewerPinchStartDistance = 0f;
+            _memoMediaViewerPinchStartZoom = _memoMediaViewerZoom;
+        }
+
+        private void ResetMemoMediaViewerTransform()
+        {
+            _memoMediaViewerRotation = 0;
+            _memoMediaViewerZoom = 1f;
+            _memoMediaViewerPinchStartDistance = 0f;
+            _memoMediaViewerPinchStartZoom = 1f;
+            _memoMediaViewerFirstPointerId = -1;
+            _memoMediaViewerSecondPointerId = -1;
+            ApplyMemoMediaViewerTransform();
+        }
+
+        private void ApplyMemoMediaViewerTransform()
+        {
+            float width = _memoMediaViewerImage.resolvedStyle.width;
+            float height = _memoMediaViewerImage.resolvedStyle.height;
+            bool isQuarterTurn = _memoMediaViewerRotation == 90 || _memoMediaViewerRotation == 270;
+            float rotationFitScale = isQuarterTurn && width > 0f && height > 0f
+                ? Mathf.Min(width / height, height / width)
+                : 1f;
+            float scale = _memoMediaViewerZoom * rotationFitScale;
+            _memoMediaViewerImage.style.scale = new StyleScale(new Scale(new Vector3(scale, scale, 1f)));
+            _memoMediaViewerImage.style.rotate = new Rotate(new Angle(_memoMediaViewerRotation));
+        }
+
+        private void ClearMemoDetailMediaTextures()
+        {
+            foreach (VisualElement spinner in _memoDetailMediaSpinners)
+            {
+                LoadingSpinnerController.Stop(spinner);
+            }
+
+            _memoDetailMediaSpinners.Clear();
+            foreach (Texture2D texture in _memoDetailMediaTextures)
+            {
+                Destroy(texture);
+            }
+
+            _memoDetailMediaTextures.Clear();
+        }
+
+        private static string GetMemoMediaUrl(string imageUrl)
+        {
+            return imageUrl.StartsWith("http://", StringComparison.OrdinalIgnoreCase)
+                || imageUrl.StartsWith("https://", StringComparison.OrdinalIgnoreCase)
+                ? imageUrl
+                : ServicesManager.BuildServerUrl(imageUrl);
         }
 
         private static VisualElement CreateMemoChecklistRow(MemoChecklistItem item)

@@ -12,7 +12,7 @@ namespace MemoAnchor.UI
         private readonly ScanMapService _scanMapService = new();
         private readonly HashSet<string> _openMapAddresses = new(StringComparer.Ordinal);
         private readonly List<ScanMapItem> _scanMaps = new();
-        private Button _mapListButton, _mapPreviewMenuButton, _mapCreateTextMemoButton, _mapCreateChecklistMemoButton;
+        private Button _mapListButton, _mapPreviewMenuButton, _mapCreateTextMemoButton, _mapCreateChecklistMemoButton, _mapCreateMediaMemoButton;
         private VisualElement _mapPreview, _mapListOverlay, _mapListSheet, _mapListContent, _mapEmptyState, _mapCreateMemoActions;
         private Label _mapCurrentSpaceLabel, _mapCurrentAddressLabel, _mapReadModeLabel, _mapScanTimeLabel;
         private string _selectedMapId;
@@ -27,6 +27,7 @@ namespace MemoAnchor.UI
             _mapCreateMemoActions = _root.Q<VisualElement>("map-create-memo-actions");
             _mapCreateTextMemoButton = _root.Q<Button>("map-create-text-memo-button");
             _mapCreateChecklistMemoButton = _root.Q<Button>("map-create-checklist-memo-button");
+            _mapCreateMediaMemoButton = _root.Q<Button>("map-create-media-memo-button");
             _mapPreview = _root.Q<VisualElement>("map-preview");
             _mapListOverlay = _root.Q<VisualElement>("map-list-overlay");
             _mapListSheet = _root.Q<VisualElement>("map-list-sheet");
@@ -45,6 +46,7 @@ namespace MemoAnchor.UI
             _mapPreviewMenuButton.clicked += ShowMapList;
             _mapCreateTextMemoButton.clicked += OnClickMapCreateTextMemo;
             _mapCreateChecklistMemoButton.clicked += OnClickMapCreateChecklistMemo;
+            _mapCreateMediaMemoButton.clicked += OnClickMapCreateMediaMemo;
             _mapListOverlay.RegisterCallback<ClickEvent>(_ => HideMapList());
             _mapListSheet.RegisterCallback<ClickEvent>(evt => evt.StopPropagation());
             ApplySelectedMap();
@@ -56,6 +58,7 @@ namespace MemoAnchor.UI
             _mapPreviewMenuButton.clicked -= ShowMapList;
             _mapCreateTextMemoButton.clicked -= OnClickMapCreateTextMemo;
             _mapCreateChecklistMemoButton.clicked -= OnClickMapCreateChecklistMemo;
+            _mapCreateMediaMemoButton.clicked -= OnClickMapCreateMediaMemo;
         }
 
         public async Awaitable RefreshMapListAsync()
@@ -246,6 +249,11 @@ namespace MemoAnchor.UI
         private void OnClickMapCreateChecklistMemo()
         {
             ShowMapMemoCreatePageForSelectedMap("checklist");
+        }
+
+        private void OnClickMapCreateMediaMemo()
+        {
+            ShowMapMemoCreatePageForSelectedMap("image");
         }
 
         private void ShowMapMemoCreatePageForSelectedMap(string kind)
