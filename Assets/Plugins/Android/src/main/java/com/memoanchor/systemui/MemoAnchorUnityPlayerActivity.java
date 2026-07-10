@@ -13,27 +13,45 @@ import com.unity3d.player.UnityPlayerActivity;
 
 public class MemoAnchorUnityPlayerActivity extends UnityPlayerActivity {
     private boolean isApplyingSystemBars;
+    private final Runnable enforceSystemBarsRunnable = this::applySystemBars;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        installSystemBarsListener(getWindow().getDecorView());
-        installSystemBarsListener(mUnityPlayer.getFrameLayout());
-        applySystemBars();
+        enforceSystemBars();
     }
 
     @Override
     protected void onResume() {
         super.onResume();
-        applySystemBars();
+        enforceSystemBars();
+    }
+
+    @Override
+    protected void onPostResume() {
+        super.onPostResume();
+        enforceSystemBars();
     }
 
     @Override
     public void onWindowFocusChanged(boolean hasFocus) {
         super.onWindowFocusChanged(hasFocus);
         if (hasFocus) {
-            applySystemBars();
+            enforceSystemBars();
         }
+    }
+
+    private void enforceSystemBars() {
+        View decorView = getWindow().getDecorView();
+        View playerView = mUnityPlayer.getFrameLayout();
+        installSystemBarsListener(decorView);
+        installSystemBarsListener(playerView);
+        decorView.removeCallbacks(enforceSystemBarsRunnable);
+        applySystemBars();
+        decorView.post(enforceSystemBarsRunnable);
+        decorView.postDelayed(enforceSystemBarsRunnable, 120L);
+        decorView.postDelayed(enforceSystemBarsRunnable, 500L);
+        decorView.postDelayed(enforceSystemBarsRunnable, 1000L);
     }
 
     private void applySystemBars() {
@@ -77,6 +95,7 @@ public class MemoAnchorUnityPlayerActivity extends UnityPlayerActivity {
         if (sdk >= Build.VERSION_CODES.R) {
             getWindow().setDecorFitsSystemWindows(false);
             WindowInsetsController controller = getWindow().getInsetsController();
+            controller.setSystemBarsBehavior(WindowInsetsController.BEHAVIOR_DEFAULT);
             controller.show(WindowInsets.Type.statusBars() | WindowInsets.Type.navigationBars());
             controller.setSystemBarsAppearance(
                     WindowInsetsController.APPEARANCE_LIGHT_STATUS_BARS

@@ -40,6 +40,7 @@ public final class SystemBarsHelper {
         if (sdk >= Build.VERSION_CODES.R) {
             window.setDecorFitsSystemWindows(false);
             WindowInsetsController controller = window.getInsetsController();
+            controller.setSystemBarsBehavior(WindowInsetsController.BEHAVIOR_DEFAULT);
             controller.show(WindowInsets.Type.statusBars() | WindowInsets.Type.navigationBars());
             controller.setSystemBarsAppearance(
                     WindowInsetsController.APPEARANCE_LIGHT_STATUS_BARS
