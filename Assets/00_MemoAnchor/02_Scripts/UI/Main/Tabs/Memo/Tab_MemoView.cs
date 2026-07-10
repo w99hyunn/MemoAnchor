@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System;
+using System.Text;
 using Unity.Services.Authentication;
 using UnityEngine;
 using UnityEngine.UIElements;
@@ -15,7 +16,7 @@ namespace MemoAnchor.UI
         private readonly List<MemoDetailItem> _memoTrashItems = new();
         private readonly HashSet<string> _selectedTrashMemoIds = new(StringComparer.OrdinalIgnoreCase);
         private VisualElement _memoListContainer, _memoDetailPage, _memoDetailMenu, _memoDetailContent, _memoTrashPage, _memoTrashListContainer, _memoLoadingOverlay, _memoLoadingSpinner;
-        private Button _memoDetailBackButton, _memoDetailMenuButton, _memoDetailEditButton, _memoDetailDeleteButton, _memoTrashButton, _memoTrashBackButton, _memoTrashSelectButton;
+        private Button _memoDetailBackButton, _memoDetailMenuButton, _memoDetailEditButton, _memoDetailDeleteButton, _memoDetailExportButton, _memoTrashButton, _memoTrashBackButton, _memoTrashSelectButton;
         private Button _memoTrashPermanentDeleteButton, _memoTrashRestoreButton;
         private Label _memoDetailPlaceLabel;
         private MemoDetailItem _currentMemoDetailItem;
@@ -38,6 +39,7 @@ namespace MemoAnchor.UI
             _memoDetailMenuButton = _root.Q<Button>("memo-detail-menu-button");
             _memoDetailEditButton = _root.Q<Button>("memo-detail-edit-button");
             _memoDetailDeleteButton = _root.Q<Button>("memo-detail-delete-button");
+            _memoDetailExportButton = _root.Q<Button>("memo-detail-export-button");
             _memoTrashButton = _root.Q<Button>("memo-trash-button");
             _memoTrashBackButton = _root.Q<Button>("memo-trash-back-button");
             _memoTrashSelectButton = _root.Q<Button>("memo-trash-select-button");
@@ -53,6 +55,7 @@ namespace MemoAnchor.UI
             _memoDetailMenuButton.clicked += ToggleMemoDetailMenu;
             _memoDetailEditButton.clicked += ShowCurrentMemoEditPage;
             _memoDetailDeleteButton.clicked += ShowCurrentMemoDeleteConfirm;
+            _memoDetailExportButton.clicked += ShareCurrentMemo;
             _memoTrashButton.clicked += ShowMemoTrashPage;
             _memoTrashBackButton.clicked += HideMemoTrashPage;
             _memoTrashSelectButton.clicked += ToggleMemoTrashSelectMode;
@@ -67,6 +70,7 @@ namespace MemoAnchor.UI
             _memoDetailMenuButton.clicked -= ToggleMemoDetailMenu;
             _memoDetailEditButton.clicked -= ShowCurrentMemoEditPage;
             _memoDetailDeleteButton.clicked -= ShowCurrentMemoDeleteConfirm;
+            _memoDetailExportButton.clicked -= ShareCurrentMemo;
             _memoTrashButton.clicked -= ShowMemoTrashPage;
             _memoTrashBackButton.clicked -= HideMemoTrashPage;
             _memoTrashSelectButton.clicked -= ToggleMemoTrashSelectMode;
@@ -391,6 +395,91 @@ namespace MemoAnchor.UI
             }
 
             ShowMemoDeleteConfirm(_currentMemoDetailItem);
+        }
+
+        private void ShareCurrentMemo()
+        {
+            HideMemoDetailMenu();
+            if (_currentMemoDetailItem == null)
+            {
+                return;
+            }
+
+            string subject = $"MemoAnchor - {_currentMemoDetailItem.Title}";
+            string shareText = BuildMemoShareText(_currentMemoDetailItem);
+            if (!NativeShareService.ShareText(subject, shareText))
+            {
+                PopupManager.ShowMessage("공유 내용 복사", "공유할 메모 내용을 클립보드에 복사했습니다.", "확인");
+            }
+        }
+
+        private static string BuildMemoShareText(MemoDetailItem item)
+        {
+            StringBuilder builder = new();
+            builder.AppendLine("[MemoAnchor 메모]");
+            builder.AppendLine();
+            builder.AppendLine("제목");
+            builder.AppendLine(item.Title);
+
+            if (item.Kind == MemoDetailKind.Checklist)
+            {
+                builder.AppendLine();
+                builder.AppendLine("체크리스트");
+                foreach (MemoChecklistItem checklistItem in item.ChecklistItems)
+                {
+                    builder.Append(checklistItem.Done ? "☑ " : "☐ ");
+                    builder.AppendLine(checklistItem.Text);
+                }
+            }
+            else if (!string.IsNullOrWhiteSpace(item.Body))
+            {
+                builder.AppendLine();
+                builder.AppendLine("내용");
+                builder.AppendLine(item.Body);
+            }
+
+            if (item.VoiceItems.Count > 0 || item.ImageUrls.Count > 0)
+            {
+                builder.AppendLine();
+                builder.AppendLine("첨부");
+                if (item.VoiceItems.Count > 0)
+                {
+                    builder.AppendLine($"• 음성 메모 {item.VoiceItems.Count}개");
+                }
+
+                if (item.ImageUrls.Count > 0)
+                {
+                    builder.AppendLine($"• 이미지 {item.ImageUrls.Count}개");
+                }
+            }
+
+            builder.AppendLine();
+            builder.AppendLine("────────────");
+            builder.AppendLine("상세 정보");
+            AppendMemoShareField(builder, "위치", item.Location);
+            AppendMemoShareField(builder, "마감", item.DueText);
+            AppendMemoShareField(builder, "긴급도", GetMemoUrgencyShareText(item.Urgency));
+            AppendMemoShareField(builder, "수리자", item.Assignee);
+            AppendMemoShareField(builder, "작성자", item.Author);
+            return builder.ToString().TrimEnd();
+        }
+
+        private static void AppendMemoShareField(StringBuilder builder, string label, string value)
+        {
+            if (!string.IsNullOrWhiteSpace(value))
+            {
+                builder.Append("• ").Append(label).Append(": ").AppendLine(value);
+            }
+        }
+
+        private static string GetMemoUrgencyShareText(MemoUrgency urgency)
+        {
+            return urgency switch
+            {
+                MemoUrgency.High => "높음",
+                MemoUrgency.Low => "낮음",
+                _ => "보통"
+            };
         }
 
         private void ShowMemoDeleteConfirm(MemoDetailItem item)
