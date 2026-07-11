@@ -31,6 +31,36 @@
                 <ui:Label text="하단바 중앙 스캔버튼으로 맵을 생성해주세요." class="map-empty-subtitle"/>
             </ui:VisualElement>
         </ui:VisualElement>
+        <ui:VisualElement name="map-memo-page" class="page-overlay is-hidden">
+            <ui:VisualElement class="page-header">
+                <ui:Button name="map-memo-back-button" text="" class="page-back-button common-icon-button">
+                    <ui:VisualElement class="common-icon-button-icon" style="background-image: url(&quot;project://database/Assets/00_MemoAnchor/03_Media/Icon/chevron_forward.png?fileID=2800000&amp;guid=3ca432206e7cabb45abd1dfc722e509d&amp;type=3#chevron_forward&quot;);"/>
+                </ui:Button>
+                <ui:VisualElement class="map-title-group">
+                    <ui:Label name="map-memo-space-label" text="" class="home-greeting"/>
+                    <ui:Label name="map-memo-address-label" text="" class="map-current-address-label"/>
+                </ui:VisualElement>
+            </ui:VisualElement>
+            <ui:VisualElement class="memo-section" style="flex-grow: 0; padding-top: 25px; padding-bottom: 25px; background-color: rgba(30, 30, 34, 0); margin-bottom: 30px;">
+                <ui:VisualElement class="memo-section-content" style="flex-grow: 0; padding-right: 50px; padding-left: 50px;">
+                    <ui:TextField name="map-memo-search-input" label="" placeholder-text="메모 검색..." class="memo-search-input" style="align-items: center; -unity-font-definition: url(&quot;project://database/Assets/Plugins/UI%20Toolkit/Fonts/Pretendard-Light.ttf?fileID=12800000&amp;guid=8c634880071f83d4da7be3c9ff6f0be8&amp;type=3#Pretendard-Light&quot;);">
+                        <ui:VisualElement style="flex-grow: 1; position: absolute; width: 50px; height: 50px; background-image: url(&quot;project://database/Assets/00_MemoAnchor/03_Media/Icon/search.png?fileID=2800000&amp;guid=273a16649170cad4087f1c15c86ae7ea&amp;type=3#search&quot;); margin-left: 50px; -unity-background-image-tint-color: rgb(28, 28, 28);"/>
+                    </ui:TextField>
+                    <ui:Button name="map-memo-search-clear-button" text="" class="memo-search-clear-button common-icon-button is-hidden">
+                        <ui:VisualElement class="common-icon-button-icon memo-search-clear-icon"/>
+                    </ui:Button>
+                </ui:VisualElement>
+            </ui:VisualElement>
+            <ui:ScrollView name="map-memo-content-scroll" mode="Vertical" horizontal-scroller-visibility="Hidden" vertical-scroller-visibility="Hidden" touch-scroll-type="Elastic" class="tab-content-scroll rounded-list-scroll">
+                <ui:VisualElement class="tab-content-inner">
+                    <ui:VisualElement name="map-memo-list-container" class="memo-list-container"/>
+                    <ui:VisualElement name="map-memo-empty-state" class="memo-list-empty-state is-hidden">
+                        <ui:Label text="메모가 없습니다" class="map-empty-title"/>
+                        <ui:Label text="이 맵에 생성된 메모가 없습니다." class="map-empty-subtitle"/>
+                    </ui:VisualElement>
+                </ui:VisualElement>
+            </ui:ScrollView>
+        </ui:VisualElement>
         <ui:VisualElement name="map-list-overlay" class="scan-action-dialog-overlay scan-address-dialog-overlay map-list-overlay is-hidden">
             <ui:VisualElement name="map-list-sheet" class="scan-action-dialog-sheet scan-address-dialog-sheet map-list-sheet">
                 <ui:VisualElement class="scan-action-dialog-handle scan-address-dialog-handle"/>

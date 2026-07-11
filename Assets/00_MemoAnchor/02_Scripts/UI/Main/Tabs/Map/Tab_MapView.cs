@@ -26,13 +26,14 @@ namespace MemoAnchor.UI
         private readonly List<Relationship> _availableMapFriendInviteRelationships = new();
         private readonly List<MemoItem> _readOnlyMemos = new();
         private ScanMapItem _readOnlyMap;
-        private Button _mapListButton, _mapPreviewMenuButton, _mapCreateTextMemoButton, _mapCreateChecklistMemoButton, _mapCreateMediaMemoButton, _mapCreateVoiceMemoButton;
+        private Button _mapListButton, _mapPreviewMenuButton, _mapMemoBackButton, _mapMemoSearchClearButton, _mapCreateTextMemoButton, _mapCreateChecklistMemoButton, _mapCreateMediaMemoButton, _mapCreateVoiceMemoButton;
         private Button _mapParticipantsButton, _mapParticipantsInviteButton, _mapParticipantsAddButton;
         private Button _mapFriendInviteBackButton, _mapFriendInviteSubmitButton, _mapFriendInviteLoadMoreButton;
-        private VisualElement _mapPreview, _mapListOverlay, _mapListSheet, _mapListContent, _mapEmptyState, _mapCreateMemoActions;
+        private VisualElement _mapPreview, _mapMemoPage, _mapMemoListContainer, _mapMemoEmptyState, _mapListOverlay, _mapListSheet, _mapListContent, _mapEmptyState, _mapCreateMemoActions;
         private VisualElement _mapParticipantsOverlay, _mapParticipantsSheet, _mapParticipantsList, _mapParticipantsInviteCodeContent;
         private VisualElement _mapFriendInviteOverlay, _mapFriendInviteSheet, _mapFriendInviteList;
-        private Label _mapCurrentSpaceLabel, _mapCurrentAddressLabel, _mapScanTimeLabel, _mapParticipantsTitle, _mapParticipantsManagerSummary, _mapParticipantsRepairerSummary;
+        private Label _mapCurrentSpaceLabel, _mapCurrentAddressLabel, _mapMemoSpaceLabel, _mapMemoAddressLabel, _mapScanTimeLabel, _mapParticipantsTitle, _mapParticipantsManagerSummary, _mapParticipantsRepairerSummary;
+        private TextField _mapMemoSearchInput;
         private Label _mapParticipantsInviteIssueLabel, _mapParticipantsInviteTimer, _mapParticipantsInviteCodeLabel;
         private IVisualElementScheduledItem _mapParticipantsInviteSchedule;
         private DateTimeOffset _mapParticipantsInviteExpiresAt;
@@ -47,6 +48,8 @@ namespace MemoAnchor.UI
             VisualElement mainRoot = _root.Q<VisualElement>("main-root");
             _mapListButton = _root.Q<Button>("map-list-button");
             _mapPreviewMenuButton = _root.Q<Button>("map-preview-menu-button");
+            _mapMemoBackButton = _root.Q<Button>("map-memo-back-button");
+            _mapMemoSearchClearButton = _root.Q<Button>("map-memo-search-clear-button");
             _mapCreateMemoActions = _root.Q<VisualElement>("map-create-memo-actions");
             _mapCreateTextMemoButton = _root.Q<Button>("map-create-text-memo-button");
             _mapCreateChecklistMemoButton = _root.Q<Button>("map-create-checklist-memo-button");
@@ -59,11 +62,17 @@ namespace MemoAnchor.UI
             _mapFriendInviteSubmitButton = _root.Q<Button>("map-friend-invite-submit-button");
             _mapFriendInviteLoadMoreButton = _root.Q<Button>("map-friend-invite-load-more-button");
             _mapPreview = _root.Q<VisualElement>("map-preview");
+            _mapMemoPage = _root.Q<VisualElement>("map-memo-page");
+            _mapMemoListContainer = _root.Q<VisualElement>("map-memo-list-container");
+            _mapMemoEmptyState = _root.Q<VisualElement>("map-memo-empty-state");
+            _mapMemoSearchInput = _root.Q<TextField>("map-memo-search-input");
             _mapListOverlay = _root.Q<VisualElement>("map-list-overlay");
             _mapListSheet = _root.Q<VisualElement>("map-list-sheet");
             _mapListContent = _root.Q<VisualElement>("map-list-content");
             _mapCurrentSpaceLabel = _root.Q<Label>("map-current-space-label");
             _mapCurrentAddressLabel = _root.Q<Label>("map-current-address-label");
+            _mapMemoSpaceLabel = _root.Q<Label>("map-memo-space-label");
+            _mapMemoAddressLabel = _root.Q<Label>("map-memo-address-label");
             _mapScanTimeLabel = _root.Q<Label>("map-scan-time-label");
             _mapEmptyState = _root.Q<VisualElement>("map-empty-state");
             _mapParticipantsOverlay = _root.Q<VisualElement>("map-participants-overlay");
@@ -93,7 +102,10 @@ namespace MemoAnchor.UI
             _mapFriendInviteOverlay.AddToClassList(DIALOG_ANIM_READY_CLASS);
             _mapFriendInviteOverlay.AddToClassList(HIDDEN_CLASS);
             _mapListButton.clicked += ShowMapList;
-            _mapPreviewMenuButton.clicked += ShowMapList;
+            _mapPreviewMenuButton.clicked += ShowMapMemoPage;
+            _mapMemoBackButton.clicked += HideMapMemoPage;
+            _mapMemoSearchClearButton.clicked += ClearMapMemoSearch;
+            _mapMemoSearchInput.RegisterValueChangedCallback(OnMapMemoSearchChanged);
             _mapCreateTextMemoButton.clicked += OnClickMapCreateTextMemo;
             _mapCreateChecklistMemoButton.clicked += OnClickMapCreateChecklistMemo;
             _mapCreateMediaMemoButton.clicked += OnClickMapCreateMediaMemo;
@@ -118,7 +130,10 @@ namespace MemoAnchor.UI
         private void UnregisterMapPage()
         {
             _mapListButton.clicked -= ShowMapList;
-            _mapPreviewMenuButton.clicked -= ShowMapList;
+            _mapPreviewMenuButton.clicked -= ShowMapMemoPage;
+            _mapMemoBackButton.clicked -= HideMapMemoPage;
+            _mapMemoSearchClearButton.clicked -= ClearMapMemoSearch;
+            _mapMemoSearchInput.UnregisterValueChangedCallback(OnMapMemoSearchChanged);
             _mapCreateTextMemoButton.clicked -= OnClickMapCreateTextMemo;
             _mapCreateChecklistMemoButton.clicked -= OnClickMapCreateChecklistMemo;
             _mapCreateMediaMemoButton.clicked -= OnClickMapCreateMediaMemo;
@@ -193,6 +208,77 @@ namespace MemoAnchor.UI
 
                 _mapListOverlay.AddToClassList(DIALOG_OPEN_CLASS);
             }).ExecuteLater(16);
+        }
+
+        private void ShowMapMemoPage()
+        {
+            ScanMapItem map = GetSelectedMap();
+            if (map == null)
+            {
+                return;
+            }
+
+            _mapMemoSpaceLabel.text = map.spaceName;
+            _mapMemoAddressLabel.text = string.IsNullOrWhiteSpace(map.roadAddress) ? map.address : map.roadAddress;
+            _mapMemoSearchInput.SetValueWithoutNotify(string.Empty);
+            SetVisible(_mapMemoSearchClearButton, false);
+            SetVisible(_mapMemoPage, true);
+            RebuildMapMemoList();
+            _ = RefreshMapMemoPageAsync();
+        }
+
+        private async Awaitable RefreshMapMemoPageAsync()
+        {
+            await RefreshMemoListAsync();
+            if (!_mapMemoPage.ClassListContains(HIDDEN_CLASS))
+            {
+                RebuildMapMemoList();
+            }
+        }
+
+        private void HideMapMemoPage()
+        {
+            SetVisible(_mapMemoPage, false);
+        }
+
+        private void OnMapMemoSearchChanged(ChangeEvent<string> evt)
+        {
+            SetVisible(_mapMemoSearchClearButton, !string.IsNullOrEmpty(evt.newValue));
+            RebuildMapMemoList();
+        }
+
+        private void ClearMapMemoSearch()
+        {
+            _mapMemoSearchInput.value = string.Empty;
+        }
+
+        private void RebuildMapMemoList()
+        {
+            ScanMapItem map = GetSelectedMap();
+            string query = _mapMemoSearchInput.value?.Trim() ?? string.Empty;
+            List<MemoDetailItem> items = _memoDetailItems
+                .Where(item => string.Equals(item.MapId, map.id, StringComparison.OrdinalIgnoreCase))
+                .Where(item => string.IsNullOrEmpty(query)
+                    || item.Title.Contains(query, StringComparison.OrdinalIgnoreCase)
+                    || item.Body.Contains(query, StringComparison.OrdinalIgnoreCase)
+                    || item.Assignee.Contains(query, StringComparison.OrdinalIgnoreCase))
+                .ToList();
+
+            _mapMemoListContainer.Clear();
+            _mapMemoListContainer.parent.EnableInClassList("is-memo-list-empty", items.Count == 0);
+            SetVisible(_mapMemoEmptyState, items.Count == 0);
+            foreach (MemoDetailItem item in items)
+            {
+                TemplateContainer template = _memoListItemAsset.Instantiate();
+                ApplyMemoListRow(template, item);
+                template.Q<VisualElement>("memo-list-item-foreground").RegisterCallback<ClickEvent>(_ =>
+                {
+                    HideMapMemoPage();
+                    RequestTabSwitch(1);
+                    ShowMemoDetailPage(item, true);
+                });
+                _mapMemoListContainer.Add(template);
+            }
         }
 
         private void HideMapList()

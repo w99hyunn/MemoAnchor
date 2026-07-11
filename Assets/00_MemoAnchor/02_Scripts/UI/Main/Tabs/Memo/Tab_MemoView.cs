@@ -33,6 +33,7 @@ namespace MemoAnchor.UI
         private bool _isMemoTrashLoading;
         private bool _isCreatingMemo;
         private bool _isMemoTrashSelecting;
+        private bool _memoDetailReturnsToMapMemoPage;
         private Texture2D _memoMediaViewerTexture;
         private RenderTexture _memoMediaViewerVideoTexture;
         private VideoPlayer _memoMediaViewerVideoPlayer;
@@ -106,7 +107,7 @@ namespace MemoAnchor.UI
             HideMemoDetailPage();
             SetVisible(_memoLoadingOverlay, false);
 
-            _memoDetailBackButton.clicked += HideMemoDetailPage;
+            _memoDetailBackButton.clicked += OnClickMemoDetailBack;
             _memoDetailMenuButton.clicked += ToggleMemoDetailMenu;
             _memoDetailEditButton.clicked += ShowCurrentMemoEditPage;
             _memoDetailDeleteButton.clicked += ShowCurrentMemoDeleteConfirm;
@@ -136,7 +137,7 @@ namespace MemoAnchor.UI
             StopMemoVoicePreview();
             ClearMemoDetailMediaTextures();
             HideMemoMediaViewer();
-            _memoDetailBackButton.clicked -= HideMemoDetailPage;
+            _memoDetailBackButton.clicked -= OnClickMemoDetailBack;
             _memoDetailMenuButton.clicked -= ToggleMemoDetailMenu;
             _memoDetailEditButton.clicked -= ShowCurrentMemoEditPage;
             _memoDetailDeleteButton.clicked -= ShowCurrentMemoDeleteConfirm;
@@ -408,8 +409,9 @@ namespace MemoAnchor.UI
             row.Q<Label>("memo-list-item-assignee-label").text = item.Assignee;
         }
 
-        private void ShowMemoDetailPage(MemoDetailItem item)
+        private void ShowMemoDetailPage(MemoDetailItem item, bool returnToMapMemoPage = false)
         {
+            _memoDetailReturnsToMapMemoPage = returnToMapMemoPage;
             _currentMemoDetailItem = item;
             bool canManageMemo = CanManageMemo(item) || CanDeleteMemo(item);
             _memoDetailPlaceLabel.text = item.Place;
@@ -421,8 +423,21 @@ namespace MemoAnchor.UI
             BuildMemoDetailContent(item);
         }
 
+        private void OnClickMemoDetailBack()
+        {
+            bool returnToMapMemoPage = _memoDetailReturnsToMapMemoPage;
+            HideMemoDetailPage();
+            if (returnToMapMemoPage)
+            {
+                RequestTabSwitch(3);
+                SetVisible(_mapMemoPage, true);
+                RebuildMapMemoList();
+            }
+        }
+
         private void HideMemoDetailPage()
         {
+            _memoDetailReturnsToMapMemoPage = false;
             _currentMemoDetailItem = null;
             StopMemoVoicePreview();
             HideMemoMediaViewer();
@@ -541,7 +556,7 @@ namespace MemoAnchor.UI
                 MemoDetailItem updatedItem = _memoDetailItems.Find(memo => memo.Id == item.Id);
                 if (updatedItem != null)
                 {
-                    ShowMemoDetailPage(updatedItem);
+                    ShowMemoDetailPage(updatedItem, _memoDetailReturnsToMapMemoPage);
                 }
             }
             finally
