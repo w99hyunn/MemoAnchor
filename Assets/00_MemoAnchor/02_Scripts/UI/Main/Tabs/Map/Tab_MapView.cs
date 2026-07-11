@@ -24,13 +24,15 @@ namespace MemoAnchor.UI
         private readonly HashSet<string> _selectedMapFriendInvitePlayerIds = new(StringComparer.OrdinalIgnoreCase);
         private readonly Dictionary<string, MapFriendProfileItem> _mapFriendInviteProfiles = new(StringComparer.OrdinalIgnoreCase);
         private readonly List<Relationship> _availableMapFriendInviteRelationships = new();
+        private readonly List<MemoItem> _readOnlyMemos = new();
+        private ScanMapItem _readOnlyMap;
         private Button _mapListButton, _mapPreviewMenuButton, _mapCreateTextMemoButton, _mapCreateChecklistMemoButton, _mapCreateMediaMemoButton, _mapCreateVoiceMemoButton;
         private Button _mapParticipantsButton, _mapParticipantsInviteButton, _mapParticipantsAddButton;
         private Button _mapFriendInviteBackButton, _mapFriendInviteSubmitButton, _mapFriendInviteLoadMoreButton;
         private VisualElement _mapPreview, _mapListOverlay, _mapListSheet, _mapListContent, _mapEmptyState, _mapCreateMemoActions;
         private VisualElement _mapParticipantsOverlay, _mapParticipantsSheet, _mapParticipantsList, _mapParticipantsInviteCodeContent;
         private VisualElement _mapFriendInviteOverlay, _mapFriendInviteSheet, _mapFriendInviteList;
-        private Label _mapCurrentSpaceLabel, _mapCurrentAddressLabel, _mapScanTimeLabel, _mapParticipantsManagerSummary, _mapParticipantsRepairerSummary;
+        private Label _mapCurrentSpaceLabel, _mapCurrentAddressLabel, _mapScanTimeLabel, _mapParticipantsTitle, _mapParticipantsManagerSummary, _mapParticipantsRepairerSummary;
         private Label _mapParticipantsInviteIssueLabel, _mapParticipantsInviteTimer, _mapParticipantsInviteCodeLabel;
         private IVisualElementScheduledItem _mapParticipantsInviteSchedule;
         private DateTimeOffset _mapParticipantsInviteExpiresAt;
@@ -68,6 +70,7 @@ namespace MemoAnchor.UI
             _mapParticipantsSheet = _root.Q<VisualElement>("map-participants-sheet");
             _mapParticipantsList = _root.Q<VisualElement>("map-participants-list");
             _mapParticipantsInviteCodeContent = _root.Q<VisualElement>("map-participants-invite-code-content");
+            _mapParticipantsTitle = _mapParticipantsButton.Q<Label>(className: "map-participants-title");
             _mapParticipantsManagerSummary = _root.Q<Label>("map-participants-manager-summary");
             _mapParticipantsRepairerSummary = _root.Q<Label>("map-participants-repairer-summary");
             _mapParticipantsInviteIssueLabel = _root.Q<Label>("map-participants-invite-issue-label");
@@ -143,6 +146,10 @@ namespace MemoAnchor.UI
                 ScanMapListResponse response = await _scanMapService.LoadMapsAsync();
                 _scanMaps.Clear();
                 _scanMaps.AddRange(response.maps);
+                if (_readOnlyMap != null && !_scanMaps.Exists(map => map.id == _readOnlyMap.id))
+                {
+                    _scanMaps.Add(_readOnlyMap);
+                }
 
                 if (_scanMaps.Count == 0)
                 {
@@ -295,11 +302,14 @@ namespace MemoAnchor.UI
         {
             ScanMapItem selectedMap = GetSelectedMap();
             bool hasMap = selectedMap != null;
+            bool isReadOnly = hasMap && string.Equals(selectedMap.currentUserRole, "read-only", StringComparison.OrdinalIgnoreCase);
             _mapPreview.EnableInClassList("is-empty", !hasMap);
+            _mapParticipantsButton.EnableInClassList("is-read-only", isReadOnly);
             SetVisible(_mapParticipantsButton, hasMap);
+            SetVisible(_mapParticipantsTitle, hasMap && !isReadOnly);
             SetVisible(_mapScanTimeLabel, hasMap);
             SetVisible(_mapEmptyState, !hasMap);
-            SetVisible(_mapCreateMemoActions, hasMap);
+            SetVisible(_mapCreateMemoActions, hasMap && !isReadOnly);
 
             if (!hasMap)
             {
@@ -314,7 +324,15 @@ namespace MemoAnchor.UI
             _mapCurrentSpaceLabel.text = selectedMap.spaceName;
             _mapCurrentAddressLabel.text = GetMapAddressKey(selectedMap);
             _mapScanTimeLabel.text = $"스캔일시 : {FormatScanTime(selectedMap.scanCreatedAt)}";
-            RefreshMapParticipantsSummary(selectedMap);
+            if (isReadOnly)
+            {
+                _mapParticipantsManagerSummary.text = string.Empty;
+                _mapParticipantsRepairerSummary.text = "읽기모드";
+            }
+            else
+            {
+                RefreshMapParticipantsSummary(selectedMap);
+            }
             ApplyMapParticipantsInvite(selectedMap);
         }
 
@@ -324,6 +342,11 @@ namespace MemoAnchor.UI
             var repairerNames = new List<string>();
             foreach (ScanMapMemberItem member in map.members)
             {
+                if (string.Equals(member.role, "read-only", StringComparison.OrdinalIgnoreCase))
+                {
+                    continue;
+                }
+
                 string name = string.IsNullOrWhiteSpace(member.name) ? member.playerId : member.name;
                 if (string.Equals(member.role, "manager", StringComparison.OrdinalIgnoreCase))
                 {
@@ -341,7 +364,7 @@ namespace MemoAnchor.UI
         private void ShowMapParticipants()
         {
             ScanMapItem map = GetSelectedMap();
-            if (map == null)
+            if (map == null || string.Equals(map.currentUserRole, "read-only", StringComparison.OrdinalIgnoreCase))
             {
                 return;
             }
@@ -363,6 +386,109 @@ namespace MemoAnchor.UI
                     _mapParticipantsOverlay.AddToClassList(DIALOG_OPEN_CLASS);
                 }
             }).ExecuteLater(16);
+        }
+
+        private async Awaitable OpenReadOnlyMapAsync(string code)
+        {
+            if (string.IsNullOrWhiteSpace(code))
+            {
+                PopupManager.ShowMessage("참여 코드", "참여 코드를 입력해주세요.", "확인");
+                return;
+            }
+
+            LoadingSpinnerController.ShowOverlay(_memoLoadingOverlay, _memoLoadingSpinner);
+            try
+            {
+                ReadOnlyMapResponse response = await _scanMapService.OpenReadOnlyMapAsync(code.Trim());
+                if (response?.map == null)
+                {
+                    PopupManager.ShowMessage("참여 코드", "유효한 참여 코드를 찾지 못했습니다.", "확인");
+                    return;
+                }
+
+                HideScanActionDialog();
+                if (_friendsInitialized && FriendsService.Instance.Friends.Any(relationship =>
+                    string.Equals(relationship.Member.Id, response.creatorPlayerId, StringComparison.OrdinalIgnoreCase)))
+                {
+                    await JoinMapAsMemberAsync(code.Trim());
+                    return;
+                }
+                PopupManager.ShowConfirm("읽기모드", "해당 프로젝트 생성자와 친구가 아닙니다.\n읽기모드로 보시겠습니까?", "친구 요청 보내기", "네",
+                    () => _ = RequestReadOnlyMapCreatorFriendAsync(response.creatorPlayerId),
+                    () => _ = JoinMapAsReaderAsync(code.Trim()));
+            }
+            finally
+            {
+                LoadingSpinnerController.HideOverlay(_memoLoadingOverlay, _memoLoadingSpinner);
+            }
+        }
+
+        private async Awaitable JoinMapAsReaderAsync(string code)
+        {
+            LoadingSpinnerController.ShowOverlay(_memoLoadingOverlay, _memoLoadingSpinner);
+            try
+            {
+                ReadOnlyMapResponse response = await _scanMapService.OpenReadOnlyMapAsync(code, false, true);
+                if (response?.map == null)
+                {
+                    PopupManager.ShowMessage("읽기모드", "읽기모드로 참여하지 못했습니다.", "확인");
+                    return;
+                }
+
+                EnterReadOnlyMap(response);
+            }
+            finally
+            {
+                LoadingSpinnerController.HideOverlay(_memoLoadingOverlay, _memoLoadingSpinner);
+            }
+        }
+
+        private async Awaitable JoinMapAsMemberAsync(string code)
+        {
+            ReadOnlyMapResponse response = await _scanMapService.OpenReadOnlyMapAsync(code, true);
+            if (response?.map == null)
+            {
+                PopupManager.ShowMessage("맵 참여", "맵에 참여하지 못했습니다.", "확인");
+                return;
+            }
+
+            _readOnlyMap = null;
+            _readOnlyMemos.Clear();
+            _scanMaps.RemoveAll(map => map.id == response.map.id);
+            _scanMaps.Add(response.map);
+            _selectedMapId = response.map.id;
+            ApplySelectedMap();
+            RequestTabSwitch(3);
+        }
+
+        private async Awaitable RequestReadOnlyMapCreatorFriendAsync(string creatorPlayerId)
+        {
+            if (string.IsNullOrWhiteSpace(creatorPlayerId))
+            {
+                return;
+            }
+
+            try
+            {
+                await FriendsService.Instance.AddFriendAsync(creatorPlayerId);
+                PopupManager.ShowMessage("친구 요청", "프로젝트 생성자에게 친구 요청을 보냈습니다.", "확인");
+            }
+            catch (Exception exception) when (IsFriendsRecoverableException(exception))
+            {
+                PopupManager.ShowMessage("친구 요청", "친구 요청을 보내지 못했습니다.", "확인");
+            }
+        }
+
+        private void EnterReadOnlyMap(ReadOnlyMapResponse response)
+        {
+            _readOnlyMap = response.map;
+            _readOnlyMemos.Clear();
+            _readOnlyMemos.AddRange(response.memos);
+            _scanMaps.RemoveAll(map => map.id == _readOnlyMap.id);
+            _scanMaps.Add(_readOnlyMap);
+            _selectedMapId = _readOnlyMap.id;
+            ApplySelectedMap();
+            RequestTabSwitch(3);
         }
 
         private void HideMapParticipants()
@@ -455,7 +581,9 @@ namespace MemoAnchor.UI
         {
             _availableMapFriendInviteRelationships.Clear();
             ScanMapItem map = GetSelectedMap();
-            var participatingPlayerIds = new HashSet<string>(map.members.Select(member => member.playerId), StringComparer.OrdinalIgnoreCase);
+            var participatingPlayerIds = new HashSet<string>(map.members
+                .Where(member => !string.Equals(member.role, "read-only", StringComparison.OrdinalIgnoreCase))
+                .Select(member => member.playerId), StringComparer.OrdinalIgnoreCase);
             foreach (Relationship relationship in FriendsService.Instance.Friends)
             {
                 if (!participatingPlayerIds.Contains(relationship.Member.Id))
@@ -605,10 +733,11 @@ namespace MemoAnchor.UI
                 TemplateContainer template = _mapParticipantItemAsset.Instantiate();
                 VisualElement item = template.Q<VisualElement>("map-participant-item");
                 bool isManager = string.Equals(member.role, "manager", StringComparison.OrdinalIgnoreCase);
+                bool isReadOnly = string.Equals(member.role, "read-only", StringComparison.OrdinalIgnoreCase);
                 item.EnableInClassList("is-manager", isManager);
                 template.Q<Label>("map-participant-name").text = string.IsNullOrWhiteSpace(member.name) ? member.playerId : member.name;
                 template.Q<Label>("map-participant-company").text = member.companyName;
-                template.Q<Label>("map-participant-role").text = isManager ? "관리자" : string.Empty;
+                template.Q<Label>("map-participant-role").text = isManager ? "관리자" : isReadOnly ? "읽기모드" : string.Empty;
 
                 Button promoteButton = template.Q<Button>("map-participant-promote-button");
                 Button removeButton = template.Q<Button>("map-participant-remove-button");
@@ -690,7 +819,12 @@ namespace MemoAnchor.UI
 
         private void RequestPromoteMapParticipant(ScanMapMemberItem member)
         {
-            PopupManager.ShowConfirm("관리자 지정", $"{member.name} 님을 관리자로 지정합니다.", "취소", "지정", () => _ = PromoteMapParticipantAsync(member));
+            bool isReadOnly = string.Equals(member.role, "read-only", StringComparison.OrdinalIgnoreCase);
+            string title = isReadOnly ? "수리자 전환" : "관리자 지정";
+            string message = isReadOnly
+                ? $"{member.name} 님을 수리자로 전환합니다."
+                : $"{member.name} 님을 관리자로 지정합니다.";
+            PopupManager.ShowConfirm(title, message, "취소", isReadOnly ? "전환" : "지정", () => _ = PromoteMapParticipantAsync(member));
         }
 
         private async Awaitable PromoteMapParticipantAsync(ScanMapMemberItem member)

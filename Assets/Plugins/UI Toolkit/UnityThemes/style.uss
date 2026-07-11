@@ -679,6 +679,13 @@
     background-color: rgb(213, 213, 213);
 }
 
+.map-participants-button.is-read-only .map-participants-summary,
+.map-participants-button.is-read-only:hover:enabled .map-participants-summary {
+    padding-left: 0;
+    padding-right: 0;
+    background-color: rgba(0, 0, 0, 0);
+}
+
 .map-participants-button.is-hidden,
 .map-scan-time-label.is-hidden {
     display: flex;
@@ -2533,7 +2540,7 @@
     transition-timing-function: ease-out;
 }
 
-.nav-action-equal .nav-action-button {
+.nav-action-bar .nav-action-button {
     width: 0;
     min-width: 0;
     flex-grow: 1;
@@ -2556,6 +2563,10 @@
 .nav-action-primary {
     margin-left: 12px;
     background-color: rgb(184, 29, 62);
+}
+
+.nav-action-bar.is-single-action .nav-action-primary {
+    margin-left: 0;
 }
 
 .nav-action-primary:hover:enabled {

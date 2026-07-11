@@ -24,6 +24,7 @@ namespace MemoAnchor.UI
         private Image _memoMediaViewerImage;
         private VisualElement _memoMediaViewerPlayIcon;
         private Button _memoDetailBackButton, _memoDetailMenuButton, _memoDetailEditButton, _memoDetailDeleteButton, _memoDetailExportButton, _memoTrashButton, _memoTrashBackButton, _memoTrashSelectButton;
+        private Button _memoDetailRequestButton, _memoDetailCompleteButton;
         private Button _memoTrashPermanentDeleteButton, _memoTrashRestoreButton, _memoMediaViewerCloseButton, _memoMediaViewerRotateButton, _memoMediaViewerPlayButton;
         private Label _memoDetailPlaceLabel, _memoMediaViewerTimeLabel;
         private Slider _memoMediaViewerSeekSlider;
@@ -63,6 +64,8 @@ namespace MemoAnchor.UI
             _memoDetailEditButton = _root.Q<Button>("memo-detail-edit-button");
             _memoDetailDeleteButton = _root.Q<Button>("memo-detail-delete-button");
             _memoDetailExportButton = _root.Q<Button>("memo-detail-export-button");
+            _memoDetailRequestButton = _root.Q<Button>("memo-detail-request-button");
+            _memoDetailCompleteButton = _root.Q<Button>("memo-detail-complete-button");
             _memoTrashButton = _root.Q<Button>("memo-trash-button");
             _memoTrashBackButton = _root.Q<Button>("memo-trash-back-button");
             _memoTrashSelectButton = _root.Q<Button>("memo-trash-select-button");
@@ -108,6 +111,8 @@ namespace MemoAnchor.UI
             _memoDetailEditButton.clicked += ShowCurrentMemoEditPage;
             _memoDetailDeleteButton.clicked += ShowCurrentMemoDeleteConfirm;
             _memoDetailExportButton.clicked += ShareCurrentMemo;
+            _memoDetailRequestButton.clicked += OnClickMemoDetailRequest;
+            _memoDetailCompleteButton.clicked += OnClickMemoDetailComplete;
             _memoTrashButton.clicked += ShowMemoTrashPage;
             _memoTrashBackButton.clicked += HideMemoTrashPage;
             _memoTrashSelectButton.clicked += ToggleMemoTrashSelectMode;
@@ -136,6 +141,8 @@ namespace MemoAnchor.UI
             _memoDetailEditButton.clicked -= ShowCurrentMemoEditPage;
             _memoDetailDeleteButton.clicked -= ShowCurrentMemoDeleteConfirm;
             _memoDetailExportButton.clicked -= ShareCurrentMemo;
+            _memoDetailRequestButton.clicked -= OnClickMemoDetailRequest;
+            _memoDetailCompleteButton.clicked -= OnClickMemoDetailComplete;
             _memoTrashButton.clicked -= ShowMemoTrashPage;
             _memoTrashBackButton.clicked -= HideMemoTrashPage;
             _memoTrashSelectButton.clicked -= ToggleMemoTrashSelectMode;
@@ -166,6 +173,13 @@ namespace MemoAnchor.UI
             try
             {
                 MemoListResponse response = await _memoService.LoadMemosAsync();
+                foreach (MemoItem memo in _readOnlyMemos)
+                {
+                    if (!response.memos.Exists(item => item.id == memo.id))
+                    {
+                        response.memos.Add(memo);
+                    }
+                }
                 ApplyMemoListResponse(response);
             }
             finally
@@ -286,6 +300,7 @@ namespace MemoAnchor.UI
                 Body = GetFirstNonEmpty(memo.body, string.Empty),
                 AuthorPlayerId = GetFirstNonEmpty(memo.authorPlayerId, string.Empty),
                 AssigneePlayerId = GetFirstNonEmpty(memo.assigneePlayerId, string.Empty),
+                WorkStatus = GetFirstNonEmpty(memo.workStatus, "active"),
                 Location = BuildMemoLocation(memo),
                 DueText = GetFirstNonEmpty(memo.dueText, string.Empty),
                 Assignee = GetFirstNonEmpty(memo.assigneeName, string.Empty),
@@ -368,7 +383,10 @@ namespace MemoAnchor.UI
 
                 ShowMemoDetailPage(item);
             });
-            RegisterMemoDeleteRow(row);
+            if (!IsReadOnlyMap(item.MapId))
+            {
+                RegisterMemoDeleteRow(row);
+            }
             _memoListContainer.Add(template);
         }
 
@@ -399,7 +417,7 @@ namespace MemoAnchor.UI
             HideMemoDetailMenu();
             SetVisible(_memoDetailMenuButton, canManageMemo);
             SetVisible(_memoDetailPage, true);
-            SetMemoDetailNavMode(true);
+            ApplyMemoDetailWorkActions(item);
             BuildMemoDetailContent(item);
         }
 
@@ -440,14 +458,96 @@ namespace MemoAnchor.UI
             return string.Equals(map?.currentUserRole, "manager", StringComparison.OrdinalIgnoreCase);
         }
 
-        private static bool CanDeleteMemo(MemoDetailItem item)
+        private bool IsReadOnlyMap(string mapId)
         {
+            ScanMapItem map = _scanMaps.Find(item => string.Equals(item.id, mapId, StringComparison.OrdinalIgnoreCase));
+            return string.Equals(map?.currentUserRole, "read-only", StringComparison.OrdinalIgnoreCase);
+        }
+
+        private bool CanDeleteMemo(MemoDetailItem item)
+        {
+            if (IsReadOnlyMap(item.MapId))
+            {
+                return false;
+            }
             return string.Equals(item.AuthorPlayerId, AuthenticationService.Instance.PlayerId, StringComparison.OrdinalIgnoreCase);
         }
 
         private bool CanEditMemo(MemoDetailItem item)
         {
             return CanDeleteMemo(item) || CanManageMemo(item);
+        }
+
+        private void ApplyMemoDetailWorkActions(MemoDetailItem item)
+        {
+            bool isReadOnly = IsReadOnlyMap(item.MapId);
+            bool isManager = CanManageMemo(item);
+            bool isAssignee = string.Equals(item.AssigneePlayerId, AuthenticationService.Instance.PlayerId, StringComparison.OrdinalIgnoreCase);
+            bool isRequested = string.Equals(item.WorkStatus, "completion-requested", StringComparison.OrdinalIgnoreCase);
+            bool isCompleted = string.Equals(item.WorkStatus, "completed", StringComparison.OrdinalIgnoreCase);
+            bool showManagerActions = !isReadOnly && isManager && isRequested;
+            bool showAssigneeAction = !isReadOnly && !isManager && isAssignee && !isCompleted;
+
+            SetVisible(_memoDetailRequestButton, showManagerActions);
+            SetVisible(_memoDetailCompleteButton, showManagerActions || showAssigneeAction);
+            _memoDetailBottomBar.EnableInClassList("is-single-action", showAssigneeAction);
+            if (showManagerActions)
+            {
+                _memoDetailRequestButton.text = "보완 요청";
+                _memoDetailCompleteButton.text = "완료 확정";
+            }
+            else if (showAssigneeAction)
+            {
+                _memoDetailCompleteButton.text = isRequested ? "작업 완료 요청 전송 완료" : "작업 완료";
+            }
+
+            SetMemoDetailNavMode(showManagerActions || showAssigneeAction);
+        }
+
+        private void OnClickMemoDetailRequest()
+        {
+            if (_currentMemoDetailItem != null)
+            {
+                _ = SetMemoWorkStatusAsync(_currentMemoDetailItem, "active");
+            }
+        }
+
+        private void OnClickMemoDetailComplete()
+        {
+            if (_currentMemoDetailItem == null)
+            {
+                return;
+            }
+
+            bool isManager = CanManageMemo(_currentMemoDetailItem);
+            bool isRequested = string.Equals(_currentMemoDetailItem.WorkStatus, "completion-requested", StringComparison.OrdinalIgnoreCase);
+            if (!isManager && isRequested)
+            {
+                PopupManager.ShowConfirm("작업 완료 취소", "작업 완료 요청을 취소할까요?", "아니요", "취소하기",
+                    () => _ = SetMemoWorkStatusAsync(_currentMemoDetailItem, "active"));
+                return;
+            }
+
+            _ = SetMemoWorkStatusAsync(_currentMemoDetailItem, isManager ? "completed" : "completion-requested");
+        }
+
+        private async Awaitable SetMemoWorkStatusAsync(MemoDetailItem item, string status)
+        {
+            SetMemoServerWaiting(true);
+            try
+            {
+                MemoListResponse response = await _memoService.SetMemoWorkStatusAsync(item.Id, status);
+                ApplyMemoListResponse(response);
+                MemoDetailItem updatedItem = _memoDetailItems.Find(memo => memo.Id == item.Id);
+                if (updatedItem != null)
+                {
+                    ShowMemoDetailPage(updatedItem);
+                }
+            }
+            finally
+            {
+                SetMemoServerWaiting(false);
+            }
         }
 
         private void ShowCurrentMemoEditPage()
@@ -1550,6 +1650,7 @@ namespace MemoAnchor.UI
             public string Body;
             public string AuthorPlayerId;
             public string AssigneePlayerId;
+            public string WorkStatus;
             public string Location;
             public string DueText;
             public string Assignee;

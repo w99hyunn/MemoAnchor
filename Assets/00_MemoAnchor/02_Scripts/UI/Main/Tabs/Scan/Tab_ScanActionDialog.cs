@@ -62,6 +62,18 @@ namespace MemoAnchor.UI
             }).ExecuteLater(240);
         }
 
+        public void ShowScanJoinDialog()
+        {
+            HideScanActionDialog();
+            PopupManager.ShowTextInput(
+                "맵 참여",
+                "알림창을 통해 참여코드를 확인해주세요.",
+                string.Empty,
+                "취소",
+                "참여하기",
+                code => _ = OpenReadOnlyMapAsync(code));
+        }
+
         private void EnsureScanActionDialog()
         {
             if (_scanActionDialogOverlay != null)

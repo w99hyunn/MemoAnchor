@@ -127,10 +127,10 @@ namespace MemoAnchor.UI
             element.EnableInClassList(HIDDEN_CLASS, !visible);
         }
 
-        private void SetMemoDetailNavMode(bool enabled)
+        private void SetMemoDetailNavMode(bool enabled, bool showActions = true)
         {
             _bottomNavWrapper.EnableInClassList("is-memo-detail-mode", enabled);
-            SetVisible(_memoDetailBottomBar, enabled);
+            SetVisible(_memoDetailBottomBar, enabled && showActions);
         }
 
         private void SetMemoFilterNavMode(bool enabled)

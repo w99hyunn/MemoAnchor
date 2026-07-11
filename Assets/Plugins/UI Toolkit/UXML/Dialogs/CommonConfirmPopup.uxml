@@ -6,7 +6,7 @@
             <ui:Label name="common-confirm-popup-message" text="진행할까요?" class="common-confirm-popup-message"/>
             <ui:VisualElement name="common-confirm-input-box" class="memo-search-page common-confirm-input-section" style="display: none;">
                 <ui:VisualElement class="scan-input-box memo-search-input-box">
-                    <ui:TextField name="common-confirm-input" label="" placeholder-text="친구코드 입력" class="scan-input-field"/>
+                    <ui:TextField name="common-confirm-input" label="" placeholder-text="코드 입력" class="scan-input-field"/>
                 </ui:VisualElement>
             </ui:VisualElement>
             <ui:Label name="common-confirm-status-label" text="" class="common-confirm-status-label is-hidden"/>

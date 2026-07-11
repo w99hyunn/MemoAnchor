@@ -79,6 +79,22 @@ namespace MemoAnchor
     }
 
     [Serializable]
+    public class ReadOnlyMapRequest
+    {
+        public string code;
+        public bool joinAsMember;
+        public bool joinAsReader;
+    }
+
+    [Serializable]
+    public class ReadOnlyMapResponse
+    {
+        public ScanMapItem map;
+        public List<MemoItem> memos = new();
+        public string creatorPlayerId;
+    }
+
+    [Serializable]
     public class ScanMapCreateRequest
     {
         public string addressId;
@@ -138,6 +154,18 @@ namespace MemoAnchor
             {
                 _isLoading = false;
             }
+        }
+
+        public async Awaitable<ReadOnlyMapResponse> OpenReadOnlyMapAsync(string code, bool joinAsMember = false, bool joinAsReader = false)
+        {
+            string json = JsonUtility.ToJson(new ReadOnlyMapRequest { code = code, joinAsMember = joinAsMember, joinAsReader = joinAsReader });
+            using UnityWebRequest request = ServicesManager.CreateAuthorizedJsonPostRequest($"{SCAN_MAPS_API_PATH}/read-only", json);
+            await ServicesManager.SendRequestAsync(request);
+            if (request.result != UnityWebRequest.Result.Success)
+            {
+                return null;
+            }
+            return JsonUtility.FromJson<ReadOnlyMapResponse>(request.downloadHandler.text);
         }
 
         public async Awaitable<ScanMapCreateResult> CreateMapAsync(ScanMapCreateRequest payload)

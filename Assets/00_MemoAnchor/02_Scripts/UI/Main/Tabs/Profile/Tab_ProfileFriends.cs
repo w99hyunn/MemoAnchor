@@ -265,7 +265,6 @@ namespace MemoAnchor.UI
 
         private void ConfirmFriendDelete(string memberId)
         {
-            PopupManager.HideConfirm();
             _ = DeleteFriendAsync(memberId);
         }
 
@@ -447,7 +446,7 @@ namespace MemoAnchor.UI
 
         private void ShowFriendRequestResult(string message)
         {
-            PopupManager.ShowConfirm("친구 추가", message, "닫기", "확인", PopupManager.HideConfirm);
+            PopupManager.ShowMessage("친구 추가", message, "확인");
         }
 
         private async Awaitable WaitForFriendsInitializationAsync()

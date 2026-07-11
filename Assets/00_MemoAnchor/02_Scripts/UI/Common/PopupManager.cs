@@ -20,6 +20,7 @@ namespace MemoAnchor.UI
         private Label _confirmTitleLabel, _confirmMessageLabel, _confirmCancelLabel, _confirmSubmitLabel, _confirmStatusLabel;
         private TemplateContainer _confirmTree;
         private Action _onConfirmSubmit;
+        private Action _onConfirmCancel;
         private Action<string> _onInputSubmit;
         private bool _confirmUsesInput;
         private int _confirmPresentationVersion;
@@ -40,6 +41,12 @@ namespace MemoAnchor.UI
         public static void ShowConfirm(string title, string message, string cancelText, string submitText, Action onSubmit)
         {
             Instance.ShowConfirmInternal(title, message, cancelText, submitText, true, onSubmit);
+        }
+
+        public static void ShowConfirm(string title, string message, string cancelText, string submitText, Action onCancel, Action onSubmit)
+        {
+            Instance.ShowConfirmInternal(title, message, cancelText, submitText, true, onSubmit);
+            Instance._onConfirmCancel = onCancel;
         }
 
         public static void ShowMessage(string title, string message, string submitText)
@@ -75,6 +82,7 @@ namespace MemoAnchor.UI
             _confirmCancelLabel.text = cancelText;
             _confirmSubmitLabel.text = submitText;
             _onConfirmSubmit = onSubmit;
+            _onConfirmCancel = null;
             _onInputSubmit = null;
             _confirmUsesInput = false;
             _confirmInputBox.style.display = DisplayStyle.None;
@@ -103,6 +111,7 @@ namespace MemoAnchor.UI
             _confirmSubmitLabel.text = submitText;
             _confirmInput.value = value;
             _onConfirmSubmit = null;
+            _onConfirmCancel = null;
             _onInputSubmit = onSubmit;
             _confirmUsesInput = true;
             _confirmInputBox.style.display = DisplayStyle.Flex;
@@ -126,6 +135,7 @@ namespace MemoAnchor.UI
         private void HideConfirmInternal()
         {
             _onConfirmSubmit = null;
+            _onConfirmCancel = null;
             _onInputSubmit = null;
             _confirmUsesInput = false;
 
@@ -152,6 +162,13 @@ namespace MemoAnchor.UI
             Action onSubmit = _onConfirmSubmit;
             HideConfirmInternal();
             onSubmit?.Invoke();
+        }
+
+        private void CancelConfirm()
+        {
+            Action onCancel = _onConfirmCancel;
+            HideConfirmInternal();
+            onCancel?.Invoke();
         }
 
         private void SubmitTextInput()
@@ -204,7 +221,7 @@ namespace MemoAnchor.UI
 
             _confirmOverlay.RegisterCallback<ClickEvent>(_ => HideConfirmInternal());
             confirmSheet.RegisterCallback<ClickEvent>(evt => evt.StopPropagation());
-            _confirmCancelButton.clicked += HideConfirmInternal;
+            _confirmCancelButton.clicked += CancelConfirm;
             _confirmSubmitButton.clicked += SubmitConfirm;
         }
     }

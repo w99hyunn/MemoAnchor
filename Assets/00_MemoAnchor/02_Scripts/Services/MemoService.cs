@@ -37,6 +37,7 @@ namespace MemoAnchor
         public string authorName;
         public string assigneePlayerId;
         public string assigneeName;
+        public string workStatus;
         public string dueText;
         public string createdAt;
         public string deletedAt;
@@ -341,6 +342,12 @@ namespace MemoAnchor
         public async Awaitable<MemoListResponse> DeleteMemoPermanentlyAsync(string memoId)
         {
             return await MutateMemoAsync($"{MEMOS_API_PATH}/{UnityWebRequest.EscapeURL(memoId)}/permanent", UnityWebRequest.kHttpVerbDELETE, _lastTrashResponse, response => _lastTrashResponse = response);
+        }
+
+        public async Awaitable<MemoListResponse> SetMemoWorkStatusAsync(string memoId, string status)
+        {
+            string path = $"{MEMOS_API_PATH}/{UnityWebRequest.EscapeURL(memoId)}/work-status/{UnityWebRequest.EscapeURL(status)}";
+            return await MutateMemoAsync(path, UnityWebRequest.kHttpVerbPOST, _lastResponse, response => _lastResponse = response);
         }
 
         private async Awaitable<MemoListResponse> MutateMemoAsync(string path, string method, MemoListResponse fallback, Action<MemoListResponse> applyResponse)

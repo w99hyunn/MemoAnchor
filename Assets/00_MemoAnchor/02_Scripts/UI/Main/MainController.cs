@@ -184,7 +184,7 @@ namespace MemoAnchor.UI
 
         private void OnClickScanActionJoin()
         {
-            _view.HideScanActionDialog();
+            _view.ShowScanJoinDialog();
         }
 
         private static void SetState(Button button, bool active)
