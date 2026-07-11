@@ -1016,7 +1016,9 @@ namespace MemoAnchor.UI
                 SetMemoCreateRepairerExpanded(false);
             };
 
-            item.Q<Label>("memo-create-repairer-name").text = memberName;
+            _mapFriendInviteProfiles.TryGetValue(memberId, out MapFriendProfileItem profile);
+            item.Q<Label>("memo-create-repairer-name").text = string.IsNullOrWhiteSpace(profile?.name) ? memberName : profile.name;
+            item.Q<Label>("memo-create-repairer-company").text = profile?.companyName ?? string.Empty;
             _memoCreateRepairerItemsList.Add(row);
         }
 

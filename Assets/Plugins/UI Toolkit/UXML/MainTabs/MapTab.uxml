@@ -10,7 +10,13 @@
                 <ui:VisualElement class="common-icon-button-icon" style="background-image: url(&quot;project://database/Assets/00_MemoAnchor/03_Media/Icon/building.png?fileID=2800000&amp;guid=9ac4f4a4e6b84dd7b67d1c4c0a8dd37c&amp;type=3#building&quot;);"/>
             </ui:Button>
         </ui:VisualElement>
-        <ui:Label name="map-read-mode-label" text="읽기모드" class="map-read-mode-label"/>
+        <ui:Button name="map-participants-button" class="map-participants-button is-hidden">
+            <ui:Label text="참여자" picking-mode="Ignore" class="map-participants-title"/>
+            <ui:VisualElement picking-mode="Ignore" class="map-participants-summary">
+                <ui:Label name="map-participants-manager-summary" text="" class="map-participants-manager-summary"/>
+                <ui:Label name="map-participants-repairer-summary" text="" class="map-participants-repairer-summary"/>
+            </ui:VisualElement>
+        </ui:Button>
         <ui:VisualElement name="map-preview" class="map-preview">
             <ui:Button name="map-preview-menu-button" text="☰" class="map-preview-menu-button common-icon-button"/>
             <ui:VisualElement name="map-create-memo-actions" class="map-create-memo-actions is-hidden">
@@ -32,6 +38,45 @@
                 <ui:ScrollView name="map-list-scroll" mode="Vertical" horizontal-scroller-visibility="Hidden" vertical-scroller-visibility="Hidden" touch-scroll-type="Elastic" class="full-width-list page-scroll">
                     <ui:VisualElement name="map-list-content" class="full-width-list content-list"/>
                 </ui:ScrollView>
+            </ui:VisualElement>
+        </ui:VisualElement>
+        <ui:VisualElement name="map-participants-overlay" class="scan-action-dialog-overlay scan-address-dialog-overlay map-participants-overlay is-hidden">
+            <ui:VisualElement name="map-participants-sheet" class="scan-action-dialog-sheet scan-address-dialog-sheet map-participants-sheet">
+                <ui:VisualElement class="scan-action-dialog-handle scan-address-dialog-handle"/>
+                <ui:VisualElement class="map-participants-invite-header">
+                    <ui:Button name="map-participants-invite-button" class="map-participants-invite-code-button">
+                        <ui:Label name="map-participants-invite-issue-label" text="초대 코드 발급" picking-mode="Ignore" class="map-participants-invite-issue-label"/>
+                        <ui:VisualElement name="map-participants-invite-code-content" picking-mode="Ignore" class="horizontal-row is-hidden">
+                            <ui:Label name="map-participants-invite-timer" text="05:00" class="map-participants-invite-timer"/>
+                            <ui:Label name="map-participants-invite-code" text="" class="map-participants-invite-code"/>
+                            <ui:VisualElement class="common-icon-button-icon map-participants-copy-icon"/>
+                        </ui:VisualElement>
+                    </ui:Button>
+                </ui:VisualElement>
+                <ui:Button name="map-participants-add-button" class="map-participants-add-button">
+                    <ui:Label text="+" picking-mode="Ignore" class="map-participants-add-icon"/>
+                    <ui:Label text="새 멤버 초대하기" picking-mode="Ignore" class="map-participants-add-label"/>
+                </ui:Button>
+                <ui:VisualElement class="memo-filter-divider"/>
+                <ui:ScrollView mode="Vertical" horizontal-scroller-visibility="Hidden" vertical-scroller-visibility="Hidden" touch-scroll-type="Elastic" class="full-width-list page-scroll">
+                    <ui:VisualElement name="map-participants-list" class="full-width-list content-list"/>
+                </ui:ScrollView>
+            </ui:VisualElement>
+        </ui:VisualElement>
+        <ui:VisualElement name="map-friend-invite-overlay" class="scan-action-dialog-overlay scan-address-dialog-overlay map-friend-invite-overlay is-hidden">
+            <ui:VisualElement name="map-friend-invite-sheet" class="scan-action-dialog-sheet scan-address-dialog-sheet map-friend-invite-sheet">
+                <ui:VisualElement class="scan-action-dialog-handle scan-address-dialog-handle"/>
+                <ui:VisualElement class="map-friend-invite-header">
+                    <ui:Button name="map-friend-invite-back-button" class="common-icon-button map-friend-invite-back-button">
+                        <ui:VisualElement picking-mode="Ignore" class="common-icon-button-icon map-friend-invite-back-icon"/>
+                    </ui:Button>
+                    <ui:Label text="친구목록" class="map-friend-invite-title"/>
+                </ui:VisualElement>
+                <ui:ScrollView mode="Vertical" horizontal-scroller-visibility="Hidden" vertical-scroller-visibility="Hidden" touch-scroll-type="Elastic" class="full-width-list page-scroll map-friend-invite-scroll">
+                    <ui:VisualElement name="map-friend-invite-list" class="full-width-list content-list"/>
+                    <ui:Button name="map-friend-invite-load-more-button" text="더 불러오기" class="map-friend-invite-load-more-button is-hidden"/>
+                </ui:ScrollView>
+                <ui:Button name="map-friend-invite-submit-button" text="초대하기" class="map-friend-invite-submit-button"/>
             </ui:VisualElement>
         </ui:VisualElement>
     </ui:VisualElement>

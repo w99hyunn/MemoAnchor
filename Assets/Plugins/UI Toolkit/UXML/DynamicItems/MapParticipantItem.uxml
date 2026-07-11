@@ -1,0 +1,13 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements">
+    <ui:VisualElement name="map-participant-item" class="map-participant-item">
+        <ui:Label name="map-participant-name" class="map-participant-name"/>
+        <ui:Label name="map-participant-company" class="map-participant-company"/>
+        <ui:Label name="map-participant-role" class="map-participant-role"/>
+        <ui:Button name="map-participant-promote-button" class="common-icon-button map-participant-action-button">
+            <ui:VisualElement picking-mode="Ignore" class="common-icon-button-icon map-participant-swap-icon"/>
+        </ui:Button>
+        <ui:Button name="map-participant-remove-button" class="common-icon-button map-participant-action-button">
+            <ui:VisualElement picking-mode="Ignore" class="common-icon-button-icon map-participant-trash-icon"/>
+        </ui:Button>
+    </ui:VisualElement>
+</ui:UXML>

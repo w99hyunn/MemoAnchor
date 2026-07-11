@@ -1,0 +1,7 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements">
+    <ui:Button name="map-friend-invite-item" class="scan-friend-list-item map-friend-invite-item">
+        <ui:Label name="map-friend-invite-name" class="scan-friend-name"/>
+        <ui:Label name="map-friend-invite-company" class="scan-friend-company"/>
+        <ui:VisualElement name="map-friend-invite-check" picking-mode="Ignore" class="map-friend-invite-check"/>
+    </ui:Button>
+</ui:UXML>

@@ -1,5 +1,6 @@
 <ui:UXML xmlns:ui="UnityEngine.UIElements">
     <ui:Button name="memo-create-repairer-row" class="profile-menu-row profile-friend-row">
         <ui:Label name="memo-create-repairer-name" class="profile-friend-name"/>
+        <ui:Label name="memo-create-repairer-company" class="profile-friend-company"/>
     </ui:Button>
 </ui:UXML>

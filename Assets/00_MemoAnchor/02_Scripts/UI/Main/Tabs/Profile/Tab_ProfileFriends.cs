@@ -122,6 +122,7 @@ namespace MemoAnchor.UI
                 try
                 {
                     await FriendsService.Instance.ForceRelationshipsRefreshAsync();
+                    await RefreshFriendProfilesAsync();
                     RebuildProfileFriendList();
                     RebuildOpenAlertFriendRequests();
                 }
@@ -134,6 +135,42 @@ namespace MemoAnchor.UI
                     _isFriendsRefreshing = false;
                 }
             } while (_friendsRefreshQueued);
+        }
+
+        private async Awaitable RefreshFriendProfilesAsync()
+        {
+            _mapFriendInviteProfiles.Clear();
+            var playerIds = new System.Collections.Generic.List<string>(MAP_FRIEND_INVITE_PAGE_SIZE);
+            foreach (Relationship relationship in FriendsService.Instance.Friends)
+            {
+                playerIds.Add(relationship.Member.Id);
+                if (playerIds.Count < MAP_FRIEND_INVITE_PAGE_SIZE)
+                {
+                    continue;
+                }
+
+                await LoadFriendProfilesAsync(playerIds);
+                playerIds.Clear();
+            }
+
+            if (playerIds.Count > 0)
+            {
+                await LoadFriendProfilesAsync(playerIds);
+            }
+        }
+
+        private async Awaitable LoadFriendProfilesAsync(System.Collections.Generic.List<string> playerIds)
+        {
+            MapFriendProfilesResponse response = await _scanMapService.LoadFriendProfilesAsync(playerIds);
+            if (response == null)
+            {
+                return;
+            }
+
+            foreach (MapFriendProfileItem profile in response.profiles)
+            {
+                _mapFriendInviteProfiles[profile.playerId] = profile;
+            }
         }
 
         private async Awaitable EnsurePlayerNameAsync()
@@ -186,12 +223,14 @@ namespace MemoAnchor.UI
 
         private void AddProfileFriendRow(Relationship relationship)
         {
-            VisualElement row = new();
-            row.AddToClassList("profile-friend-row");
-
-            Label nameLabel = new(GetMemberDisplayName(relationship.Member));
-            nameLabel.AddToClassList("profile-friend-name");
-            row.Add(nameLabel);
+            TemplateContainer template = _memoCreateRepairerRowAsset.Instantiate();
+            Button row = template.Q<Button>("memo-create-repairer-row");
+            string memberId = relationship.Member.Id;
+            _mapFriendInviteProfiles.TryGetValue(memberId, out MapFriendProfileItem profile);
+            template.Q<Label>("memo-create-repairer-name").text = string.IsNullOrWhiteSpace(profile?.name)
+                ? GetMemberDisplayName(relationship.Member)
+                : profile.name;
+            template.Q<Label>("memo-create-repairer-company").text = profile?.companyName ?? string.Empty;
 
             Button deleteButton = new();
             deleteButton.AddToClassList("profile-friend-delete-button");
@@ -200,7 +239,6 @@ namespace MemoAnchor.UI
             deleteIcon.AddToClassList("profile-friend-delete-icon");
             deleteButton.Add(deleteIcon);
 
-            string memberId = relationship.Member.Id;
             string memberName = GetMemberDisplayName(relationship.Member);
             deleteButton.clicked += () => ShowFriendDeleteConfirm(memberId, memberName);
             row.Add(deleteButton);
