@@ -17,8 +17,8 @@
             </ui:VisualElement>
         </ui:VisualElement>
         <ui:Instance template="BottomNav" name="nav"/>
-        <ui:VisualElement name="memo-create-loading-overlay" class="loading-overlay is-hidden">
-            <ui:VisualElement name="memo-create-loading-spinner" class="loading-spinner"/>
+        <ui:VisualElement name="main-loading-overlay" class="loading-overlay is-hidden">
+            <ui:VisualElement name="main-loading-spinner" class="loading-spinner"/>
         </ui:VisualElement>
     </ui:VisualElement>
 </ui:UXML>

@@ -15,14 +15,14 @@ namespace MemoAnchor.UI
 
         private Button _alertButton, _alertBackButton, _homeModeToggle, _memoModeToggle;
         private VisualElement _homeModeBack, _menuTab, _memoFilterPage;
-        private VisualElement _alertDialogPage, _alertRequestList, _alertMapList;
+        private VisualElement _alertDialogPage, _alertScroll, _alertList, _alertEmptyState;
         private Label _homeGreetingLabel, _homeModeTitle;
 
         public Button AlertButton => _alertButton;
         public Button AlertBackButton => _alertBackButton;
         public Button HomeModeToggle => _homeModeToggle;
         public Button MemoModeToggle => _memoModeToggle;
-        public VisualElement AlertRequestList => _alertRequestList;
+        public VisualElement AlertList => _alertList;
 
         private void Awake()
         {
@@ -37,8 +37,9 @@ namespace MemoAnchor.UI
             _menuTab = root.Q<VisualElement>("tab-menu");
             _memoFilterPage = root.Q<VisualElement>("memo-filter-page");
             _alertDialogPage = root.Q<VisualElement>("alert-dialog-page");
-            _alertRequestList = root.Q<VisualElement>("alert-request-list");
-            _alertMapList = root.Q<VisualElement>("alert-map-list");
+            _alertScroll = root.Q<VisualElement>("alert-scroll");
+            _alertList = root.Q<VisualElement>("alert-list");
+            _alertEmptyState = root.Q<VisualElement>("alert-empty-state");
             _homeGreetingLabel = root.Q<Label>("home-greeting-label");
             _homeModeTitle = root.Q<Label>("home-mode-title");
         }
@@ -74,19 +75,14 @@ namespace MemoAnchor.UI
 
         public void ClearAlertItems()
         {
-            _alertRequestList.Clear();
-            _alertMapList.Clear();
+            _alertList.Clear();
         }
 
-        public void AddMapAlert(VisualTreeAsset mapItemAsset, string title, string description, string time, bool showsActions)
+        public void RefreshAlertEmptyState()
         {
-            TemplateContainer item = mapItemAsset.Instantiate();
-            item.Q<Label>("alert-primary-text").text = title;
-            item.Q<Label>("alert-secondary-text").text = description;
-            item.Q<Label>("alert-time-text").text = time;
-            item.Q<Button>("alert-close-button").style.display = showsActions ? DisplayStyle.None : DisplayStyle.Flex;
-            item.Q<VisualElement>("alert-action-row").style.display = showsActions ? DisplayStyle.Flex : DisplayStyle.None;
-            _alertMapList.Add(item);
+            bool isEmpty = _alertList.childCount == 0;
+            SetVisible(_alertScroll, !isEmpty);
+            SetVisible(_alertEmptyState, isEmpty);
         }
 
         private static void SetVisible(VisualElement element, bool visible)

@@ -54,10 +54,14 @@
                 </ui:Button>
             </ui:VisualElement>
             <ui:ScrollView name="alert-scroll" mode="Vertical" horizontal-scroller-visibility="Hidden" vertical-scroller-visibility="Hidden" touch-scroll-type="Elastic" class="alert-scroll">
-                <ui:VisualElement name="alert-request-list" class="alert-section"/>
-                <ui:VisualElement class="alert-gap"/>
-                <ui:VisualElement name="alert-map-list" class="alert-section"/>
+                <ui:VisualElement name="alert-content" class="tab-content-inner">
+                    <ui:VisualElement name="alert-list" class="alert-section"/>
+                </ui:VisualElement>
             </ui:ScrollView>
+            <ui:VisualElement name="alert-empty-state" class="memo-list-container is-empty memo-list-empty-state is-hidden">
+                <ui:Label text="알림이 없습니다" class="map-empty-title"/>
+                <ui:Label text="새로운 알림이 없습니다." class="map-empty-subtitle"/>
+            </ui:VisualElement>
         </ui:VisualElement>
     </ui:VisualElement>
 </ui:UXML>

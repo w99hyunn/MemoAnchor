@@ -599,7 +599,7 @@ namespace MemoAnchor.UI
             string url = isRemote ? GetMemoMediaUrl(path) : new Uri(path).AbsoluteUri;
             if (isRemote)
             {
-                LoadingSpinnerController.ShowOverlay(_memoLoadingOverlay, _memoLoadingSpinner);
+                LoadingSpinnerController.ShowOverlay(_mainLoadingOverlay, _mainLoadingSpinner);
             }
 
             try
@@ -627,7 +627,7 @@ namespace MemoAnchor.UI
             {
                 if (isRemote)
                 {
-                    LoadingSpinnerController.HideOverlay(_memoLoadingOverlay, _memoLoadingSpinner);
+                LoadingSpinnerController.HideOverlay(_mainLoadingOverlay, _mainLoadingSpinner);
                 }
             }
         }

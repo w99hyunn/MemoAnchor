@@ -19,7 +19,7 @@ namespace MemoAnchor.UI
         private readonly List<Texture2D> _memoDetailMediaTextures = new();
         private readonly List<VisualElement> _memoDetailMediaSpinners = new();
         private readonly HashSet<string> _selectedTrashMemoIds = new(StringComparer.OrdinalIgnoreCase);
-        private VisualElement _memoListContainer, _memoDetailPage, _memoDetailMenu, _memoDetailContent, _memoTrashPage, _memoTrashListContainer, _memoLoadingOverlay, _memoLoadingSpinner;
+        private VisualElement _memoListContainer, _memoDetailPage, _memoDetailMenu, _memoDetailContent, _memoTrashPage, _memoTrashListContainer, _mainLoadingOverlay, _mainLoadingSpinner;
         private VisualElement _memoMediaViewerOverlay, _memoMediaViewerPanel, _memoMediaViewerSpinner, _memoMediaViewerVideoControls;
         private Image _memoMediaViewerImage;
         private VisualElement _memoMediaViewerPlayIcon;
@@ -58,8 +58,8 @@ namespace MemoAnchor.UI
             _memoDetailContent = _root.Q<VisualElement>("memo-detail-content");
             _memoTrashPage = _root.Q<VisualElement>("memo-trash-page");
             _memoTrashListContainer = _root.Q<VisualElement>("memo-trash-list-container");
-            _memoLoadingOverlay = _root.Q<VisualElement>("memo-loading-overlay");
-            _memoLoadingSpinner = _root.Q<VisualElement>("memo-loading-spinner");
+            _mainLoadingOverlay = _root.Q<VisualElement>("main-loading-overlay");
+            _mainLoadingSpinner = _root.Q<VisualElement>("main-loading-spinner");
             _memoDetailBackButton = _root.Q<Button>("memo-detail-back-button");
             _memoDetailMenuButton = _root.Q<Button>("memo-detail-menu-button");
             _memoDetailEditButton = _root.Q<Button>("memo-detail-edit-button");
@@ -105,7 +105,7 @@ namespace MemoAnchor.UI
             SetVisible(_memoMediaViewerOverlay, false);
             RebuildMemoList();
             HideMemoDetailPage();
-            SetVisible(_memoLoadingOverlay, false);
+            SetVisible(_mainLoadingOverlay, false);
 
             _memoDetailBackButton.clicked += OnClickMemoDetailBack;
             _memoDetailMenuButton.clicked += ToggleMemoDetailMenu;
@@ -968,11 +968,11 @@ namespace MemoAnchor.UI
         {
             if (isWaiting)
             {
-                LoadingSpinnerController.ShowOverlay(_memoLoadingOverlay, _memoLoadingSpinner);
+                LoadingSpinnerController.ShowOverlay(_mainLoadingOverlay, _mainLoadingSpinner);
             }
             else
             {
-                LoadingSpinnerController.HideOverlay(_memoLoadingOverlay, _memoLoadingSpinner);
+                LoadingSpinnerController.HideOverlay(_mainLoadingOverlay, _mainLoadingSpinner);
             }
         }
 

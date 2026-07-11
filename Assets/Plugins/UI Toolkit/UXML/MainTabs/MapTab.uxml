@@ -2,10 +2,10 @@
     <Style src="project://database/Assets/Plugins/UI%20Toolkit/UnityThemes/style.uss?fileID=7433441132597879392&amp;guid=c3edbd9c191f92b49aa6a3ce9ffd69d5&amp;type=3#style"/>
     <ui:VisualElement name="tab-map" class="tab-page tab-page-layout map-tab-page">
         <ui:VisualElement class="map-top-bar home-header tab-fixed-header">
-            <ui:VisualElement class="map-title-group">
-                <ui:Label name="map-current-space-label" text="3D MAP" class="home-greeting"/>
-                <ui:Label name="map-current-address-label" text="" class="map-current-address-label"/>
-            </ui:VisualElement>
+            <ui:Button name="map-detail-button" class="map-title-group">
+                <ui:Label name="map-current-space-label" text="3D MAP" picking-mode="Ignore" class="home-greeting"/>
+                <ui:Label name="map-current-address-label" text="" picking-mode="Ignore" class="map-current-address-label"/>
+            </ui:Button>
             <ui:Button name="map-list-button" class="map-list-button common-icon-button">
                 <ui:VisualElement class="common-icon-button-icon" style="background-image: url(&quot;project://database/Assets/00_MemoAnchor/03_Media/Icon/building.png?fileID=2800000&amp;guid=9ac4f4a4e6b84dd7b67d1c4c0a8dd37c&amp;type=3#building&quot;);"/>
             </ui:Button>

@@ -296,7 +296,6 @@ namespace MemoAnchor.UI
 
             if (FriendsService.Instance.IncomingFriendRequests.Count == 0)
             {
-                AddRequestStatus(alertRequestList, "새 친구요청이 없습니다.");
                 return;
             }
 
@@ -313,7 +312,7 @@ namespace MemoAnchor.UI
             string memberName = GetMemberDisplayName(request.Member);
 
             item.Q<Label>("alert-primary-text").text = $"{memberName}님께서 친구요청을 보냈습니다.";
-            item.Q<Label>("alert-secondary-text").text = memberId;
+            item.Q<Label>("alert-secondary-text").style.display = DisplayStyle.None;
             item.Q<Label>("alert-time-text").text = string.Empty;
             item.Q<Button>("alert-reject-button").clicked += () => _ = DeclineFriendRequestAsync(memberId);
             item.Q<Button>("alert-accept-button").clicked += () => _ = AcceptFriendRequestAsync(memberId);

@@ -56,7 +56,12 @@ namespace MemoAnchor.UI
 
         public static void ShowTextInput(string title, string message, string value, string cancelText, string submitText, Action<string> onSubmit)
         {
-            Instance.ShowTextInputInternal(title, message, value, cancelText, submitText, onSubmit);
+            Instance.ShowTextInputInternal(title, message, value, "코드 입력", cancelText, submitText, onSubmit);
+        }
+
+        public static void ShowTextInput(string title, string message, string value, string placeholder, string cancelText, string submitText, Action<string> onSubmit)
+        {
+            Instance.ShowTextInputInternal(title, message, value, placeholder, cancelText, submitText, onSubmit);
         }
 
         public static void HideConfirm()
@@ -102,7 +107,7 @@ namespace MemoAnchor.UI
             PopupPresentation.ScheduleOpen(_confirmOverlay);
         }
 
-        private void ShowTextInputInternal(string title, string message, string value, string cancelText, string submitText, Action<string> onSubmit)
+        private void ShowTextInputInternal(string title, string message, string value, string placeholder, string cancelText, string submitText, Action<string> onSubmit)
         {
             EnsureConfirmPopup();
             _confirmTitleLabel.text = title;
@@ -110,6 +115,7 @@ namespace MemoAnchor.UI
             _confirmCancelLabel.text = cancelText;
             _confirmSubmitLabel.text = submitText;
             _confirmInput.value = value;
+            _confirmInput.textEdition.placeholder = placeholder;
             _onConfirmSubmit = null;
             _onConfirmCancel = null;
             _onInputSubmit = onSubmit;

@@ -14,6 +14,7 @@ namespace MemoAnchor.UI
         public static void ShowOverlay(VisualElement overlay, VisualElement spinner)
         {
             int token = NextOverlayToken(overlay);
+            overlay.BringToFront();
             overlay.RemoveFromClassList(HIDDEN_CLASS);
             overlay.RemoveFromClassList(OPEN_CLASS);
             overlay.schedule.Execute(() =>

@@ -357,8 +357,5 @@
                 </ui:VisualElement>
             </ui:VisualElement>
         </ui:VisualElement>
-        <ui:VisualElement name="memo-loading-overlay" class="loading-overlay is-hidden">
-            <ui:VisualElement name="memo-loading-spinner" class="loading-spinner"/>
-        </ui:VisualElement>
     </ui:VisualElement>
 </ui:UXML>

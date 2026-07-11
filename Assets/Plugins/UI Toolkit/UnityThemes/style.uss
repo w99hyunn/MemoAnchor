@@ -76,7 +76,6 @@
     height: 50px;
     -unity-background-scale-mode: scale-to-fit;
     -unity-background-image-tint-color: rgb(42, 42, 42);
-    picking-mode: ignore;
 }
 
 .horizontal-row {
@@ -329,7 +328,6 @@
     min-width: 0;
     overflow: hidden;
     -unity-text-overflow-position: end;
-    picking-mode: ignore;
 }
 
 .memo-header-actions {
@@ -605,10 +603,23 @@
 }
 
 .map-title-group {
-    width: 100%;
+    width: auto;
+    flex-grow: 1;
+    flex-shrink: 1;
     flex-direction: row;
     align-items: center;
     min-width: 0;
+    margin: 0;
+    padding: 0;
+    border-width: 0;
+    border-radius: 0;
+    background-color: rgba(0, 0, 0, 0);
+}
+
+.map-title-group:hover:enabled,
+.map-title-group:active:enabled,
+.map-title-group:disabled {
+    background-color: rgba(0, 0, 0, 0);
 }
 
 .map-current-address-label {
@@ -1852,7 +1863,6 @@
 .memo-body-text {
     flex-grow: 1;
     font-size: 42px;
-    line-height: 58px;
     color: rgb(20, 20, 20);
     white-space: normal;
 }
@@ -4448,6 +4458,10 @@
     background-color: rgb(246, 246, 246);
 }
 
+.alert-scroll .unity-scroll-view__content-container {
+    flex-grow: 1;
+}
+
 .alert-section {
     background-color: rgb(255, 255, 255);
 }
@@ -4512,15 +4526,34 @@
     border-color: rgb(78, 78, 78);
 }
 
+.alert-action-secondary:hover:enabled {
+    background-color: rgb(247, 247, 247);
+    border-width: 2px;
+    border-color: rgb(78, 78, 78);
+}
+
+.alert-action-secondary:active:enabled {
+    background-color: rgb(235, 235, 235);
+    border-width: 2px;
+    border-color: rgb(58, 58, 58);
+}
+
 .alert-action-primary {
     color: rgb(255, 255, 255);
     background-color: rgb(75, 88, 132);
     border-color: rgb(75, 88, 132);
 }
 
-.alert-gap {
-    height: 200px;
-    background-color: rgb(246, 246, 246);
+.alert-action-primary:hover:enabled {
+    background-color: rgb(66, 79, 119);
+    border-width: 2px;
+    border-color: rgb(66, 79, 119);
+}
+
+.alert-action-primary:active:enabled {
+    background-color: rgb(55, 68, 105);
+    border-width: 2px;
+    border-color: rgb(55, 68, 105);
 }
 
 .alert-close-button {

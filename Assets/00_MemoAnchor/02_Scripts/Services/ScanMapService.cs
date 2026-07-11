@@ -290,6 +290,12 @@ namespace MemoAnchor
             return await MutateMembersAsync(path, UnityWebRequest.kHttpVerbDELETE);
         }
 
+        public async Awaitable<ScanMapListResponse> DeleteMapAsync(string mapId)
+        {
+            string path = $"{SCAN_MAPS_API_PATH}/{UnityWebRequest.EscapeURL(mapId)}";
+            return await MutateMembersAsync(path, UnityWebRequest.kHttpVerbDELETE);
+        }
+
         private async Awaitable<ScanMapListResponse> MutateMembersAsync(string path, string method)
         {
             if (_isManagingMembers || !AuthenticationService.Instance.IsSignedIn)

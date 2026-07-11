@@ -7,8 +7,6 @@ namespace MemoAnchor.UI
     [RequireComponent(typeof(MainView))]
     public class Tab_HomeController : MonoBehaviour
     {
-        [SerializeField] private VisualTreeAsset _alertMapItemAsset;
-
         private Tab_HomeView _view;
         private MainView _mainTabView;
         private bool _isHomeWorkMode = true;
@@ -69,10 +67,8 @@ namespace MemoAnchor.UI
         private void RebuildAlertItems()
         {
             _view.ClearAlertItems();
-            _mainTabView.AddFriendRequestAlertsTo(_view.AlertRequestList);
-
-            _view.AddMapAlert(_alertMapItemAsset, "전기실", "3일 뒤 마감알림", "10분 전", false);
-            _view.AddMapAlert(_alertMapItemAsset, "전기실", "3일 뒤 마감알림", "10분 전", true);
+            _mainTabView.AddFriendRequestAlertsTo(_view.AlertList);
+            _view.RefreshAlertEmptyState();
         }
     }
 }

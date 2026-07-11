@@ -17,7 +17,7 @@ namespace MemoAnchor.UI
         [SerializeField] private VisualTreeAsset _memoCreateRepairerStatusAsset;
         [SerializeField] private VisualTreeAsset _memoCreateTimeOptionAsset;
 
-        private VisualElement _memoCreatePage, _memoCreateCalendar, _memoCreateCalendarGrid, _memoCreateTimePicker, _memoCreateLoadingOverlay, _memoCreateLoadingSpinner;
+        private VisualElement _memoCreatePage, _memoCreateCalendar, _memoCreateCalendarGrid, _memoCreateTimePicker;
         private VisualElement _memoCreateRepairerCard, _memoCreateRepairerList, _memoCreateRepairerItemsList, _memoCreateRepairerChevron;
         private VisualElement _memoCreateMediaDivider, _memoCreateMediaContent, _memoCreateMediaBox, _memoCreateMediaList;
         private VisualElement _memoCreateMediaSourceOverlay, _memoCreateMediaSourceSheet;
@@ -56,8 +56,6 @@ namespace MemoAnchor.UI
         {
             VisualElement mainRoot = _root.Q<VisualElement>("main-root");
             _memoCreatePage = _root.Q<VisualElement>("memo-create-page");
-            _memoCreateLoadingOverlay = _root.Q<VisualElement>("memo-create-loading-overlay");
-            _memoCreateLoadingSpinner = _root.Q<VisualElement>("memo-create-loading-spinner");
             _memoCreateScroll = _root.Q<ScrollView>("memo-create-scroll");
             _memoCreateCalendar = _root.Q<VisualElement>(className: "memo-create-calendar");
             _memoCreateCalendarGrid = _root.Q<VisualElement>("memo-create-calendar-grid");
@@ -114,7 +112,6 @@ namespace MemoAnchor.UI
             BuildMemoCreateCalendar();
             BuildMemoCreateTimePicker();
             RegisterMemoVoiceCreatePage();
-            SetVisible(_memoCreateLoadingOverlay, false);
             HideMapMemoCreatePage();
 
             _memoCreateBackButton.clicked += OnClickMemoCreateBack;
@@ -539,11 +536,11 @@ namespace MemoAnchor.UI
         {
             if (isSubmitting)
             {
-                LoadingSpinnerController.ShowOverlay(_memoCreateLoadingOverlay, _memoCreateLoadingSpinner);
+                LoadingSpinnerController.ShowOverlay(_mainLoadingOverlay, _mainLoadingSpinner);
             }
             else
             {
-                LoadingSpinnerController.HideOverlay(_memoCreateLoadingOverlay, _memoCreateLoadingSpinner);
+                LoadingSpinnerController.HideOverlay(_mainLoadingOverlay, _mainLoadingSpinner);
             }
 
             _memoCreateSubmitButton.SetEnabled(!isSubmitting);

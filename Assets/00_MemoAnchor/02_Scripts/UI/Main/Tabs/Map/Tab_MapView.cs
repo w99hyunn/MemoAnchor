@@ -26,7 +26,7 @@ namespace MemoAnchor.UI
         private readonly List<Relationship> _availableMapFriendInviteRelationships = new();
         private readonly List<MemoItem> _readOnlyMemos = new();
         private ScanMapItem _readOnlyMap;
-        private Button _mapListButton, _mapPreviewMenuButton, _mapMemoBackButton, _mapMemoSearchClearButton, _mapCreateTextMemoButton, _mapCreateChecklistMemoButton, _mapCreateMediaMemoButton, _mapCreateVoiceMemoButton;
+        private Button _mapListButton, _mapDetailButton, _mapPreviewMenuButton, _mapMemoBackButton, _mapMemoSearchClearButton, _mapCreateTextMemoButton, _mapCreateChecklistMemoButton, _mapCreateMediaMemoButton, _mapCreateVoiceMemoButton;
         private Button _mapParticipantsButton, _mapParticipantsInviteButton, _mapParticipantsAddButton;
         private Button _mapFriendInviteBackButton, _mapFriendInviteSubmitButton, _mapFriendInviteLoadMoreButton;
         private VisualElement _mapPreview, _mapMemoPage, _mapMemoListContainer, _mapMemoEmptyState, _mapListOverlay, _mapListSheet, _mapListContent, _mapEmptyState, _mapCreateMemoActions;
@@ -47,6 +47,7 @@ namespace MemoAnchor.UI
         {
             VisualElement mainRoot = _root.Q<VisualElement>("main-root");
             _mapListButton = _root.Q<Button>("map-list-button");
+            _mapDetailButton = _root.Q<Button>("map-detail-button");
             _mapPreviewMenuButton = _root.Q<Button>("map-preview-menu-button");
             _mapMemoBackButton = _root.Q<Button>("map-memo-back-button");
             _mapMemoSearchClearButton = _root.Q<Button>("map-memo-search-clear-button");
@@ -102,6 +103,7 @@ namespace MemoAnchor.UI
             _mapFriendInviteOverlay.AddToClassList(DIALOG_ANIM_READY_CLASS);
             _mapFriendInviteOverlay.AddToClassList(HIDDEN_CLASS);
             _mapListButton.clicked += ShowMapList;
+            _mapDetailButton.clicked += ShowMapDetail;
             _mapPreviewMenuButton.clicked += ShowMapMemoPage;
             _mapMemoBackButton.clicked += HideMapMemoPage;
             _mapMemoSearchClearButton.clicked += ClearMapMemoSearch;
@@ -130,6 +132,7 @@ namespace MemoAnchor.UI
         private void UnregisterMapPage()
         {
             _mapListButton.clicked -= ShowMapList;
+            _mapDetailButton.clicked -= ShowMapDetail;
             _mapPreviewMenuButton.clicked -= ShowMapMemoPage;
             _mapMemoBackButton.clicked -= HideMapMemoPage;
             _mapMemoSearchClearButton.clicked -= ClearMapMemoSearch;
@@ -208,6 +211,88 @@ namespace MemoAnchor.UI
 
                 _mapListOverlay.AddToClassList(DIALOG_OPEN_CLASS);
             }).ExecuteLater(16);
+        }
+
+        private void ShowMapDetail()
+        {
+            ScanMapItem map = GetSelectedMap();
+            if (map == null)
+            {
+                return;
+            }
+
+            string role = map.currentUserRole switch
+            {
+                "manager" => "관리자",
+                "repairer" => "수리자",
+                "read-only" => "읽기모드",
+                _ => map.currentUserRole
+            };
+            string participantCount = string.Equals(map.currentUserRole, "read-only", StringComparison.OrdinalIgnoreCase)
+                ? "비공개"
+                : $"{map.members.Count}명";
+            string details = $"<b>주소</b>\n{GetMapAddressKey(map)}\n\n<b>스캔 일시</b>\n{FormatScanTime(map.scanCreatedAt)}\n\n<b>내 역할</b>\n{role}\n\n<b>참여 인원</b>\n{participantCount}";
+            if (string.Equals(map.currentUserRole, "manager", StringComparison.OrdinalIgnoreCase))
+            {
+                PopupManager.ShowConfirm(map.spaceName, details, "닫기", "맵 삭제", () => ShowDeleteMapConfirm(map));
+                return;
+            }
+
+            PopupManager.ShowMessage(map.spaceName, details, "닫기");
+        }
+
+        private void ShowDeleteMapConfirm(ScanMapItem map)
+        {
+            PopupManager.ShowConfirm("맵 삭제", $"{map.spaceName} 맵과 해당 맵의 모든 메모를 삭제할까요?", "취소", "삭제", () => ShowDeleteMapNameInput(map));
+        }
+
+        private void ShowDeleteMapNameInput(ScanMapItem map, bool nameMismatch = false)
+        {
+            string message = nameMismatch
+                ? $"맵 이름이 일치하지 않습니다.\n삭제하려면 '{map.spaceName}'을 다시 입력해주세요."
+                : $"삭제하려면 맵 이름 '{map.spaceName}'을 입력해주세요.";
+            PopupManager.ShowTextInput("맵 삭제 확인", message, string.Empty, "맵 이름 입력", "취소", "삭제", value => ConfirmDeleteMapName(map, value));
+        }
+
+        private void ConfirmDeleteMapName(ScanMapItem map, string value)
+        {
+            if (!string.Equals(value.Trim(), map.spaceName, StringComparison.Ordinal))
+            {
+                ShowDeleteMapNameInput(map, true);
+                return;
+            }
+
+            _ = DeleteMapAsync(map);
+        }
+
+        private async Awaitable DeleteMapAsync(ScanMapItem map)
+        {
+            LoadingSpinnerController.ShowOverlay(_mainLoadingOverlay, _mainLoadingSpinner);
+            try
+            {
+                ScanMapListResponse response = await _scanMapService.DeleteMapAsync(map.id);
+                if (response == null)
+                {
+                    PopupManager.ShowMessage("맵 삭제 실패", "서버에서 맵을 삭제하지 못했습니다.", "확인");
+                    return;
+                }
+
+                if (string.Equals(_readOnlyMap?.id, map.id, StringComparison.OrdinalIgnoreCase))
+                {
+                    _readOnlyMap = null;
+                    _readOnlyMemos.Clear();
+                }
+                _scanMaps.Clear();
+                _scanMaps.AddRange(response.maps);
+                _selectedMapId = _scanMaps.Count > 0 ? _scanMaps[0].id : null;
+                RebuildMapList();
+                ApplySelectedMap();
+                await RefreshMemoListAsync();
+            }
+            finally
+            {
+                LoadingSpinnerController.HideOverlay(_mainLoadingOverlay, _mainLoadingSpinner);
+            }
         }
 
         private void ShowMapMemoPage()
@@ -482,7 +567,7 @@ namespace MemoAnchor.UI
                 return;
             }
 
-            LoadingSpinnerController.ShowOverlay(_memoLoadingOverlay, _memoLoadingSpinner);
+            LoadingSpinnerController.ShowOverlay(_mainLoadingOverlay, _mainLoadingSpinner);
             try
             {
                 ReadOnlyMapResponse response = await _scanMapService.OpenReadOnlyMapAsync(code.Trim());
@@ -505,13 +590,13 @@ namespace MemoAnchor.UI
             }
             finally
             {
-                LoadingSpinnerController.HideOverlay(_memoLoadingOverlay, _memoLoadingSpinner);
+                LoadingSpinnerController.HideOverlay(_mainLoadingOverlay, _mainLoadingSpinner);
             }
         }
 
         private async Awaitable JoinMapAsReaderAsync(string code)
         {
-            LoadingSpinnerController.ShowOverlay(_memoLoadingOverlay, _memoLoadingSpinner);
+            LoadingSpinnerController.ShowOverlay(_mainLoadingOverlay, _mainLoadingSpinner);
             try
             {
                 ReadOnlyMapResponse response = await _scanMapService.OpenReadOnlyMapAsync(code, false, true);
@@ -525,7 +610,7 @@ namespace MemoAnchor.UI
             }
             finally
             {
-                LoadingSpinnerController.HideOverlay(_memoLoadingOverlay, _memoLoadingSpinner);
+                LoadingSpinnerController.HideOverlay(_mainLoadingOverlay, _mainLoadingSpinner);
             }
         }
 
@@ -691,7 +776,7 @@ namespace MemoAnchor.UI
                 .Take(count)
                 .Select(relationship => relationship.Member.Id)
                 .ToList();
-            LoadingSpinnerController.ShowOverlay(_memoLoadingOverlay, _memoLoadingSpinner);
+            LoadingSpinnerController.ShowOverlay(_mainLoadingOverlay, _mainLoadingSpinner);
             try
             {
                 MapFriendProfilesResponse response = await _scanMapService.LoadFriendProfilesAsync(playerIds);
@@ -706,7 +791,7 @@ namespace MemoAnchor.UI
             }
             finally
             {
-                LoadingSpinnerController.HideOverlay(_memoLoadingOverlay, _memoLoadingSpinner);
+                LoadingSpinnerController.HideOverlay(_mainLoadingOverlay, _mainLoadingSpinner);
             }
         }
 
@@ -789,7 +874,7 @@ namespace MemoAnchor.UI
                     companyName = profile?.companyName ?? string.Empty
                 });
             }
-            LoadingSpinnerController.ShowOverlay(_memoLoadingOverlay, _memoLoadingSpinner);
+            LoadingSpinnerController.ShowOverlay(_mainLoadingOverlay, _mainLoadingSpinner);
             try
             {
                 ScanMapListResponse response = await _scanMapService.InviteMembersAsync(map.id, members);
@@ -804,7 +889,7 @@ namespace MemoAnchor.UI
             }
             finally
             {
-                LoadingSpinnerController.HideOverlay(_memoLoadingOverlay, _memoLoadingSpinner);
+                LoadingSpinnerController.HideOverlay(_mainLoadingOverlay, _mainLoadingSpinner);
             }
         }
 
@@ -881,7 +966,7 @@ namespace MemoAnchor.UI
                 return;
             }
 
-            LoadingSpinnerController.ShowOverlay(_memoLoadingOverlay, _memoLoadingSpinner);
+            LoadingSpinnerController.ShowOverlay(_mainLoadingOverlay, _mainLoadingSpinner);
             try
             {
                 MapInviteResponse response = await _scanMapService.IssueInviteAsync(map.id);
@@ -899,7 +984,7 @@ namespace MemoAnchor.UI
             }
             finally
             {
-                LoadingSpinnerController.HideOverlay(_memoLoadingOverlay, _memoLoadingSpinner);
+                LoadingSpinnerController.HideOverlay(_mainLoadingOverlay, _mainLoadingSpinner);
             }
         }
 
@@ -916,7 +1001,7 @@ namespace MemoAnchor.UI
         private async Awaitable PromoteMapParticipantAsync(ScanMapMemberItem member)
         {
             ScanMapItem map = GetSelectedMap();
-            LoadingSpinnerController.ShowOverlay(_memoLoadingOverlay, _memoLoadingSpinner);
+            LoadingSpinnerController.ShowOverlay(_mainLoadingOverlay, _mainLoadingSpinner);
             try
             {
                 ScanMapListResponse response = await _scanMapService.PromoteMemberAsync(map.id, member.playerId);
@@ -924,7 +1009,7 @@ namespace MemoAnchor.UI
             }
             finally
             {
-                LoadingSpinnerController.HideOverlay(_memoLoadingOverlay, _memoLoadingSpinner);
+                LoadingSpinnerController.HideOverlay(_mainLoadingOverlay, _mainLoadingSpinner);
             }
         }
 
@@ -936,7 +1021,7 @@ namespace MemoAnchor.UI
         private async Awaitable RemoveMapParticipantAsync(ScanMapMemberItem member)
         {
             ScanMapItem map = GetSelectedMap();
-            LoadingSpinnerController.ShowOverlay(_memoLoadingOverlay, _memoLoadingSpinner);
+            LoadingSpinnerController.ShowOverlay(_mainLoadingOverlay, _mainLoadingSpinner);
             try
             {
                 ScanMapListResponse response = await _scanMapService.RemoveMemberAsync(map.id, member.playerId);
@@ -944,7 +1029,7 @@ namespace MemoAnchor.UI
             }
             finally
             {
-                LoadingSpinnerController.HideOverlay(_memoLoadingOverlay, _memoLoadingSpinner);
+                LoadingSpinnerController.HideOverlay(_mainLoadingOverlay, _mainLoadingSpinner);
             }
         }
 
