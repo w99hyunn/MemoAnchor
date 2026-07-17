@@ -57,3 +57,11 @@ bld/
 
 # Immersal API keys (보안!)
 **/ImmersalSDK/Resources/ImmersalSDKToken.asset
+
+# Server binaries
+/[Ss]erver/[Bb]in/
+/[Ss]erver/[Oo]bj/
+/[Ss]erver/[Ll]og/
+
+# because.. Public Repository
+/[Ss]erver/appsettings.json

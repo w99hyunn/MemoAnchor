@@ -1,0 +1,6 @@
+@ASP.NET_core_MemoAnchor_Server_HostAddress = http://localhost:5108
+
+GET {{ASP.NET_core_MemoAnchor_Server_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
