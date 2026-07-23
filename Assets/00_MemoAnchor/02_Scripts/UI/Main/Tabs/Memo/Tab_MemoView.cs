@@ -30,6 +30,7 @@ namespace MemoAnchor.UI
         private Slider _memoMediaViewerSeekSlider;
         private MemoDetailItem _currentMemoDetailItem;
         private bool _isMemoListLoading;
+        private bool _isMemoWorkMode = true;
         private bool _isMemoTrashLoading;
         private bool _isCreatingMemo;
         private bool _isMemoTrashSelecting;
@@ -84,6 +85,8 @@ namespace MemoAnchor.UI
             _memoMediaViewerPlayIcon = _root.Q<VisualElement>("memo-media-viewer-play-icon");
             _memoMediaViewerSeekSlider = _root.Q<Slider>("memo-media-viewer-seek-slider");
             _memoMediaViewerTimeLabel = _root.Q<Label>("memo-media-viewer-time-label");
+            RegisterHomeMemoCards();
+            RegisterHomeMapCards();
 
             if (!TryGetComponent<VideoPlayer>(out _memoMediaViewerVideoPlayer))
             {
@@ -129,13 +132,13 @@ namespace MemoAnchor.UI
             _memoMediaViewerPanel.RegisterCallback<PointerMoveEvent>(OnMemoMediaViewerPointerMove);
             _memoMediaViewerPanel.RegisterCallback<PointerUpEvent>(OnMemoMediaViewerPointerUp);
             _memoMediaViewerPanel.RegisterCallback<PointerCancelEvent>(OnMemoMediaViewerPointerCancel);
-            _ = RefreshMemoListAsync();
         }
 
         private void UnregisterMemoDetailPage()
         {
             StopMemoVoicePreview();
             ClearMemoDetailMediaTextures();
+            UnregisterHomeMemoCards();
             HideMemoMediaViewer();
             _memoDetailBackButton.clicked -= OnClickMemoDetailBack;
             _memoDetailMenuButton.clicked -= ToggleMemoDetailMenu;
@@ -222,6 +225,12 @@ namespace MemoAnchor.UI
             {
                 _isCreatingMemo = false;
             }
+        }
+
+        public void ApplyMemoRoleMode(bool isWorkMode)
+        {
+            _isMemoWorkMode = isWorkMode;
+            RebuildMemoList();
         }
 
         private async Awaitable<MemoDetailItem> UpdateMemoForMapAsync(MemoDetailItem item, ScanMapItem map, string kind, string title, string body, string urgency, string assigneePlayerId, string assigneeName, string dueText, List<MemoChecklistEntry> checklistItems, List<MemoVoiceEntry> voiceItems, List<string> imageUrls)
@@ -321,8 +330,10 @@ namespace MemoAnchor.UI
 
         private void RebuildMemoList()
         {
+            RebuildHomeMemoCards();
             _memoListContainer.Clear();
-            bool isEmpty = _memoDetailItems.Count == 0;
+            List<MemoDetailItem> visibleItems = _memoDetailItems.FindAll(IsMemoVisibleInCurrentRoleMode);
+            bool isEmpty = visibleItems.Count == 0;
             _memoListContainer.EnableInClassList("is-empty", isEmpty);
             _memoListContainer.parent.EnableInClassList("is-memo-list-empty", isEmpty);
             if (isEmpty)
@@ -332,12 +343,19 @@ namespace MemoAnchor.UI
                 return;
             }
 
-            foreach (MemoDetailItem item in _memoDetailItems)
+            foreach (MemoDetailItem item in visibleItems)
             {
                 AddMemoListRow(item);
             }
 
             CacheMemoFilterRows();
+        }
+
+        private bool IsMemoVisibleInCurrentRoleMode(MemoDetailItem item)
+        {
+            ScanMapItem map = _scanMaps.Find(scanMap => string.Equals(scanMap.id, item.MapId, StringComparison.OrdinalIgnoreCase));
+            string role = _isMemoWorkMode ? "repairer" : "manager";
+            return map != null && string.Equals(map.currentUserRole, role, StringComparison.OrdinalIgnoreCase);
         }
 
         private void AddMemoListEmptyState()
@@ -546,7 +564,7 @@ namespace MemoAnchor.UI
             _ = SetMemoWorkStatusAsync(_currentMemoDetailItem, isManager ? "completed" : "completion-requested");
         }
 
-        private async Awaitable SetMemoWorkStatusAsync(MemoDetailItem item, string status)
+        private async Awaitable SetMemoWorkStatusAsync(MemoDetailItem item, string status, bool showDetail = true)
         {
             SetMemoServerWaiting(true);
             try
@@ -554,7 +572,7 @@ namespace MemoAnchor.UI
                 MemoListResponse response = await _memoService.SetMemoWorkStatusAsync(item.Id, status);
                 ApplyMemoListResponse(response);
                 MemoDetailItem updatedItem = _memoDetailItems.Find(memo => memo.Id == item.Id);
-                if (updatedItem != null)
+                if (showDetail && updatedItem != null)
                 {
                     ShowMemoDetailPage(updatedItem, _memoDetailReturnsToMapMemoPage);
                 }

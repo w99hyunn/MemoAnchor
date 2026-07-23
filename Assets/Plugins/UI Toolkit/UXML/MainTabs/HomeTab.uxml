@@ -1,6 +1,4 @@
 <ui:UXML xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" noNamespaceSchemaLocation="../../../../../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
-    <ui:Template name="MemoItem" src="project://database/Assets/Plugins/UI%20Toolkit/UXML/DynamicItems/MemoItem.uxml?fileID=9197481963319205126&amp;guid=25071315ed99feb41aa0d3bb9bcc60cf&amp;type=3#MemoItem"/>
-    <ui:Template name="ScanMapItem" src="project://database/Assets/Plugins/UI%20Toolkit/UXML/DynamicItems/ScanMapItem.uxml?fileID=9197481963319205126&amp;guid=d4b216a9f54568546832867b7a98c94b&amp;type=3#ScanMapItem"/>
     <Style src="project://database/Assets/Plugins/UI%20Toolkit/UnityThemes/style.uss?fileID=7433441132597879392&amp;guid=c3edbd9c191f92b49aa6a3ce9ffd69d5&amp;type=3#style"/>
     <ui:VisualElement name="tab-home" class="tab-page tab-page-layout">
         <ui:VisualElement class="home-header tab-fixed-header" style="align-items: center;">
@@ -22,13 +20,12 @@
                             </ui:VisualElement>
                             <ui:Button text="전체보기" class="memo-section-more"/>
                         </ui:VisualElement>
-                        <ui:ScrollView name="memo-scroll" mode="Horizontal" horizontal-scroller-visibility="Hidden" vertical-scroller-visibility="Hidden" touch-scroll-type="Elastic" class="memo-scroll" style="flex-grow: 0;">
-                            <ui:VisualElement class="horizontal-card-scroll-content">
-                                <ui:Instance template="MemoItem"/>
-                                <ui:Instance template="MemoItem"/>
-                                <ui:Instance template="MemoItem"/>
-                            </ui:VisualElement>
-                        </ui:ScrollView>
+                        <ui:VisualElement class="home-memo-scroll-frame">
+                            <ui:ScrollView name="memo-scroll" mode="Horizontal" horizontal-scroller-visibility="Hidden" vertical-scroller-visibility="Hidden" touch-scroll-type="Elastic" class="memo-scroll home-memo-scroll" style="flex-grow: 0;">
+                                <ui:VisualElement name="home-memo-card-container" class="horizontal-card-scroll-content"/>
+                            </ui:ScrollView>
+                            <ui:Label name="home-memo-empty-label" class="home-memo-empty-label is-hidden" picking-mode="Ignore"/>
+                        </ui:VisualElement>
                     </ui:VisualElement>
                 </ui:VisualElement>
                 <ui:VisualElement class="memo-section" style="flex-grow: 0; margin-bottom: 50px; background-color: rgba(30, 30, 34, 0);">
@@ -36,12 +33,12 @@
                         <ui:VisualElement class="memo-section-header">
                             <ui:Label text="스캔 완료된 맵" class="memo-section-title"/>
                         </ui:VisualElement>
-                        <ui:ScrollView name="scan-map-scroll" mode="Horizontal" horizontal-scroller-visibility="Hidden" vertical-scroller-visibility="Hidden" touch-scroll-type="Elastic" class="memo-scroll" style="flex-grow: 0; height: 900px;">
-                            <ui:VisualElement class="horizontal-card-scroll-content">
-                                <ui:Instance template="ScanMapItem"/>
-                                <ui:Instance template="ScanMapItem"/>
-                            </ui:VisualElement>
-                        </ui:ScrollView>
+                        <ui:VisualElement class="home-map-scroll-frame">
+                            <ui:ScrollView name="scan-map-scroll" mode="Horizontal" horizontal-scroller-visibility="Hidden" vertical-scroller-visibility="Hidden" touch-scroll-type="Elastic" class="memo-scroll home-map-scroll" style="flex-grow: 0;">
+                                <ui:VisualElement name="home-map-card-container" class="horizontal-card-scroll-content"/>
+                            </ui:ScrollView>
+                            <ui:Label name="home-map-empty-label" text="참가 중인 맵이 없습니다." class="home-map-empty-label is-hidden" picking-mode="Ignore"/>
+                        </ui:VisualElement>
                     </ui:VisualElement>
                 </ui:VisualElement>
             </ui:VisualElement>

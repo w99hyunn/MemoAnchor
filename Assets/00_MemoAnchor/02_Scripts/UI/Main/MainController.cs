@@ -36,7 +36,6 @@ namespace MemoAnchor.UI
             _view.TabViewport.RegisterCallback<GeometryChangedEvent>(OnViewportGeometryChanged);
             _isRegistered = true;
             ShowTab(0);
-            _ = _view.RefreshMapListAsync();
             UpdateScanStartAvailability();
         }
 

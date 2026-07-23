@@ -90,6 +90,7 @@ namespace MemoAnchor.UI
             RegisterMemoFilterPage();
             RegisterMemoSearchPage();
             RegisterMapPage();
+            LoadInitialData();
             HideProfileAccountSettings();
             RebuildProfileFriendList();
             ApplyProfileFriendList();

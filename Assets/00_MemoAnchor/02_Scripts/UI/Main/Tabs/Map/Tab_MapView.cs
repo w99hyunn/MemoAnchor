@@ -162,36 +162,43 @@ namespace MemoAnchor.UI
             try
             {
                 ScanMapListResponse response = await _scanMapService.LoadMapsAsync();
-                _scanMaps.Clear();
-                _scanMaps.AddRange(response.maps);
-                if (_readOnlyMap != null && !_scanMaps.Exists(map => map.id == _readOnlyMap.id))
-                {
-                    _scanMaps.Add(_readOnlyMap);
-                }
-
-                if (_scanMaps.Count == 0)
-                {
-                    _selectedMapId = string.Empty;
-                    _openMapAddresses.Clear();
-                }
-                else if (string.IsNullOrWhiteSpace(_selectedMapId) || !_scanMaps.Exists(map => map.id == _selectedMapId))
-                {
-                    _selectedMapId = _scanMaps[0].id;
-                    _openMapAddresses.Add(GetMapAddressKey(_scanMaps[0]));
-                }
-
-                RebuildMapList();
-                ApplySelectedMap();
-                ScanMapItem selectedMap = GetSelectedMap();
-                if (selectedMap != null)
-                {
-                    RebuildMapParticipants(selectedMap);
-                }
+                ApplyMapListResponse(response);
             }
             finally
             {
                 _isMapListLoading = false;
             }
+        }
+
+        private void ApplyMapListResponse(ScanMapListResponse response)
+        {
+            _scanMaps.Clear();
+            _scanMaps.AddRange(response.maps);
+            if (_readOnlyMap != null && !_scanMaps.Exists(map => map.id == _readOnlyMap.id))
+            {
+                _scanMaps.Add(_readOnlyMap);
+            }
+
+            if (_scanMaps.Count == 0)
+            {
+                _selectedMapId = string.Empty;
+                _openMapAddresses.Clear();
+            }
+            else if (string.IsNullOrWhiteSpace(_selectedMapId) || !_scanMaps.Exists(map => map.id == _selectedMapId))
+            {
+                _selectedMapId = _scanMaps[0].id;
+                _openMapAddresses.Add(GetMapAddressKey(_scanMaps[0]));
+            }
+
+            RebuildMapList();
+            ApplySelectedMap();
+            ScanMapItem selectedMap = GetSelectedMap();
+            if (selectedMap != null)
+            {
+                RebuildMapParticipants(selectedMap);
+            }
+
+            RebuildMemoList();
         }
 
         private void ShowMapList()
@@ -385,6 +392,7 @@ namespace MemoAnchor.UI
 
         private void RebuildMapList()
         {
+            RebuildHomeMapCards();
             _mapListContent.Clear();
 
             Dictionary<string, List<ScanMapItem>> mapsByAddress = new(StringComparer.Ordinal);
@@ -1045,6 +1053,7 @@ namespace MemoAnchor.UI
             _scanMaps.AddRange(response.maps);
             RebuildMapList();
             ApplySelectedMap();
+            RebuildMemoList();
             ScanMapItem map = GetSelectedMap();
             if (map != null)
             {

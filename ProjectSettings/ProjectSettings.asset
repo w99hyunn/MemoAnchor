@@ -12,8 +12,8 @@ PlayerSettings:
   targetDevice: 2
   useOnDemandResources: 0
   accelerometerFrequency: 60
-  companyName: Memo Anchor
-  productName: Memo Anchor
+  companyName: xreal
+  productName: "\uBA54\uBAA8\uC575\uCEE4"
   defaultCursor: {fileID: 0}
   cursorHotspot: {x: 0, y: 0}
   m_SplashScreenBackgroundColor: {r: 0, g: 0, b: 0, a: 1}
@@ -145,7 +145,12 @@ PlayerSettings:
   visionOSBundleVersion: 1.0
   tvOSBundleVersion: 1.0
   bundleVersion: 0.1
-  preloadedAssets: []
+  preloadedAssets:
+  - {fileID: 11400000, guid: aae537177c585d043a90fc891f8c9971, type: 2}
+  - {fileID: -2759771288930723977, guid: a851f8e839ecc3f41ada5d3020ac8fa8, type: 2}
+  - {fileID: -5264169070992408723, guid: 5a5493244193d32498dafc4901f38651, type: 2}
+  - {fileID: 4800000, guid: c9f956787b1d945e7b36e0516201fc76, type: 3}
+  - {fileID: 4800000, guid: 0945859e5a1034c2cb6dce53cb4fb899, type: 3}
   metroInputSource: 0
   wsaTransparentSwapchain: 0
   m_HolographicPauseOnTrackingLoss: 1
@@ -167,14 +172,14 @@ PlayerSettings:
   androidMaxAspectRatio: 2.1
   androidMinAspectRatio: 1
   applicationIdentifier:
-    Android: com.MemoAnchor.MemoAnchor
-    iPhone: com.Memo-Anchor.Memo-Anchor
+    Android: com.xreal.memoanchor
+    iPhone: com.xreal.memoanchor
   buildNumber:
     Standalone: 0
     VisionOS: 0
     iPhone: 0
     tvOS: 0
-  overrideDefaultApplicationIdentifier: 0
+  overrideDefaultApplicationIdentifier: 1
   AndroidBundleVersionCode: 1
   AndroidMinSdkVersion: 29
   AndroidTargetSdkVersion: 0
@@ -300,7 +305,7 @@ PlayerSettings:
   - m_BuildTarget: 
     m_Icons:
     - serializedVersion: 2
-      m_Icon: {fileID: 2800000, guid: 7cff294bd56b1a64793e66fb4a9090dc, type: 3}
+      m_Icon: {fileID: 2800000, guid: c5484f5bd1c29de40898e64802107c7b, type: 3}
       m_Width: 128
       m_Height: 128
       m_Kind: 0

@@ -132,7 +132,7 @@
     width: 300px;
     height: 250px;
     margin-bottom: 34px;
-    background-image: url("project://database/Assets/00_MemoAnchor/03_Media/Icon/system/icon_white.png?fileID=2800000&guid=a90bf743c20b64942a4a68d0465a7c3e&type=3#icon_white");
+    background-image: url("project://database/Assets/00_MemoAnchor/03_Media/Icon/system/icon%201.png?fileID=2800000&guid=c5484f5bd1c29de40898e64802107c7b&type=3#icon%201");
     -unity-background-scale-mode: scale-to-fit;
 }
 
@@ -153,8 +153,8 @@
 
 .splash-panel {
     position: absolute;
-    left: 110px;
-    right: 110px;
+    left: 140px;
+    right: 140px;
     bottom: 220px;
     display: flex;
 }
@@ -314,7 +314,7 @@
 }
 
 .memo-tab-mode-page {
-    background-color: rgb(86, 99, 142);
+    background-color: #535E83;
 }
 
 .memo-tab-mode-page.is-admin-mode {
@@ -345,7 +345,7 @@
 }
 
 .home-greeting {
-    font-size: 60px;
+    font-size: 70px;
     -unity-font-definition: url("project://database/Assets/Plugins/UI%20Toolkit/Fonts/Pretendard-SemiBold.ttf?fileID=12800000&guid=7136488b0fb8f924b91754e33f3b5abc&type=3#Pretendard-SemiBold");
 }
 
@@ -353,6 +353,10 @@
     font-size: 50px;
     color: rgb(28, 28, 28);
     -unity-font-definition: url("project://database/Assets/Plugins/UI%20Toolkit/Fonts/Pretendard-SemiBold.ttf?fileID=12800000&guid=7136488b0fb8f924b91754e33f3b5abc&type=3#Pretendard-SemiBold");
+}
+
+#memo-detail-place-label {
+    font-size: 58px;
 }
 
 .header-icon-button {
@@ -381,7 +385,7 @@
 }
 
 #mode-back {
-    background-color: rgb(86, 99, 142);
+    background-color: #535E83;
 }
 
 #mode-back.is-admin-mode {
@@ -433,7 +437,7 @@
     background-color: var(--brand-pink);
     background-image: url("project://database/Assets/00_MemoAnchor/03_Media/Icon/admin.png?fileID=2800000&guid=5b0fcf6366924744cb2f0df276925867&type=3#admin");
     -unity-background-scale-mode: scale-to-fit;
-    -unity-background-image-tint-color: rgb(255, 255, 255);
+    -unity-background-image-tint-color: #FFB6C8;
     align-self: flex-start;
     transition-property: translate, background-color;
     transition-duration: 0.18s;
@@ -443,8 +447,9 @@
 
 .home-mode-toggle.is-work-mode .home-mode-toggle-thumb {
     translate: 84px 0;
-    background-color: rgb(86, 99, 142);
+    background-color: #535E83;
     background-image: url("project://database/Assets/00_MemoAnchor/03_Media/Icon/user.png?fileID=2800000&guid=3a95cf702d6e3e64ca7c035145fdacfd&type=3#user");
+    -unity-background-image-tint-color: #95ABF9;
 }
 
 .memo-section-title {
@@ -462,15 +467,59 @@
     height: 700px;
 }
 
+.home-memo-scroll-frame {
+    position: relative;
+    width: 100%;
+    height: 700px;
+}
+
+.home-memo-scroll {
+    width: 100%;
+    height: 700px;
+}
+
+.home-memo-empty-label {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    font-size: 38px;
+    color: rgba(255, 255, 255, 0.78);
+    -unity-text-align: middle-center;
+}
+
+.home-map-scroll-frame {
+    position: relative;
+    width: 100%;
+    height: 900px;
+}
+
+.home-map-scroll {
+    width: 100%;
+    height: 900px;
+}
+
+.home-map-empty-label {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    font-size: 38px;
+    color: rgb(135, 135, 135);
+    -unity-text-align: middle-center;
+}
+
 .memo-card {
     width: 900px;
     min-width: 760px;
     height: 700px;
     background-color: rgb(255, 255, 255);
-    border-top-left-radius: 80px;
-    border-top-right-radius: 80px;
-    border-bottom-left-radius: 80px;
-    border-bottom-right-radius: 80px;
+    border-top-left-radius: 30px;
+    border-top-right-radius: 30px;
+    border-bottom-left-radius: 30px;
+    border-bottom-right-radius: 30px;
     padding: 28px;
     margin-right: 40px;
     padding-top: 60px;
@@ -593,6 +642,138 @@
     margin-left: auto;
 }
 
+.home-memo-body-text {
+    flex-grow: 1;
+    font-size: 40px;
+    color: rgb(44, 44, 44);
+    white-space: normal;
+}
+
+.home-memo-footer-location {
+    max-width: 330px;
+    margin-left: 30px;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+.home-memo-voice-row {
+    height: 100px;
+}
+
+.home-memo-checkmark {
+    width: 58px;
+    height: 58px;
+    flex-shrink: 0;
+    border-left-width: 4px;
+    border-right-width: 4px;
+    border-top-width: 4px;
+    border-bottom-width: 4px;
+    border-left-color: rgb(155, 155, 155);
+    border-right-color: rgb(155, 155, 155);
+    border-top-color: rgb(155, 155, 155);
+    border-bottom-color: rgb(155, 155, 155);
+    border-top-left-radius: 5px;
+    border-top-right-radius: 5px;
+    border-bottom-left-radius: 5px;
+    border-bottom-right-radius: 5px;
+}
+
+.memo-check-row.is-complete .memo-check-text {
+    color: rgb(165, 165, 165);
+}
+
+.memo-check-row.is-complete .home-memo-checkmark {
+    background-color: rgb(205, 205, 205);
+    background-image: url("project://database/Assets/00_MemoAnchor/03_Media/Icon/check.png?fileID=2800000&guid=cc44cf71ac7687d4c82692e2f8ff010c&type=3#check");
+    -unity-background-scale-mode: scale-to-fit;
+    -unity-background-image-tint-color: rgb(155, 155, 155);
+}
+
+.home-memo-image-gallery {
+    height: 300px;
+    margin-bottom: 10px;
+    overflow: hidden;
+}
+
+.home-memo-image-gallery .unity-scroll-view__content-container {
+    flex-direction: row;
+}
+
+.home-memo-image-preview {
+    width: 245px;
+    height: 280px;
+    flex-shrink: 0;
+    margin-right: 18px;
+    background-color: rgb(225, 225, 225);
+    border-top-left-radius: 14px;
+    border-top-right-radius: 14px;
+    border-bottom-left-radius: 14px;
+    border-bottom-right-radius: 14px;
+    -unity-background-scale-mode: scale-and-crop;
+}
+
+.home-completion-request-card {
+    padding-top: 42px;
+}
+
+.home-completion-title-row {
+    height: 130px;
+    flex-direction: row;
+    align-items: center;
+    padding-left: 38px;
+    padding-right: 38px;
+    margin-bottom: 70px;
+    background-color: rgb(239, 239, 239);
+    border-top-left-radius: 12px;
+    border-top-right-radius: 12px;
+    border-bottom-left-radius: 12px;
+    border-bottom-right-radius: 12px;
+}
+
+.home-completion-title {
+    flex-grow: 1;
+    min-width: 0;
+    font-size: 43px;
+    color: rgb(35, 35, 35);
+    -unity-font-definition: url("project://database/Assets/Plugins/UI%20Toolkit/Fonts/Pretendard-Medium.ttf?fileID=12800000&guid=45ed9c45b09f5f2498d91e1982ab7527&type=3#Pretendard-Medium");
+}
+
+.home-completion-arrow {
+    width: 64px;
+    font-size: 52px;
+    color: rgb(35, 35, 35);
+    -unity-text-align: middle-center;
+}
+
+.home-completion-actions {
+    height: 245px;
+    flex-direction: row;
+    margin-bottom: 38px;
+}
+
+.home-completion-action {
+    flex-grow: 1;
+    height: 245px;
+    margin: 0;
+    padding: 0;
+    border-width: 0;
+    font-size: 43px;
+    -unity-font-definition: url("project://database/Assets/Plugins/UI%20Toolkit/Fonts/Pretendard-SemiBold.ttf?fileID=12800000&guid=7136488b0fb8f924b91754e33f3b5abc&type=3#Pretendard-SemiBold");
+}
+
+.home-completion-action.is-supplement {
+    margin-right: 14px;
+    color: rgb(255, 65, 88);
+    background-color: rgb(255, 215, 220);
+}
+
+.home-completion-action.is-complete {
+    margin-left: 14px;
+    color: #535E83;
+    background-color: rgb(218, 225, 248);
+}
+
 .map-tab-page {
     background-color: rgb(244, 244, 244);
 }
@@ -679,6 +860,10 @@
 #map-memo-page .memo-search-input .unity-base-text-field__input,
 #map-memo-page .memo-search-input .unity-base-text-field__input--placeholder {
     color: rgb(88, 88, 88);
+}
+
+#map-memo-empty-state {
+    flex-grow: 1;
 }
 
 .map-participants-title,
@@ -1132,15 +1317,11 @@
 .scan-map-card {
     width: 760px;
     min-width: 760px;
-    height: 900px;
+    height: 760px;
     margin-right: 32px;
-    border-radius: 28px;
+    border-radius: 30px;
     background-color: rgb(132, 132, 132);
     overflow: hidden;
-    border-top-left-radius: 80px;
-    border-top-right-radius: 80px;
-    border-bottom-right-radius: 80px;
-    border-bottom-left-radius: 80px;
 }
 
 .scan-map-thumbnail {
@@ -1446,7 +1627,7 @@
 }
 
 .memo-search-input {
-    font-size: 50px;
+    font-size: 44px;
     -unity-font-definition: url("project://database/Assets/Plugins/UI%20Toolkit/Fonts/Pretendard-Regular.ttf?fileID=12800000&guid=c19593ccf51a3b643a58d19da7851c10&type=3#Pretendard-Regular");
     background-color: rgba(255, 255, 255, 0);
     height: 110px;
@@ -1469,6 +1650,14 @@
 
 .memo-search-input .unity-base-text-field__input--placeholder {
     color: rgb(222, 222, 226);
+}
+
+#memo-search-input .unity-base-text-field__input {
+    border-color: #95ABF9;
+}
+
+#memo-search-input .unity-base-text-field__input--placeholder {
+    color: #95ABF9;
 }
 
 .memo-search-clear-button {
@@ -1516,7 +1705,7 @@
 }
 
 .memo-list-swipe-row {
-    height: 350px;
+    height: 300px;
     position: relative;
     overflow: hidden;
     background-color: rgb(236, 60, 85);
@@ -1548,7 +1737,7 @@
 }
 
 .memo-list-item {
-    height: 350px;
+    height: 300px;
     position: absolute;
     top: 0;
     left: 0;
@@ -1559,8 +1748,8 @@
     padding-left: 75px;
     padding-right: 75px;
     background-color: rgb(255, 255, 255);
-    padding-top: 75px;
-    padding-bottom: 75px;
+    padding-top: 50px;
+    padding-bottom: 50px;
     transition-property: translate, background-color;
     transition-duration: 0.16s;
     transition-timing-function: ease-out;
@@ -1808,7 +1997,7 @@
     padding-bottom: 0;
     padding-left: 0;
     background-color: rgb(231, 231, 231);
-    border-radius: 28px;
+    border-radius: 30px;
     border-width: 1px;
     border-color: rgb(210, 210, 210);
 }
@@ -2054,7 +2243,7 @@
 }
 
 .memo-filter-date-button.is-selected {
-    border-color: rgb(86, 99, 142);
+    border-color: #535E83;
 }
 
 .memo-filter-date-button.is-selected:hover:enabled {
@@ -2118,7 +2307,7 @@
 }
 
 .memo-filter-date-button.is-selected .memo-filter-calendar-icon {
-    -unity-background-image-tint-color: rgb(86, 99, 142);
+    -unity-background-image-tint-color: #535E83;
 }
 
 .page-overlay.is-admin-mode .memo-filter-date-button.is-selected .memo-filter-calendar-icon {
@@ -2196,7 +2385,7 @@
 .memo-filter-calendar {
     margin-top: 34px;
     border-width: 2px;
-    border-color: rgb(86, 99, 142);
+    border-color: #535E83;
     border-radius: 36px;
     background-color: rgb(255, 255, 255);
     padding-top: 34px;
@@ -2348,7 +2537,7 @@
 
 .memo-filter-calendar-cell.is-selected {
     color: rgb(255, 255, 255);
-    background-color: rgb(86, 99, 142);
+    background-color: #535E83;
     border-radius: 35px;
 }
 
@@ -2408,8 +2597,8 @@
 
 .memo-filter-chip.is-selected,
 .memo-filter-urgency-chip.is-selected {
-    background-color: rgb(86, 99, 142);
-    border-color: rgb(86, 99, 142);
+    background-color: #535E83;
+    border-color: #535E83;
     color: rgb(255, 255, 255);
 }
 
@@ -2518,12 +2707,12 @@
 }
 
 .memo-filter-map-item.is-selected {
-    color: rgb(86, 99, 142);
+    color: #535E83;
     -unity-font-definition: url("project://database/Assets/Plugins/UI%20Toolkit/Fonts/Pretendard-SemiBold.ttf?fileID=12800000&guid=7136488b0fb8f924b91754e33f3b5abc&type=3#Pretendard-SemiBold");
 }
 
 .memo-filter-map-item.is-selected .scan-address-list-text {
-    color: rgb(86, 99, 142);
+    color: #535E83;
     -unity-font-definition: url("project://database/Assets/Plugins/UI%20Toolkit/Fonts/Pretendard-SemiBold.ttf?fileID=12800000&guid=7136488b0fb8f924b91754e33f3b5abc&type=3#Pretendard-SemiBold");
 }
 
@@ -2573,7 +2762,7 @@
     height: 152px;
     border-radius: 64px;
     color: rgb(255, 255, 255);
-    font-size: 42px;
+    font-size: 48px;
     -unity-font-definition: url("project://database/Assets/Plugins/UI%20Toolkit/Fonts/Pretendard-SemiBold.ttf?fileID=12800000&guid=7136488b0fb8f924b91754e33f3b5abc&type=3#Pretendard-SemiBold");
     transition-property: background-color;
     transition-duration: 0.14s;
@@ -2831,7 +3020,7 @@
     width: 38px;
     height: 38px;
     align-self: center;
-    background-image: url("project://database/Assets/00_MemoAnchor/03_Media/Icon/gallery.png");
+    background-image: url("project://database/Assets/00_MemoAnchor/03_Media/Icon/gallery.png?fileID=21300000&guid=b6ea6a9428cc9f944b855613213a02cb&type=3#gallery");
     -unity-background-scale-mode: scale-to-fit;
 }
 
@@ -2935,11 +3124,11 @@
 }
 
 .memo-media-source-gallery-icon {
-    background-image: url("project://database/Assets/00_MemoAnchor/03_Media/Icon/gallery_popup.png");
+    background-image: url("project://database/Assets/00_MemoAnchor/03_Media/Icon/gallery_popup.png?fileID=21300000&guid=86176f397a5aa5e40a376ebc5e84d4a6&type=3#gallery_popup");
 }
 
 .memo-media-source-camera-icon {
-    background-image: url("project://database/Assets/00_MemoAnchor/03_Media/Icon/camera_popup.png");
+    background-image: url("project://database/Assets/00_MemoAnchor/03_Media/Icon/camera_popup.png?fileID=21300000&guid=868397966750d95478ac4dad48cc0793&type=3#camera_popup");
 }
 
 .memo-media-source-label {
@@ -3127,7 +3316,7 @@
 }
 
 .memo-create-voice-item.is-detail .memo-create-voice-item-row.scan-input-box {
-    padding-right: 88px;
+    padding-right: 108px;
     border-radius: 52px;
 }
 
@@ -3136,7 +3325,27 @@
 }
 
 .memo-create-voice-item.is-detail .memo-create-voice-play-button.memo-filter-calendar-close {
-    right: 4px;
+    right: 24px;
+    background-color: rgb(255, 255, 255);
+    border-color: transparent;
+    transition-duration: 0.14s;
+}
+
+.memo-create-voice-item.is-detail .memo-create-voice-play-button.memo-filter-calendar-close:hover:enabled {
+    background-color: rgb(232, 232, 232);
+    border-color: transparent;
+}
+
+.memo-create-voice-item.is-detail .memo-create-voice-play-button.memo-filter-calendar-close:active:enabled {
+    background-color: rgb(218, 218, 218);
+    border-color: transparent;
+}
+
+.memo-create-voice-item.is-detail .memo-create-voice-icon {
+    width: 50px;
+    height: 50px;
+    align-self: center;
+    translate: 0 -3px;
 }
 
 .memo-create-voice-item.is-detail .memo-voice-preview-player {
@@ -3529,7 +3738,7 @@
 .profile-card {
     flex-grow: 0;
     background-color: rgb(255, 255, 255);
-    border-radius: 42px;
+    border-radius: 30px;
     margin-bottom: 38px;
     padding-left: 62px;
     padding-right: 62px;
@@ -3582,7 +3791,7 @@
     padding-left: 24px;
     padding-right: 24px;
     border-radius: 27px;
-    background-color: rgb(86, 99, 142);
+    background-color: #535E83;
     color: rgb(255, 255, 255);
     font-size: 30px;
     -unity-text-align: middle-center;
@@ -3694,7 +3903,7 @@
     height: 78px;
     margin-left: auto;
     border-radius: 39px;
-    background-color: rgb(86, 99, 142);
+    background-color: #535E83;
     align-items: center;
     justify-content: center;
 }
@@ -3758,7 +3967,7 @@
 
 .profile-switch.is-selected .profile-switch-thumb {
     translate: 82px 0;
-    background-color: rgb(86, 99, 142);
+    background-color: #535E83;
 }
 
 .profile-account-settings-page {
@@ -4582,15 +4791,18 @@
 }
 
 .splash-root .splash-action-button {
+    position: relative;
     flex-direction: row;
     align-items: center;
     justify-content: center;
 }
 
 .splash-root .splash-login-icon {
+    position: absolute;
+    left: 44px;
     width: 48px;
     height: 48px;
-    margin-right: 22px;
+    margin-right: 0;
     -unity-background-scale-mode: scale-to-fit;
 }
 
@@ -4605,19 +4817,26 @@
 }
 
 #google-login-button {
-    background-color: rgb(255, 255, 255);
+    margin-top: 28px;
+    background-color: rgba(255, 255, 255, 0);
+    border-width: 3px;
+    border-color: rgb(255, 255, 255);
 }
 
 #google-login-button:hover:enabled {
-    background-color: rgb(245, 245, 245);
+    background-color: rgba(255, 255, 255, 0.1);
+    border-width: 3px;
+    border-color: rgb(255, 255, 255);
 }
 
 #google-login-button:active:enabled {
-    background-color: rgb(232, 232, 232);
+    background-color: rgba(255, 255, 255, 0.18);
+    border-width: 3px;
+    border-color: rgb(255, 255, 255);
 }
 
 #google-login-button .splash-login-label {
-    color: rgb(43, 43, 43);
+    color: rgb(255, 255, 255);
 }
 
 .splash-root .splash-login-icon-kakao {

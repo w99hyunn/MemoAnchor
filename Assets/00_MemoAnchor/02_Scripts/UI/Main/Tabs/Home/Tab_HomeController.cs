@@ -30,6 +30,7 @@ namespace MemoAnchor.UI
             _view.ApplyGreeting(MemoAnchor.PlayerSession.Profile.Name);
             _view.HideAlertDialog();
             _view.ApplyHomeMode(_isHomeWorkMode);
+            _mainTabView.ApplyMemoRoleMode(_isHomeWorkMode);
         }
 
         private void OnDisable()
@@ -51,6 +52,7 @@ namespace MemoAnchor.UI
         {
             _isHomeWorkMode = !_isHomeWorkMode;
             _view.ApplyHomeMode(_isHomeWorkMode);
+            _mainTabView.ApplyMemoRoleMode(_isHomeWorkMode);
         }
 
         private void ShowAlertDialog()

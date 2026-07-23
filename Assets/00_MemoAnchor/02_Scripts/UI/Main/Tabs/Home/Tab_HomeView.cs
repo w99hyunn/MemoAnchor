@@ -48,7 +48,7 @@ namespace MemoAnchor.UI
         {
             if (!string.IsNullOrWhiteSpace(name))
             {
-                _homeGreetingLabel.text = $"{name}님, 안녕하세요";
+                _homeGreetingLabel.text = $"{name}님, 안녕하세요!";
             }
         }
 

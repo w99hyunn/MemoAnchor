@@ -9,9 +9,9 @@
         <ui:VisualElement name="login-panel" class="splash-panel">
             <ui:Button name="kakao-login-button" class="nav-action-button splash-action-button splash-login-button-kakao">
                 <ui:VisualElement class="splash-login-icon splash-login-icon-kakao"/>
-                <ui:Label text="Kakao로 로그인" class="splash-login-label"/>
+                <ui:Label text="카카오로 로그인" class="splash-login-label"/>
             </ui:Button>
-            <ui:Button name="google-login-button" class="nav-action-button splash-action-button" style="margin-top: 16px;">
+            <ui:Button name="google-login-button" class="nav-action-button splash-action-button">
                 <ui:VisualElement class="splash-login-icon splash-login-icon-google"/>
                 <ui:Label text="Google로 로그인" class="splash-login-label"/>
             </ui:Button>

@@ -103,7 +103,7 @@ namespace MemoAnchor
                 AuthCompletion completion = await authService.TryCompleteCachedLoginAsync();
                 if (completion.IsExistingMember)
                 {
-                    SceneManager.LoadScene(mainScene);
+                    await EnterMainSceneAsync();
                     return true;
                 }
             }
@@ -121,6 +121,7 @@ namespace MemoAnchor
 
             isCompletingLogin = false;
             isLoggingIn = false;
+            SetLoginCompletionLoading(false);
             return false;
         }
 
@@ -300,6 +301,7 @@ namespace MemoAnchor
             catch (System.Exception exception)
             {
                 Debug.LogException(exception);
+                SetLoginCompletionLoading(false);
                 SetSignupStatus("회원가입에 실패했습니다. 다시 시도해주세요.");
                 SetSignupButtonEnabled(true);
             }
@@ -419,10 +421,12 @@ namespace MemoAnchor
 
         private async Awaitable EnterMainSceneAsync()
         {
-            SetLoginCompletionLoading(false);
+            SetLoginCompletionLoading(true);
             MemoAnchor.UI.PopupManager.HideConfirm();
-            SetSignupStatus("메인 화면으로 이동합니다.");
+            SetSignupStatus("메인 화면을 불러오는 중입니다.");
+            await MainInitialData.PreloadAsync();
             await fadeTransition.FadeOutAsync();
+            SetLoginCompletionLoading(false);
             SceneManager.LoadScene(mainScene);
         }
 
