@@ -10,6 +10,7 @@ using UnityEngine.Rendering;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 using UnityEngine.XR.ARFoundation;
+using UnityEngine.XR.ARSubsystems;
 
 public static class ARKitMeshScanSceneBuilder
 {
@@ -36,8 +37,9 @@ public static class ARKitMeshScanSceneBuilder
         CreateDirectionalLight();
 
         var arSession = CreateARSession();
-        var xrOrigin = CreateXROrigin(out var arCamera, out var arCameraManager);
+        var xrOrigin = CreateXROrigin(out var arCamera, out var arCameraManager, out var arOcclusionManager);
         var meshManager = CreateMeshManager(xrOrigin.transform, meshPrefab);
+        var planeManager = CreatePlaneManager(xrOrigin.transform);
         var hitMarker = CreateHitMarker(markerMaterial);
         var ui = CreateHud();
 
@@ -45,8 +47,10 @@ public static class ARKitMeshScanSceneBuilder
         var controller = controllerGo.AddComponent<ARKitMeshScanController>();
         SetObject(controller, "arSession", arSession);
         SetObject(controller, "meshManager", meshManager);
+        SetObject(controller, "planeManager", planeManager);
         SetObject(controller, "arCamera", arCamera);
         SetObject(controller, "arCameraManager", arCameraManager);
+        SetObject(controller, "arOcclusionManager", arOcclusionManager);
         SetObject(controller, "meshMaterial", meshMaterial);
         SetObject(controller, "sessionStateText", ui.SessionText);
         SetObject(controller, "meshStatsText", ui.StatsText);
@@ -174,7 +178,7 @@ public static class ARKitMeshScanSceneBuilder
         return session;
     }
 
-    private static XROrigin CreateXROrigin(out Camera arCamera, out ARCameraManager arCameraManager)
+    private static XROrigin CreateXROrigin(out Camera arCamera, out ARCameraManager arCameraManager, out AROcclusionManager arOcclusionManager)
     {
         var originGo = new GameObject("XR Origin");
         var origin = originGo.AddComponent<XROrigin>();
@@ -194,6 +198,9 @@ public static class ARKitMeshScanSceneBuilder
 
         cameraGo.AddComponent<AudioListener>();
         arCameraManager = cameraGo.AddComponent<ARCameraManager>();
+        arOcclusionManager = cameraGo.AddComponent<AROcclusionManager>();
+        arOcclusionManager.requestedEnvironmentDepthMode = EnvironmentDepthMode.Best;
+        arOcclusionManager.environmentDepthTemporalSmoothingRequested = true;
         cameraGo.AddComponent<ARCameraBackground>();
         ConfigureTrackedPoseDriver(cameraGo.AddComponent<TrackedPoseDriver>());
 
@@ -234,6 +241,17 @@ public static class ARKitMeshScanSceneBuilder
         meshManager.concurrentQueueSize = 4;
 
         return meshManager;
+    }
+
+    private static ARPlaneManager CreatePlaneManager(Transform xrOrigin)
+    {
+        var go = new GameObject("AR Plane Manager");
+        go.transform.SetParent(xrOrigin, false);
+        go.transform.localScale = Vector3.one;
+
+        var planeManager = go.AddComponent<ARPlaneManager>();
+        planeManager.requestedDetectionMode = PlaneDetectionMode.Horizontal | PlaneDetectionMode.Vertical;
+        return planeManager;
     }
 
     private static GameObject CreateHitMarker(Material markerMaterial)

@@ -1,157 +1,93 @@
-\# Construction VPS
+# MemoAnchor
 
+iPad(LiDAR)로 공간을 스캔하고, Mac/서버에서 Open3D TSDF로 3D mesh를 복원한 뒤,
+iPad 앱과 웹 뷰어에서 결과를 확인하는 RGB-D reconstruction 파이프라인입니다.
 
+```text
+iPad (Unity + ARKit)          Mac / Server                       확인
+─────────────────────         ────────────────────────           ──────────────
+RGB + Depth + Confidence      POST /upload  → ZIP 수신
++ Camera Pose 기록      ─────▶ Open3D TSDF fusion
+                              result.ply 생성
+                                    │
+                                    ├── GET /result/<scanId> ───▶ iPad 앱 preview
+                                    └── GET /viewer?scan=<id> ──▶ 브라우저 3D 뷰어
+```
 
-Unity 기반 건설 현장용 VPS(Visual Positioning System) 애플리케이션
+## 현재 상태
 
+검증된 offline/online reconstruction 파이프라인입니다.
+실제 스캔 데이터(`scan_20260718_163137`, 301 frames)로 방 구조와 색상이 확인 가능한
+mesh(181,727 vertices / 347,922 triangles, 약 20초)를 생성하는 것까지 확인했습니다.
 
+| 영역 | 상태 |
+| --- | --- |
+| iPad RGB-D 데이터셋 기록 | 동작 |
+| ZIP 패키징 + 서버 업로드 | 동작 |
+| 서버 Open3D TSDF 복원 | 동작 |
+| 브라우저 HTML 뷰어 | 동작 |
+| iPad 앱 내 mesh preview | 동작 |
+| RTAB-Map iOS native 통합 | **보류** (스캐폴딩만 존재, 현재 경로 아님) |
 
-\## 🎯 주요 기능
-
-
-
-\- 📍 Immersal SDK를 활용한 실시간 6-DoF 포즈 추정
-
-\- 🏗️ 건설 현장 커스텀 맵 생성 및 로컬라이제이션
-
-\- 📏 AR 기반 거리 측정
-
-\- 📸 위치 태그가 포함된 현장 사진 촬영
-
-
-
-\## 🔧 개발 환경
-
-
-
-\- Unity 2021.3 LTS 이상
-
-\- Immersal SDK 1.18+
-
-\- AR Foundation 5.0+
-
-\- Android API Level 24+
-
-
-
-\## 📦 설치 방법
-
-
-
-\### 1. 레포 클론
+## 빠른 시작
 
 ```bash
+# 1. Python 환경 (Open3D는 Python 3.10 권장)
+python3.10 -m venv tools/reconstruction/.venv
+tools/reconstruction/.venv/bin/python -m pip install -r tools/reconstruction/requirements.txt
 
-git clone https://github.com/네아이디/construction-vps.git
+# 2. 서버 실행 (Mac)
+tools/reconstruction/.venv/bin/python tools/reconstruction_server/server.py --host 0.0.0.0 --port 8765
 
-cd construction-vps
-
+# 3. Unity 씬에서 업로드 주소 설정 후 iPad로 빌드 → 스캔 → 결과 확인
 ```
 
+전체 절차는 **[docs/GUIDE.md](docs/GUIDE.md)** 를 참고하세요.
 
+## 저장소 구조
 
-\### 2. Unity에서 열기
-
-\- Unity Hub 열기
-
-\- \[Add] > 클론한 폴더 선택
-
-\- 프로젝트 열기
-
-
-
-\### 3. Immersal SDK 설치
-
-1\. https://developers.immersal.com/ 에서 SDK 다운로드
-
-2\. Assets > Import Package > Custom Package
-
-3\. 다운로드한 .unitypackage 선택 후 Import
-
-
-
-\### 4. Immersal 토큰 설정
-
-1\. Immersal 계정 생성 및 API 토큰 발급
-
-2\. Unity: Window > Immersal SDK > Settings
-
-3\. Token 입력
-
-
-
-\## 🚀 사용 방법
-
-
-
-\### 맵 생성
-
-1\. Immersal Mapper 앱 설치 (Google Play/App Store)
-
-2\. 건설 현장 스캔
-
-3\. 클라우드에 업로드
-
-4\. Unity에서 맵 ID로 로드
-
-
-
-\### 앱 빌드
-
-1\. File > Build Settings
-
-2\. Platform: Android 선택
-
-3\. \[Build And Run]
-
-
-
-\## 📁 프로젝트 구조
-
-```
-
+```text
 Assets/
+  Scenes/ARKitMeshScanScene.unity        스캔 씬
+  Scripts_donghyeon/ARKitMeshing/        스캔 컨트롤러 · RGB-D 레코더 · 업로드
+  Editor/                                iOS 빌드 · 씬 빌더 에디터 스크립트
+  Plugins/iOS/                           네이티브 플러그인 (RTAB-Map 스텁, 보류)
+  Shaders/PreviewVertexColors.shader     vertex color preview 셰이더
 
-├── Scenes/           # Unity 씬 파일
+tools/
+  reconstruction/                        Open3D 오프라인 복원 파이프라인
+    reconstruct_open3d_tsdf.py           TSDF 복원 메인
+    inspect_rgbd_frame.py                단일 프레임 진단
+    reconstruction_common.py             좌표 변환 · 데이터셋 로더
+    viewer.html                          단독 실행형 웹 뷰어
+  reconstruction_server/                 업로드 수신 + 복원 워커 + /viewer 서버
+  validate_rgbd_dataset.py               데이터셋 무결성 검증
+  rtabmap_ios/                           RTAB-Map iOS 연동 스캐폴딩 (보류)
 
-│   └── MainScene.unity
-
-├── Scripts/          # C# 스크립트
-
-│   └── VPSManager.cs
-
-├── Prefabs/          # 프리팹
-
-└── Resources/        # 리소스 파일
-
+docs/
+  GUIDE.md                               셋업 · 실행 가이드
+  reconstruction_end_to_end_summary.md   전체 검증 기록
+  reconstruction_summary_short.md        요약 + 결과 이미지
 ```
 
+## 요구 사항
 
+- Unity 2021.3 LTS 이상 (AR Foundation 5.x / ARKit)
+- LiDAR 탑재 iPad 또는 iPhone (iOS 16+)
+- macOS + Xcode (iOS 빌드용)
+- Python 3.10 + Open3D (복원 서버용)
 
-\## 🔑 환경 변수
+## 환경 변수
 
+실제 키는 커밋되지 않습니다. 예시 파일을 복사해서 사용하세요.
 
+```bash
+cp .env.example .env
+cp Assets/StreamingAssets/gemini.env.example Assets/StreamingAssets/gemini.env
+```
 
-`.gitignore`에 의해 제외된 민감 파일:
+`.env` / `gemini.env` / `ImmersalSDKToken.asset` 은 `.gitignore` 로 제외되어 있습니다.
 
-\- `ImmersalSDKToken.asset` - Immersal API 토큰
-
-
-
-
-\## 📝 라이선스
-
-
+## 라이선스
 
 MIT License
-
-
-
-\## 🙏 Acknowledgments
-
-
-
-\- Immersal SDK
-
-\- Unity AR Foundation
-

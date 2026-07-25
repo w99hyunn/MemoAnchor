@@ -1,0 +1,204 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>MemoAnchor Reconstruction Viewer</title>
+  <style>
+    html, body {
+      width: 100%;
+      height: 100%;
+      margin: 0;
+      overflow: hidden;
+      background: #111417;
+      color: #e7edf2;
+      font: 14px/1.4 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+    #toolbar {
+      position: absolute;
+      top: 12px;
+      left: 12px;
+      z-index: 10;
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      padding: 10px;
+      background: rgba(18, 22, 27, 0.88);
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 8px;
+      backdrop-filter: blur(8px);
+    }
+    button, select {
+      height: 34px;
+      border: 1px solid rgba(255,255,255,0.18);
+      border-radius: 6px;
+      background: #202833;
+      color: #e7edf2;
+      padding: 0 10px;
+      font: inherit;
+    }
+    button:hover, select:hover { background: #2b3542; }
+    #status {
+      position: absolute;
+      left: 12px;
+      bottom: 12px;
+      z-index: 10;
+      max-width: min(760px, calc(100vw - 24px));
+      padding: 8px 10px;
+      background: rgba(18, 22, 27, 0.88);
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 8px;
+      color: #b9c4ce;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    canvas { display: block; }
+  </style>
+</head>
+<body>
+  <div id="toolbar">
+    <select id="model">
+      <option value="full_scan_rotate270_color90_candidate/fused_mesh_clean.ply">colored mesh PLY</option>
+      <option value="full_scan_rotate270_color90_candidate/fused_point_cloud.ply">colored point cloud PLY</option>
+      <option value="full_scan_rotate270/fused_mesh_clean.ply">geometry mesh PLY</option>
+      <option value="full_scan_rotate270/fused_point_cloud.ply">geometry point cloud PLY</option>
+      <option value="full_scan_rotate270/fused_mesh_clean.obj">geometry mesh OBJ</option>
+    </select>
+    <button id="load">Load</button>
+    <button id="reset">Reset View</button>
+  </div>
+  <div id="status">Ready</div>
+
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.166.1/build/three.module.js",
+        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.166.1/examples/jsm/"
+      }
+    }
+  </script>
+  <script type="module">
+    import * as THREE from 'three';
+    import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+    import { PLYLoader } from 'three/addons/loaders/PLYLoader.js';
+    import { OBJLoader } from 'three/addons/loaders/OBJLoader.js';
+
+    const status = document.getElementById('status');
+    const select = document.getElementById('model');
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x111417);
+
+    const camera = new THREE.PerspectiveCamera(55, window.innerWidth / window.innerHeight, 0.01, 1000);
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    document.body.appendChild(renderer.domElement);
+
+    const controls = new OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+
+    scene.add(new THREE.HemisphereLight(0xffffff, 0x26313a, 1.7));
+    const sun = new THREE.DirectionalLight(0xffffff, 2.2);
+    sun.position.set(4, 8, 6);
+    scene.add(sun);
+    const grid = new THREE.GridHelper(8, 32, 0x3b4652, 0x222a33);
+    scene.add(grid);
+
+    let current = null;
+
+    function setStatus(text) {
+      status.textContent = text;
+    }
+
+    function clearCurrent() {
+      if (!current) return;
+      scene.remove(current);
+      current.traverse?.((child) => {
+        child.geometry?.dispose?.();
+        if (Array.isArray(child.material)) child.material.forEach((m) => m.dispose?.());
+        else child.material?.dispose?.();
+      });
+      current = null;
+    }
+
+    function fitCamera(object) {
+      const box = new THREE.Box3().setFromObject(object);
+      const size = box.getSize(new THREE.Vector3());
+      const center = box.getCenter(new THREE.Vector3());
+      const maxDim = Math.max(size.x, size.y, size.z) || 1;
+      const distance = maxDim / (2 * Math.tan(THREE.MathUtils.degToRad(camera.fov / 2))) * 1.6;
+      camera.position.set(center.x + distance, center.y + distance * 0.55, center.z + distance);
+      camera.near = Math.max(0.01, distance / 1000);
+      camera.far = distance * 1000;
+      camera.updateProjectionMatrix();
+      controls.target.copy(center);
+      controls.update();
+    }
+
+    function materialForGeometry(geometry, asPoints) {
+      const hasColor = Boolean(geometry.getAttribute('color'));
+      if (asPoints) {
+        return new THREE.PointsMaterial({
+          size: 0.012,
+          vertexColors: hasColor,
+          color: hasColor ? 0xffffff : 0xb9c4ce,
+          sizeAttenuation: true
+        });
+      }
+      return new THREE.MeshStandardMaterial({
+        vertexColors: hasColor,
+        color: hasColor ? 0xffffff : 0xb9c4ce,
+        roughness: 0.82,
+        metalness: 0.0,
+        side: THREE.DoubleSide
+      });
+    }
+
+    function loadModel(path) {
+      clearCurrent();
+      setStatus(`Loading ${path} ...`);
+      const isPointCloud = path.includes('point_cloud');
+      if (path.endsWith('.ply')) {
+        new PLYLoader().load(path, (geometry) => {
+          geometry.computeVertexNormals?.();
+          current = isPointCloud
+            ? new THREE.Points(geometry, materialForGeometry(geometry, true))
+            : new THREE.Mesh(geometry, materialForGeometry(geometry, false));
+          scene.add(current);
+          fitCamera(current);
+          setStatus(`Loaded ${path}`);
+        }, undefined, (error) => setStatus(`Load failed: ${error.message || error}`));
+        return;
+      }
+      if (path.endsWith('.obj')) {
+        new OBJLoader().load(path, (object) => {
+          object.traverse((child) => {
+            if (child.isMesh) child.material = materialForGeometry(child.geometry, false);
+          });
+          current = object;
+          scene.add(current);
+          fitCamera(current);
+          setStatus(`Loaded ${path}`);
+        }, undefined, (error) => setStatus(`Load failed: ${error.message || error}`));
+      }
+    }
+
+    document.getElementById('load').addEventListener('click', () => loadModel(select.value));
+    document.getElementById('reset').addEventListener('click', () => current && fitCamera(current));
+    window.addEventListener('resize', () => {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+
+    function animate() {
+      requestAnimationFrame(animate);
+      controls.update();
+      renderer.render(scene, camera);
+    }
+    animate();
+    loadModel(select.value);
+  </script>
+</body>
+</html>
