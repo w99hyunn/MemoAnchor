@@ -19,12 +19,16 @@ iPad 스캔 → 서버 복원 → iPad/웹 확인까지의 전체 절차입니�
 | 항목 | 요구 사항 |
 | --- | --- |
 | 기기 | LiDAR 탑재 iPad / iPhone (iOS 16 이상) |
-| Unity | 2021.3 LTS 이상, AR Foundation 5.x + ARKit XR Plugin |
+| Unity | **2022.3.62f3** — 다른 버전으로 열면 업그레이드 프롬프트가 뜹니다 |
+| Unity 패키지 | AR Foundation 5.2.0 + ARKit XR Plugin 5.2.0 (자동 설치) |
 | Mac | macOS + Xcode (iOS 빌드/서명) |
 | Python | 3.10 (Open3D 호환 버전) |
 | 네트워크 | iPad와 Mac이 **같은 Wi-Fi** 에 연결 |
 
 > Open3D는 Python 3.13에서 설치되지 않는 경우가 많습니다. 3.10 가상환경을 따로 만드는 것을 권장합니다.
+
+Unity 패키지는 `Packages/packages-lock.json` 이 커밋되어 있어 프로젝트를 여는 순간 자동 해석됩니다.
+따로 임포트할 SDK나 유니티패키지는 없습니다.
 
 ---
 
@@ -43,6 +47,10 @@ tools/reconstruction/.venv/bin/python -m pip install -r tools/reconstruction/req
 ```bash
 tools/reconstruction/.venv/bin/python -c "import open3d; print(open3d.__version__)"
 ```
+
+> **경로를 바꾸지 마세요.** 서버는 `tools/reconstruction/.venv/bin/python` 이 존재하면 그 인터프리터로
+> 복원 스크립트를 실행하고, 없으면 서버 자신의 인터프리터로 폴백합니다. 다른 위치에 venv를 만들면
+> 폴백된 인터프리터에 Open3D가 없어서 복원이 조용히 실패합니다.
 
 ---
 

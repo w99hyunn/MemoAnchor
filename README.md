@@ -72,10 +72,16 @@ docs/
 
 ## 요구 사항
 
-- Unity 2021.3 LTS 이상 (AR Foundation 5.x / ARKit)
-- LiDAR 탑재 iPad 또는 iPhone (iOS 16+)
-- macOS + Xcode (iOS 빌드용)
-- Python 3.10 + Open3D (복원 서버용)
+| 항목 | 버전 |
+| --- | --- |
+| Unity | **2022.3.62f3** (프로젝트에 고정된 버전) |
+| AR Foundation / ARKit XR Plugin | 5.2.0 — `packages-lock.json` 으로 자동 해석됨 |
+| 기기 | LiDAR 탑재 iPad / iPhone, iOS 16+ |
+| Mac | macOS + Xcode (iOS 빌드·서명) |
+| Python | 3.10 (Open3D 호환 버전) |
+
+Unity 패키지는 `Packages/packages-lock.json` 이 함께 커밋되어 있으므로 프로젝트를 열면
+자동으로 동일 버전이 설치됩니다. 별도로 받을 SDK는 없습니다.
 
 ## 환경 변수
 
