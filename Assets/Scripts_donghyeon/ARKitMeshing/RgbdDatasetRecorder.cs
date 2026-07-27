@@ -301,6 +301,8 @@ public sealed class RgbdDatasetRecorder : IDisposable
         AppendJson(json, "ar_foundation_version", metadata.ar_foundation_version, true);
         AppendJson(json, "operating_system", metadata.operating_system, true);
         AppendJson(json, "device_model", metadata.device_model, true);
+        AppendJson(json, "runtime_platform", metadata.runtime_platform, true);
+        AppendJson(json, "depth_provider", metadata.depth_provider, true);
         AppendJson(json, "target_frame_rate_hz", metadata.target_frame_rate_hz, true);
         AppendJson(json, "max_rgb_depth_timestamp_difference_ms", metadata.max_rgb_depth_timestamp_difference_ms, true);
         AppendJson(json, "max_write_queue", metadata.max_write_queue, true);

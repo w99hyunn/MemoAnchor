@@ -61,6 +61,8 @@ public sealed class RgbdSessionMetadata
     public string ar_foundation_version;
     public string operating_system;
     public string device_model;
+    public string runtime_platform;
+    public string depth_provider;
     public float target_frame_rate_hz;
     public double max_rgb_depth_timestamp_difference_ms;
     public int max_write_queue;

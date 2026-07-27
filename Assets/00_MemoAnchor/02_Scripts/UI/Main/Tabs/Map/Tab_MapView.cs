@@ -42,6 +42,7 @@ namespace MemoAnchor.UI
         private int _mapListTransitionToken, _mapParticipantsTransitionToken, _mapFriendInviteTransitionToken;
         private int _mapFriendInviteVisibleCount;
         private bool _isMapListLoading;
+        private string _preferredMapId = string.Empty;
 
         private void RegisterMapPage()
         {
@@ -182,7 +183,12 @@ namespace MemoAnchor.UI
                 _scanMaps.Add(_readOnlyMap);
             }
 
-            if (_scanMaps.Count == 0)
+            if (!string.IsNullOrWhiteSpace(_preferredMapId) && _scanMaps.Exists(map => map.id == _preferredMapId))
+            {
+                _selectedMapId = _preferredMapId;
+                _openMapAddresses.Add(GetMapAddressKey(_scanMaps.Find(map => map.id == _preferredMapId)));
+            }
+            else if (_scanMaps.Count == 0)
             {
                 _selectedMapId = string.Empty;
                 _openMapAddresses.Clear();
@@ -192,6 +198,7 @@ namespace MemoAnchor.UI
                 _selectedMapId = _scanMaps[0].id;
                 _openMapAddresses.Add(GetMapAddressKey(_scanMaps[0]));
             }
+            _preferredMapId = string.Empty;
 
             RebuildMapList();
             ApplySelectedMap();
@@ -554,14 +561,18 @@ namespace MemoAnchor.UI
                 return;
             }
 
-            _ = OpenSelectedMapReconstructionAsync(map);
+            OpenSelectedMapReconstruction(map);
         }
 
-        private async Awaitable OpenSelectedMapReconstructionAsync(ScanMapItem map)
+        private void OpenSelectedMapReconstruction(ScanMapItem map)
         {
             MapScanSession.BeginResultView(map.id, map.reconstructionScanId, map.reconstructionResultFile);
-            SceneHistoryManager.SaveCurrentScene();
-            await _fadeTransition.FadeOutAndLoadSceneAsync(MapScanSession.SCAN_SCENE_NAME);
+            ScanSceneRequested?.Invoke();
+        }
+
+        public void PreferMapSelection(string mapId)
+        {
+            _preferredMapId = mapId?.Trim() ?? string.Empty;
         }
 
         private void RefreshMapParticipantsSummary(ScanMapItem map)

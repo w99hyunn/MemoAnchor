@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using UnityEngine.UIElements;
 
 namespace MemoAnchor.UI
@@ -14,9 +15,11 @@ namespace MemoAnchor.UI
         private Tab_ScanView _scanView;
         private Tab_ScanController _scanController;
         private FadeTransition _fadeTransition;
+        private Camera _mainCamera;
         private int _currentTabIndex;
         private bool _isScanNavModeActive;
         private bool _isRegistered;
+        private bool _isOpeningScanScene;
 
         private void Awake()
         {
@@ -24,6 +27,7 @@ namespace MemoAnchor.UI
             TryGetComponent<Tab_ScanView>(out _scanView);
             TryGetComponent<Tab_ScanController>(out _scanController);
             TryGetComponent<FadeTransition>(out _fadeTransition);
+            _mainCamera = Camera.main;
         }
 
         private void Start()
@@ -35,8 +39,10 @@ namespace MemoAnchor.UI
             _view.ProfileButton.clicked += OnClickProfile;
             _view.ScanStartButton.clicked += OnClickScanStart;
             _view.TabSwitchRequested += ShowTab;
+            _view.ScanSceneRequested += OnScanSceneRequested;
             _scanView.ScanStartReadinessChanged += UpdateScanStartAvailability;
             _view.TabViewport.RegisterCallback<GeometryChangedEvent>(OnViewportGeometryChanged);
+            SceneManager.sceneUnloaded += OnSceneUnloaded;
             _isRegistered = true;
             ShowTab(0);
             UpdateScanStartAvailability();
@@ -56,8 +62,10 @@ namespace MemoAnchor.UI
             _view.ProfileButton.clicked -= OnClickProfile;
             _view.ScanStartButton.clicked -= OnClickScanStart;
             _view.TabSwitchRequested -= ShowTab;
+            _view.ScanSceneRequested -= OnScanSceneRequested;
             _scanView.ScanStartReadinessChanged -= UpdateScanStartAvailability;
             _view.TabViewport.UnregisterCallback<GeometryChangedEvent>(OnViewportGeometryChanged);
+            SceneManager.sceneUnloaded -= OnSceneUnloaded;
             _isRegistered = false;
         }
 
@@ -129,8 +137,71 @@ namespace MemoAnchor.UI
         private async Awaitable StartScanAsync()
         {
             MapScanSession.BeginScan(_scanController.CreateScanDraft());
-            SceneHistoryManager.SaveCurrentScene();
-            await _fadeTransition.FadeOutAndLoadSceneAsync(MapScanSession.SCAN_SCENE_NAME);
+            await OpenScanSceneAsync();
+        }
+
+        private void OnScanSceneRequested()
+        {
+            _ = OpenScanSceneAsync();
+        }
+
+        private async Awaitable OpenScanSceneAsync()
+        {
+            if (_isOpeningScanScene || SceneManager.GetSceneByName(MapScanSession.SCAN_SCENE_NAME).isLoaded)
+            {
+                return;
+            }
+
+            _isOpeningScanScene = true;
+            await _fadeTransition.FadeOutAsync();
+            _view.SetScanSceneActive(true);
+            _mainCamera.gameObject.SetActive(false);
+
+            SceneManager.LoadScene(MapScanSession.SCAN_SCENE_NAME, LoadSceneMode.Additive);
+            Scene scanScene = SceneManager.GetSceneByName(MapScanSession.SCAN_SCENE_NAME);
+            if (scanScene.IsValid() && scanScene.isLoaded)
+            {
+                SceneManager.SetActiveScene(scanScene);
+            }
+            _isOpeningScanScene = false;
+        }
+
+        private void OnSceneUnloaded(Scene scene)
+        {
+            if (scene.name != MapScanSession.SCAN_SCENE_NAME)
+            {
+                return;
+            }
+
+            Scene mainScene = gameObject.scene;
+            if (mainScene.IsValid() && mainScene.isLoaded)
+            {
+                SceneManager.SetActiveScene(mainScene);
+            }
+
+            _mainCamera.gameObject.SetActive(true);
+            _view.SetScanSceneActive(false);
+
+            bool returnToMap = MapScanSession.ReturnToMapOnClose;
+            bool completedNewScan = returnToMap && !MapScanSession.IsViewingStoredResult;
+            string returnMapId = MapScanSession.HasActiveMap ? MapScanSession.MapId : string.Empty;
+            if (!returnToMap)
+            {
+                _isScanNavModeActive = true;
+                ShowTab(2);
+            }
+            else
+            {
+                if (completedNewScan)
+                {
+                    _scanView.ResetScanForm();
+                }
+                _view.PreferMapSelection(returnMapId);
+                ShowTab(3);
+            }
+
+            MapScanSession.Clear();
+            _ = _fadeTransition.FadeInAsync();
         }
 
         private void ShowTab(int tabIndex)

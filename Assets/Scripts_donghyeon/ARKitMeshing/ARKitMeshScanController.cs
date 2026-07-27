@@ -80,6 +80,15 @@ public class ARKitMeshScanController : MonoBehaviour
     [SerializeField] private float rgbdRecorderFrameIntervalSeconds = 0.2f;
     [SerializeField] private int rgbdRecorderMaxQueue = 4;
 
+    [Header("Android Depth Scan")]
+    [SerializeField] private int androidDepthPreviewMaxFrames = 48;
+    [SerializeField] private int androidDepthPreviewMaxPointsPerFrame = 1800;
+    [SerializeField] private int androidDepthPreviewPixelStride = 6;
+    [SerializeField] private float androidDepthMinMeters = 0.15f;
+    [SerializeField] private float androidDepthMaxMeters = 5f;
+    [SerializeField] private float androidDepthTriangleMaxDifferenceMeters = 0.18f;
+    [SerializeField] private float androidMaxRgbDepthTimestampDeltaSeconds = 0.12f;
+
     [Header("Scan Guidance")]
     [SerializeField] private bool showScanQualityGuidance = true;
     [SerializeField] private bool requireMinimumQualityToStop = true;
@@ -153,6 +162,7 @@ public class ARKitMeshScanController : MonoBehaviour
     private bool previewHasProjectedColors;
     private float previewProjectedColorCoverage;
     private bool reconstructionPackageRunning;
+    private bool reconstructionCompletedSuccessfully;
     private bool mapConfirmationRunning;
     private readonly ScanMapService scanMapService = new();
     private static Mesh surfacePointMesh;
@@ -161,6 +171,7 @@ public class ARKitMeshScanController : MonoBehaviour
     private readonly List<VisualKeyframe> keyframes = new List<VisualKeyframe>(32);
     private float nextKeyframeCaptureTime;
     private float nextCoverageOverlayRefreshTime;
+    private float stopGuidanceHoldUntil;
     private Vector3 lastKeyframePosition;
     private Quaternion lastKeyframeRotation = Quaternion.identity;
     private bool hasLastKeyframePose;
@@ -176,6 +187,9 @@ public class ARKitMeshScanController : MonoBehaviour
     private float nextRgbdRecorderFrameTime;
     private int nextRgbdRecorderFrameId;
     private string lastRgbdRecorderDatasetPath = string.Empty;
+    private bool depthOnlyPreview;
+
+    private static bool IsAndroidDepthScan => Application.platform == RuntimePlatform.Android;
 
     private void Awake()
     {
@@ -272,7 +286,9 @@ public class ARKitMeshScanController : MonoBehaviour
     {
         SetButtonLabel(resetButton, "Scan");
         SetButtonLabel(exportButton, "Stop");
-        SetExportStatus("Ready. Tap Scan to start ARKit mesh mapping.");
+        SetExportStatus(IsAndroidDepthScan
+            ? "Ready. Tap Scan to start ARCore Depth mapping."
+            : "Ready. Tap Scan to start ARKit mesh mapping.");
         SetScanningEnabled(false);
         SetLiveMeshesVisible(false);
         EnsurePreviewCamera();
@@ -363,8 +379,10 @@ public class ARKitMeshScanController : MonoBehaviour
         hasLastKeyframePose = false;
         scanId = DateTime.UtcNow.ToString("yyyyMMdd_HHmmss");
         scanStartTime = Time.time;
+        stopGuidanceHoldUntil = 0f;
         geminiEnhancementRunning = false;
         reconstructionPackageRunning = false;
+        reconstructionCompletedSuccessfully = false;
         latestScanQuality = null;
         latestCoverageSummary = null;
         skippedFastMotionFrames = 0;
@@ -373,6 +391,7 @@ public class ARKitMeshScanController : MonoBehaviour
         nextRgbdRecorderFrameTime = 0f;
         nextRgbdRecorderFrameId = 1;
         lastRgbdRecorderDatasetPath = string.Empty;
+        depthOnlyPreview = false;
 
         DestroyPreview();
         DestroyLiveCoverageOverlay();
@@ -380,8 +399,9 @@ public class ARKitMeshScanController : MonoBehaviour
         if (meshManager)
         {
             meshManager.gameObject.SetActive(true);
-            meshManager.enabled = true;
-            meshManager.DestroyAllMeshes();
+            meshManager.enabled = !IsAndroidDepthScan;
+            if (!IsAndroidDepthScan)
+                meshManager.DestroyAllMeshes();
         }
 
         if (planeManager)
@@ -409,7 +429,9 @@ public class ARKitMeshScanController : MonoBehaviour
         previewMouseDragging = false;
         previousPinchDistance = 0f;
 
-        SetExportStatus("Scanning... move slowly around the space.");
+        SetExportStatus(IsAndroidDepthScan
+            ? "Scanning with ARCore Depth... move slowly around the space."
+            : "Scanning... move slowly around the space.");
         StartRgbdRecorder();
         UpdateSessionState(ARSession.state);
         UpdateButtonStates();
@@ -421,7 +443,7 @@ public class ARKitMeshScanController : MonoBehaviour
         if (MapScanSession.IsViewingStoredResult || reconstructionPackageRunning)
             return;
 
-        if (!meshManager)
+        if (!meshManager && !IsAndroidDepthScan)
         {
             SetExportStatus("Stop failed: ARMeshManager missing");
             return;
@@ -430,10 +452,21 @@ public class ARKitMeshScanController : MonoBehaviour
         if (scanMode != ScanMode.Scanning)
             return;
 
-        var bounds = BuildPreviewFromLiveMeshes();
+        var bounds = meshManager ? BuildPreviewFromLiveMeshes() : null;
+        if (!bounds.HasValue && IsAndroidDepthScan)
+        {
+            bounds = BuildPreviewFromDepthKeyframes();
+            depthOnlyPreview = bounds.HasValue;
+        }
+
         if (!bounds.HasValue)
         {
-            SetExportStatus("No map data yet. Move the phone to scan first.");
+            stopGuidanceHoldUntil = Time.unscaledTime + 8f;
+            SetExportStatus(IsAndroidDepthScan
+                ? IsEnvironmentDepthUnsupported()
+                    ? "이 기기는 ARCore Depth 스캔을 지원하지 않습니다."
+                    : "아직 Depth 데이터가 부족합니다.\n천천히 이동하며 벽과 바닥을 더 비춰주세요."
+                : "아직 맵 데이터가 없습니다.\n휴대폰을 움직여 공간을 더 스캔해주세요.");
             UpdateButtonStates();
             return;
         }
@@ -442,9 +475,10 @@ public class ARKitMeshScanController : MonoBehaviour
         if (requireMinimumQualityToStop && latestScanQuality != null && latestScanQuality.score < minimumStopQualityScore)
         {
             DestroyPreview();
+            stopGuidanceHoldUntil = Time.unscaledTime + 8f;
             SetExportStatus(
-                "Scan needs more coverage before stopping.\n" +
-                latestScanQuality.primaryGuidance);
+                $"아직 완료할 수 없습니다.\n품질 {latestScanQuality.score:0}% / 필요 {minimumStopQualityScore:0}%\n" +
+                "계속 스캔한 뒤 Stop을 다시 눌러주세요.");
             UpdateButtonStates();
             return;
         }
@@ -458,9 +492,11 @@ public class ARKitMeshScanController : MonoBehaviour
 
         BuildVisualKeyframePreview(bounds.Value);
 
-        SetExportStatus(previewHasProjectedColors
-            ? $"Scan stopped. Showing photo-projected LiDAR map.\nCoverage: {previewProjectedColorCoverage:P0}"
-            : "Scan stopped. Showing clean structural map.");
+        SetExportStatus(depthOnlyPreview
+            ? "Scan stopped. Showing ARCore Depth preview."
+            : previewHasProjectedColors
+                ? $"Scan stopped. Showing photo-projected LiDAR map.\nCoverage: {previewProjectedColorCoverage:P0}"
+                : "Scan stopped. Showing clean structural map.");
 
         _ = FinalizeCompletedScanAsync(bounds.Value);
 
@@ -543,6 +579,7 @@ public class ARKitMeshScanController : MonoBehaviour
             if (!packageReconstructionScanOnStop)
             {
                 SetExportStatus("Scan complete. Map saved.");
+                reconstructionCompletedSuccessfully = MapScanSession.HasActiveMap;
                 return;
             }
 
@@ -550,6 +587,10 @@ public class ARKitMeshScanController : MonoBehaviour
                 && (MapScanSession.HasActiveMap || !string.IsNullOrWhiteSpace(reconstructionUploadUrl)))
             {
                 await UploadReconstructionPackageAsync(zipPath);
+            }
+            else
+            {
+                reconstructionCompletedSuccessfully = MapScanSession.HasActiveMap;
             }
         }
         catch (Exception ex)
@@ -562,6 +603,11 @@ public class ARKitMeshScanController : MonoBehaviour
             mapConfirmationRunning = false;
             reconstructionPackageRunning = false;
             UpdateButtonStates();
+            if (MapScanSession.HasActiveMap && reconstructionCompletedSuccessfully)
+            {
+                MapScanSession.RequestReturnToMap();
+                CloseScanScene();
+            }
         }
     }
 
@@ -577,7 +623,7 @@ public class ARKitMeshScanController : MonoBehaviour
 
         Directory.CreateDirectory(framesFolder);
 
-        if (meshManager && meshManager.meshes != null)
+        if (HasLiveMeshData())
             WriteObj(Path.Combine(scanFolder, "raw_mesh.obj"), meshManager.meshes);
 
         var rgbdDatasetFolder = string.Empty;
@@ -600,6 +646,8 @@ public class ARKitMeshScanController : MonoBehaviour
             scanId = id,
             capturedAtUtc = DateTime.UtcNow.ToString("o"),
             durationSeconds = Mathf.Max(0f, Time.time - scanStartTime),
+            runtimePlatform = Application.platform.ToString(),
+            depthOnlyReconstruction = depthOnlyPreview,
             coordinateSystem = "Unity world space, meters",
             hasRawMeshObj = File.Exists(Path.Combine(scanFolder, "raw_mesh.obj")),
             hasRgbdRecorderDataset = !string.IsNullOrWhiteSpace(rgbdDatasetFolder),
@@ -958,6 +1006,7 @@ public class ARKitMeshScanController : MonoBehaviour
 
             ShowServerReconstructionPreview(mesh, serverScanId, localPath);
             SetExportStatus($"Server reconstruction loaded in app.\n{mesh.vertexCount:N0} vertices / {mesh.triangles.Length / 3:N0} triangles");
+            reconstructionCompletedSuccessfully = true;
         }
     }
 
@@ -1075,6 +1124,20 @@ public class ARKitMeshScanController : MonoBehaviour
 
     private void GoBack()
     {
+        CloseScanScene();
+    }
+
+    private void CloseScanScene()
+    {
+        Scene scanScene = gameObject.scene;
+        Scene mainScene = SceneManager.GetSceneByName(fallbackSceneName);
+        if (mainScene.IsValid() && mainScene.isLoaded && scanScene != mainScene)
+        {
+            SceneManager.SetActiveScene(mainScene);
+            SceneManager.UnloadSceneAsync(scanScene);
+            return;
+        }
+
         var targetScene = fallbackSceneName;
 
         try
@@ -1117,11 +1180,13 @@ public class ARKitMeshScanController : MonoBehaviour
             ar_foundation_version = typeof(ARSession).Assembly.GetName().Version?.ToString() ?? "unknown",
             operating_system = SystemInfo.operatingSystem,
             device_model = SystemInfo.deviceModel,
+            runtime_platform = Application.platform.ToString(),
+            depth_provider = IsAndroidDepthScan ? "ARCore" : "ARKit",
             target_frame_rate_hz = frameRate,
-            max_rgb_depth_timestamp_difference_ms = Mathf.Max(0.001f, maxRgbDepthTimestampDeltaSeconds) * 1000d,
+            max_rgb_depth_timestamp_difference_ms = GetRgbDepthTimestampLimitSeconds() * 1000d,
             rgb_format = "jpg",
             depth_format = "raw XRCpuImage plane 0",
-            depth_unit = "meters when AR Foundation provider reports a float depth image; raw format is stored per frame",
+            depth_unit = "meters; DepthUint16 provider frames are normalized to contiguous DepthFloat32 before recording",
             coordinate_system = "Unity world space, meters, left-handed scene convention: +X right, +Y up",
             camera_forward_convention = "Unity camera Transform.forward is local +Z in world direction; view space convention is not converted here",
             pose_convention = "camera-to-world transform from AR camera transform",
@@ -1190,9 +1255,15 @@ public class ARKitMeshScanController : MonoBehaviour
         var qualityText = string.Empty;
         if (showScanQualityGuidance && latestScanQuality != null)
         {
+            var finishGuidance = scanMode == ScanMode.Preview
+                ? "Completed - tap Back"
+                : !requireMinimumQualityToStop || latestScanQuality.score >= minimumStopQualityScore
+                    ? "Ready - tap Stop to finish"
+                    : $"Not ready - need {minimumStopQualityScore - latestScanQuality.score:0}% more";
             qualityText =
                 $"\nQuality: {latestScanQuality.score:0}% ({latestScanQuality.grade})\n" +
-                $"Depth: {latestScanQuality.averageDepthConfidence:P0}\n" +
+                $"Finish: {finishGuidance}\n" +
+                $"Depth: {latestScanQuality.depthFrameCount} frames / {latestScanQuality.averageDepthConfidence:P0}\n" +
                 $"Sync: avg {latestScanQuality.averageRgbdTimestampDeltaMs:0}ms / max {latestScanQuality.maxRgbdTimestampDeltaMs:0}ms\n" +
                 $"Skipped: fast {latestScanQuality.skippedFastMotionFrames} / sync {latestScanQuality.skippedUnsyncedDepthFrames} / depth {latestScanQuality.skippedLowConfidenceFrames}\n" +
                 $"Guide: {latestScanQuality.primaryGuidance}";
@@ -1205,18 +1276,44 @@ public class ARKitMeshScanController : MonoBehaviour
                 $"\nCoverage: weak {latestCoverageSummary.weakCells} / fair {latestCoverageSummary.fairCells} / good {latestCoverageSummary.goodCells}";
         }
 
-        var recorderText = BuildRecorderStatsText();
-
-        meshStatsText.text =
-            $"Mode: {scanMode}\n" +
+        var geometryText =
             $"Meshes: {meshCount}\n" +
             $"Vertices: {vertexCount:N0}\n" +
             $"Triangles: {triangleCount:N0}\n" +
             $"Keyframes: {keyframes.Count}\n" +
-            $"Changed: +{meshesAdded} / ~{meshesUpdated} / -{meshesRemoved}" +
+            $"Changed: +{meshesAdded} / ~{meshesUpdated} / -{meshesRemoved}";
+
+        if (IsAndroidDepthScan && scanMode == ScanMode.Scanning)
+        {
+            var diagnostics = rgbdRecorder?.SnapshotDiagnostics();
+            var capturedFrames = diagnostics?.captured_frames ?? 0;
+            var savedFrames = diagnostics?.saved_frames ?? 0;
+            var depthWidth = diagnostics?.last_depth_width ?? 0;
+            var depthHeight = diagnostics?.last_depth_height ?? 0;
+            var qualityScore = latestScanQuality?.score ?? 0f;
+            var depthSampleCount = (long)capturedFrames * depthWidth * depthHeight;
+            geometryText =
+                "Provider: ARCore Depth\n" +
+                $"Depth Frames: captured {capturedFrames} / saved {savedFrames}\n" +
+                $"Depth Samples: {depthSampleCount:N0} ({depthWidth}x{depthHeight})\n" +
+                $"Quality: {qualityScore:0}% / {minimumStopQualityScore:0}%\n" +
+                $"Depth Keyframes: {keyframes.Count} / {recommendedMinKeyframes}";
+            qualityText = string.Empty;
+            coverageText = string.Empty;
+        }
+
+        var recorderText = IsAndroidDepthScan && scanMode == ScanMode.Scanning
+            ? string.Empty
+            : BuildRecorderStatsText();
+
+        meshStatsText.text =
+            $"Mode: {scanMode}\n" +
+            geometryText +
             qualityText +
             coverageText +
             recorderText;
+
+        UpdateScanningStatus();
     }
 
     private string BuildRecorderStatsText()
@@ -1243,6 +1340,23 @@ public class ARKitMeshScanController : MonoBehaviour
     private void SetExportStatus(string message)
     {
         if (exportStatusText)
+            exportStatusText.text = message;
+    }
+
+    private void UpdateScanningStatus()
+    {
+        if (scanMode != ScanMode.Scanning ||
+            Time.unscaledTime < stopGuidanceHoldUntil ||
+            latestScanQuality == null)
+        {
+            return;
+        }
+
+        var ready = !requireMinimumQualityToStop || latestScanQuality.score >= minimumStopQualityScore;
+        var message = ready
+            ? "스캔 완료 가능\nStop을 눌러 완료하세요."
+            : $"스캔 중\n왼쪽 품질이 {minimumStopQualityScore:0}%가 될 때까지\n천천히 벽과 바닥을 비춰주세요.";
+        if (exportStatusText && exportStatusText.text != message)
             exportStatusText.text = message;
     }
 
@@ -1307,6 +1421,303 @@ public class ARKitMeshScanController : MonoBehaviour
         previewTriangleCount = previewMesh.triangles.Length / 3;
 
         return previewMesh.bounds;
+    }
+
+    private bool HasLiveMeshData()
+    {
+        if (!meshManager)
+            return false;
+
+        foreach (var meshFilter in meshManager.meshes)
+        {
+            if (meshFilter && meshFilter.sharedMesh &&
+                meshFilter.sharedMesh.vertexCount > 0 &&
+                meshFilter.sharedMesh.triangles.Length >= 3)
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private Bounds? BuildPreviewFromDepthKeyframes()
+    {
+        DestroyPreview();
+        previewHasProjectedColors = false;
+        previewProjectedColorCoverage = 0f;
+
+        var availableDepthFrames = 0;
+        foreach (var keyframe in keyframes)
+        {
+            if (keyframe.Depth != null && keyframe.HasIntrinsics)
+                availableDepthFrames++;
+        }
+
+        if (availableDepthFrames == 0)
+            return null;
+
+        var maxFrames = Mathf.Max(1, androidDepthPreviewMaxFrames);
+        var frameStride = Mathf.Max(1, Mathf.CeilToInt(availableDepthFrames / (float)maxFrames));
+        var vertices = new List<Vector3>(Mathf.Min(availableDepthFrames, maxFrames) * 1024);
+        var triangles = new List<int>(Mathf.Min(availableDepthFrames, maxFrames) * 2048);
+        var colors = new List<Color>(vertices.Capacity);
+        var eligibleFrameIndex = 0;
+        var appendedFrameCount = 0;
+
+        foreach (var keyframe in keyframes)
+        {
+            if (keyframe.Depth == null || !keyframe.HasIntrinsics)
+                continue;
+
+            if ((eligibleFrameIndex++ % frameStride) != 0)
+                continue;
+
+            var vertexCountBefore = vertices.Count;
+            AppendDepthFramePreview(keyframe, vertices, triangles, colors);
+            if (vertices.Count > vertexCountBefore)
+                appendedFrameCount++;
+        }
+
+        if (vertices.Count == 0)
+            return null;
+
+        previewRoot = new GameObject("Scanned Map Preview");
+        var previewMesh = new Mesh
+        {
+            name = "ARCore_Depth_Map",
+            indexFormat = vertices.Count > 65535 ? IndexFormat.UInt32 : IndexFormat.UInt16
+        };
+
+        previewMesh.SetVertices(vertices);
+        if (triangles.Count > 0)
+        {
+            previewMesh.SetTriangles(triangles, 0);
+        }
+        else
+        {
+            var pointIndices = new int[vertices.Count];
+            for (var i = 0; i < pointIndices.Length; i++)
+                pointIndices[i] = i;
+            previewMesh.SetIndices(pointIndices, MeshTopology.Points, 0);
+        }
+        if (colors.Count == vertices.Count)
+        {
+            previewMesh.SetColors(colors);
+            previewHasProjectedColors = true;
+            previewProjectedColorCoverage = 1f;
+        }
+
+        if (triangles.Count > 0)
+            previewMesh.RecalculateNormals();
+        previewMesh.RecalculateBounds();
+
+        var previewGo = new GameObject("ARCore Depth Surface");
+        previewGo.transform.SetParent(previewRoot.transform, false);
+        previewGo.AddComponent<MeshFilter>().sharedMesh = previewMesh;
+        var renderer = previewGo.AddComponent<MeshRenderer>();
+        renderer.sharedMaterial = GetPreviewMaterial();
+
+        previewMeshCount = appendedFrameCount;
+        previewVertexCount = vertices.Count;
+        previewTriangleCount = triangles.Count / 3;
+        return previewMesh.bounds;
+    }
+
+    private void AppendDepthFramePreview(
+        VisualKeyframe keyframe,
+        List<Vector3> vertices,
+        List<int> triangles,
+        List<Color> colors)
+    {
+        var depth = keyframe.Depth;
+        var configuredStride = Mathf.Max(1, androidDepthPreviewPixelStride);
+        var pointLimit = Mathf.Max(64, androidDepthPreviewMaxPointsPerFrame);
+        var adaptiveStride = Mathf.CeilToInt(Mathf.Sqrt(depth.Width * depth.Height / (float)pointLimit));
+        var pixelStride = Mathf.Max(configuredStride, adaptiveStride);
+        var columns = Mathf.CeilToInt(depth.Width / (float)pixelStride);
+        var rows = Mathf.CeilToInt(depth.Height / (float)pixelStride);
+        var gridIndices = new int[columns * rows];
+        var gridDepths = new float[gridIndices.Length];
+        for (var i = 0; i < gridIndices.Length; i++)
+            gridIndices[i] = -1;
+
+        for (var row = 0; row < rows; row++)
+        {
+            var y = Mathf.Min(row * pixelStride, depth.Height - 1);
+            for (var column = 0; column < columns; column++)
+            {
+                var x = Mathf.Min(column * pixelStride, depth.Width - 1);
+                if (!TryReadDepthMeters(depth, x, y, out var depthMeters) ||
+                    depthMeters < androidDepthMinMeters ||
+                    depthMeters > androidDepthMaxMeters)
+                {
+                    continue;
+                }
+
+                if (TryReadConfidence(keyframe.Confidence, depth, x, y, out var confidence) && confidence == 0)
+                    continue;
+
+                if (!TryUnprojectDepthPixel(keyframe, x, y, depthMeters, out var worldPoint))
+                    continue;
+
+                var gridIndex = row * columns + column;
+                gridIndices[gridIndex] = vertices.Count;
+                gridDepths[gridIndex] = depthMeters;
+                vertices.Add(worldPoint);
+                colors.Add(SampleDepthPreviewColor(keyframe, x, y));
+            }
+        }
+
+        for (var row = 0; row < rows - 1; row++)
+        {
+            for (var column = 0; column < columns - 1; column++)
+            {
+                var topLeft = row * columns + column;
+                var topRight = topLeft + 1;
+                var bottomLeft = topLeft + columns;
+                var bottomRight = bottomLeft + 1;
+                TryAppendDepthTriangle(topLeft, bottomLeft, topRight, gridIndices, gridDepths, vertices, triangles);
+                TryAppendDepthTriangle(topRight, bottomLeft, bottomRight, gridIndices, gridDepths, vertices, triangles);
+            }
+        }
+    }
+
+    private void TryAppendDepthTriangle(
+        int firstGridIndex,
+        int secondGridIndex,
+        int thirdGridIndex,
+        int[] gridIndices,
+        float[] gridDepths,
+        List<Vector3> vertices,
+        List<int> triangles)
+    {
+        var first = gridIndices[firstGridIndex];
+        var second = gridIndices[secondGridIndex];
+        var third = gridIndices[thirdGridIndex];
+        if (first < 0 || second < 0 || third < 0)
+            return;
+
+        var minDepth = Mathf.Min(gridDepths[firstGridIndex], Mathf.Min(gridDepths[secondGridIndex], gridDepths[thirdGridIndex]));
+        var maxDepth = Mathf.Max(gridDepths[firstGridIndex], Mathf.Max(gridDepths[secondGridIndex], gridDepths[thirdGridIndex]));
+        var allowedDifference = Mathf.Max(0.02f, androidDepthTriangleMaxDifferenceMeters) + minDepth * 0.03f;
+        if (maxDepth - minDepth > allowedDifference)
+            return;
+
+        if (Vector3.Cross(vertices[second] - vertices[first], vertices[third] - vertices[first]).sqrMagnitude < 0.00000001f)
+            return;
+
+        triangles.Add(first);
+        triangles.Add(second);
+        triangles.Add(third);
+    }
+
+    private static bool TryReadDepthMeters(CpuImageFrame depth, int x, int y, out float depthMeters)
+    {
+        depthMeters = 0f;
+        if (depth == null || depth.Planes == null || depth.Planes.Length == 0)
+            return false;
+
+        var plane = depth.Planes[0];
+        if (plane.Data == null || x < 0 || x >= depth.Width || y < 0 || y >= depth.Height)
+            return false;
+
+        var offset = y * plane.RowStride + x * plane.PixelStride;
+        if (string.Equals(depth.Format, XRCpuImage.Format.DepthFloat32.ToString(), StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(depth.Format, XRCpuImage.Format.OneComponent32.ToString(), StringComparison.OrdinalIgnoreCase))
+        {
+            if (offset < 0 || offset + sizeof(float) > plane.Data.Length)
+                return false;
+
+            depthMeters = BitConverter.ToSingle(plane.Data, offset);
+        }
+        else if (string.Equals(depth.Format, XRCpuImage.Format.DepthUint16.ToString(), StringComparison.OrdinalIgnoreCase))
+        {
+            if (offset < 0 || offset + sizeof(ushort) > plane.Data.Length)
+                return false;
+
+            depthMeters = BitConverter.ToUInt16(plane.Data, offset) * 0.001f;
+        }
+        else
+        {
+            return false;
+        }
+
+        return depthMeters > 0f && !float.IsNaN(depthMeters) && !float.IsInfinity(depthMeters);
+    }
+
+    private static bool TryReadConfidence(
+        CpuImageFrame confidence,
+        CpuImageFrame depth,
+        int depthX,
+        int depthY,
+        out byte value)
+    {
+        value = 0;
+        if (confidence == null || confidence.Planes == null || confidence.Planes.Length == 0 ||
+            confidence.Width <= 0 || confidence.Height <= 0)
+        {
+            return false;
+        }
+
+        var plane = confidence.Planes[0];
+        if (plane.Data == null)
+            return false;
+
+        var x = depth.Width > 1
+            ? Mathf.RoundToInt(depthX / (float)(depth.Width - 1) * (confidence.Width - 1))
+            : 0;
+        var y = depth.Height > 1
+            ? Mathf.RoundToInt(depthY / (float)(depth.Height - 1) * (confidence.Height - 1))
+            : 0;
+        var offset = y * plane.RowStride + x * plane.PixelStride;
+        if (offset < 0 || offset >= plane.Data.Length)
+            return false;
+
+        value = plane.Data[offset];
+        return true;
+    }
+
+    private static bool TryUnprojectDepthPixel(
+        VisualKeyframe keyframe,
+        int depthX,
+        int depthY,
+        float depthMeters,
+        out Vector3 worldPoint)
+    {
+        worldPoint = default;
+        var depth = keyframe.Depth;
+        if (!keyframe.HasIntrinsics || depth == null ||
+            keyframe.ImageResolution.x <= 1f || keyframe.ImageResolution.y <= 1f)
+        {
+            return false;
+        }
+
+        var scaleX = depth.Width / keyframe.ImageResolution.x;
+        var scaleY = depth.Height / keyframe.ImageResolution.y;
+        var fx = keyframe.FocalLength.x * scaleX;
+        var fy = keyframe.FocalLength.y * scaleY;
+        if (fx <= 0.001f || fy <= 0.001f)
+            return false;
+
+        var cx = keyframe.PrincipalPoint.x * scaleX;
+        var cy = keyframe.PrincipalPoint.y * scaleY;
+        var cameraPoint = new Vector3(
+            (depthX - cx) * depthMeters / fx,
+            -(depthY - cy) * depthMeters / fy,
+            depthMeters);
+        worldPoint = keyframe.Position + keyframe.Rotation * cameraPoint;
+        return IsFinite(worldPoint);
+    }
+
+    private static Color SampleDepthPreviewColor(VisualKeyframe keyframe, int depthX, int depthY)
+    {
+        if (!keyframe.Texture || keyframe.Depth == null)
+            return keyframe.SampleColor;
+
+        var u = keyframe.Depth.Width > 1 ? depthX / (float)(keyframe.Depth.Width - 1) : 0.5f;
+        var v = keyframe.Depth.Height > 1 ? 1f - depthY / (float)(keyframe.Depth.Height - 1) : 0.5f;
+        return keyframe.Texture.GetPixelBilinear(u, v);
     }
 
     private void ShowServerReconstructionPreview(Mesh mesh, string serverScanId, string localPath)
@@ -1697,7 +2108,7 @@ public class ARKitMeshScanController : MonoBehaviour
             if (!frame.HasIntrinsics)
                 rgbdRecorder.RecordIntrinsicsFailure("Camera intrinsics were not available for recorder frame.");
 
-            var maxDeltaMs = Mathf.Max(0.001f, maxRgbDepthTimestampDeltaSeconds) * 1000d;
+            var maxDeltaMs = GetRgbDepthTimestampLimitSeconds() * 1000d;
             var deltaMs = Math.Abs(frame.RgbDepthTimestampDeltaSeconds) * 1000d;
             if (deltaMs > maxDeltaMs)
             {
@@ -1759,10 +2170,12 @@ public class ARKitMeshScanController : MonoBehaviour
                     rgb_format = "jpg",
                     depth_format = frame.Depth.Format,
                     confidence_format = frame.Confidence.Format,
-                    depth_unit = "meters when provider format is float depth; raw XRCpuImage format is preserved",
+                    depth_unit = "meters; DepthUint16 provider frames are normalized to contiguous DepthFloat32",
                     depth_little_endian = BitConverter.IsLittleEndian,
-                    invalid_depth_policy = "provider raw value preserved; consumers should treat 0, NaN, or Inf as invalid depending on depth format",
-                    confidence_value_meaning = "ARKit environment depth confidence raw values: 0 low, 1 medium, 2 high when provider uses ARConfidenceLevel",
+                    invalid_depth_policy = "0, NaN, and Inf are invalid; Android DepthUint16 is normalized to meters before writing",
+                    confidence_value_meaning = IsAndroidDepthScan
+                        ? "ARCore confidence normalized on capture: 0 low, 1 medium, 2 high"
+                        : "ARKit environment depth confidence raw values: 0 low, 1 medium, 2 high",
                     image_orientation = Screen.orientation.ToString(),
                     applied_rotation_flip = "RGB converted to RGBA32 with XRCpuImage.Transformation.MirrorY, then JPEG encoded; depth/confidence raw planes are unrotated and unflipped"
                 },
@@ -1812,7 +2225,6 @@ public class ARKitMeshScanController : MonoBehaviour
             {
                 skippedFastMotionFrames++;
                 nextKeyframeCaptureTime = Time.unscaledTime + 0.15f;
-                SetExportStatus("Move slower for stable depth capture.");
                 return;
             }
         }
@@ -1829,7 +2241,6 @@ public class ARKitMeshScanController : MonoBehaviour
 
             skippedLowConfidenceFrames++;
             nextKeyframeCaptureTime = Time.unscaledTime + 0.15f;
-            SetExportStatus("Depth confidence is low. Slow down or aim at brighter matte surfaces.");
             return;
         }
 
@@ -1861,6 +2272,11 @@ public class ARKitMeshScanController : MonoBehaviour
             keyframe.HasSurfacePoint = true;
             keyframe.SurfacePoint = surfacePoint;
         }
+        else if (IsAndroidDepthScan && TryGetCenterDepthSurfacePoint(keyframe, out surfacePoint))
+        {
+            keyframe.HasSurfacePoint = true;
+            keyframe.SurfacePoint = surfacePoint;
+        }
 
         keyframes.Add(keyframe);
         lastKeyframePosition = position;
@@ -1868,7 +2284,6 @@ public class ARKitMeshScanController : MonoBehaviour
         hasLastKeyframePose = true;
         nextKeyframeCaptureTime = Time.unscaledTime + keyframeIntervalSeconds;
 
-        SetExportStatus($"Scanning... visual keyframes: {keyframes.Count}");
     }
 
     private bool TryCreateCameraTexture(out CameraTextureFrame frame)
@@ -1904,26 +2319,25 @@ public class ARKitMeshScanController : MonoBehaviour
                     {
                         skippedUnsyncedDepthFrames++;
                         nextKeyframeCaptureTime = Time.unscaledTime + 0.12f;
-                        SetExportStatus("Waiting for synchronized RGB-D frames.");
                         return false;
                     }
 
-                    if (rgbDepthDelta > maxRgbDepthTimestampDeltaSeconds ||
-                        rgbConfidenceDelta > maxRgbConfidenceTimestampDeltaSeconds)
+                    var rgbDepthTimestampLimit = GetRgbDepthTimestampLimitSeconds();
+                    var rgbConfidenceTimestampLimit = GetRgbConfidenceTimestampLimitSeconds();
+                    if (rgbDepthDelta > rgbDepthTimestampLimit ||
+                        rgbConfidenceDelta > rgbConfidenceTimestampLimit)
                     {
                         skippedUnsyncedDepthFrames++;
                         nextKeyframeCaptureTime = Time.unscaledTime + 0.12f;
-                        SetExportStatus(
-                            $"RGB-D not synchronized yet.\n" +
-                            $"rgb-depth {rgbDepthDelta * 1000d:0}ms / rgb-confidence {rgbConfidenceDelta * 1000d:0}ms");
                         return false;
                     }
                 }
             }
 
-            var targetWidth = Mathf.Clamp(keyframeTextureWidth, 64, 1920);
+            var requestedWidth = Mathf.Clamp(keyframeTextureWidth, 1, 1920);
+            var targetWidth = Mathf.Min(requestedWidth, image.width);
             var aspect = image.height / (float)image.width;
-            var targetHeight = Mathf.Max(64, Mathf.RoundToInt(targetWidth * aspect));
+            var targetHeight = Mathf.Clamp(Mathf.RoundToInt(targetWidth * aspect), 1, image.height);
             var conversionParams = new XRCpuImage.ConversionParams
             {
                 inputRect = new RectInt(0, 0, image.width, image.height),
@@ -1997,7 +2411,11 @@ public class ARKitMeshScanController : MonoBehaviour
         if (!arOcclusionManager)
             return false;
 
-        if (!arOcclusionManager.TryAcquireEnvironmentDepthCpuImage(out var image))
+        XRCpuImage image;
+        var acquired = IsAndroidDepthScan
+            ? arOcclusionManager.TryAcquireRawEnvironmentDepthCpuImage(out image)
+            : arOcclusionManager.TryAcquireEnvironmentDepthCpuImage(out image);
+        if (!acquired)
             return false;
 
         try
@@ -2037,6 +2455,9 @@ public class ARKitMeshScanController : MonoBehaviour
         if (!image.valid || image.planeCount <= 0)
             return null;
 
+        if (image.format == XRCpuImage.Format.DepthUint16)
+            return CopyDepthUint16AsFloat(image, kind);
+
         var planes = new CpuImagePlaneFrame[image.planeCount];
         for (var i = 0; i < image.planeCount; i++)
         {
@@ -2051,7 +2472,7 @@ public class ARKitMeshScanController : MonoBehaviour
             };
         }
 
-        return new CpuImageFrame
+        var frame = new CpuImageFrame
         {
             Kind = kind,
             Width = image.width,
@@ -2060,6 +2481,97 @@ public class ARKitMeshScanController : MonoBehaviour
             Timestamp = image.timestamp,
             Planes = planes
         };
+
+        if (IsAndroidDepthScan &&
+            string.Equals(kind, "environment_depth_confidence", StringComparison.Ordinal) &&
+            image.format == XRCpuImage.Format.OneComponent8)
+        {
+            NormalizeAndroidConfidence(frame);
+        }
+
+        return frame;
+    }
+
+    private static void NormalizeAndroidConfidence(CpuImageFrame frame)
+    {
+        var plane = frame.Planes[0];
+        for (var y = 0; y < frame.Height; y++)
+        {
+            var row = y * plane.RowStride;
+            for (var x = 0; x < frame.Width; x++)
+            {
+                var offset = row + x * plane.PixelStride;
+                if (offset < 0 || offset >= plane.Data.Length)
+                    continue;
+
+                var confidence = plane.Data[offset];
+                plane.Data[offset] = confidence >= 192 ? (byte)2 : confidence >= 64 ? (byte)1 : (byte)0;
+            }
+        }
+    }
+
+    private static CpuImageFrame CopyDepthUint16AsFloat(XRCpuImage image, string kind)
+    {
+        var source = image.GetPlane(0);
+        var depthMeters = new float[image.width * image.height];
+
+        for (var y = 0; y < image.height; y++)
+        {
+            var sourceRow = y * source.rowStride;
+            var destinationRow = y * image.width;
+            for (var x = 0; x < image.width; x++)
+            {
+                var sourceOffset = sourceRow + x * source.pixelStride;
+                if (sourceOffset < 0 || sourceOffset + 1 >= source.data.Length)
+                    continue;
+
+                var millimeters = source.data[sourceOffset] | source.data[sourceOffset + 1] << 8;
+                depthMeters[destinationRow + x] = millimeters * 0.001f;
+            }
+        }
+
+        var data = new byte[depthMeters.Length * sizeof(float)];
+        Buffer.BlockCopy(depthMeters, 0, data, 0, data.Length);
+        return new CpuImageFrame
+        {
+            Kind = kind,
+            Width = image.width,
+            Height = image.height,
+            Format = XRCpuImage.Format.DepthFloat32.ToString(),
+            Timestamp = image.timestamp,
+            Planes = new[]
+            {
+                new CpuImagePlaneFrame
+                {
+                    RowStride = image.width * sizeof(float),
+                    PixelStride = sizeof(float),
+                    Data = data
+                }
+            }
+        };
+    }
+
+    private float GetRgbDepthTimestampLimitSeconds()
+    {
+        var configuredLimit = IsAndroidDepthScan
+            ? Mathf.Max(maxRgbDepthTimestampDeltaSeconds, androidMaxRgbDepthTimestampDeltaSeconds)
+            : maxRgbDepthTimestampDeltaSeconds;
+        return Mathf.Max(0.001f, configuredLimit);
+    }
+
+    private float GetRgbConfidenceTimestampLimitSeconds()
+    {
+        var configuredLimit = IsAndroidDepthScan
+            ? Mathf.Max(maxRgbConfidenceTimestampDeltaSeconds, androidMaxRgbDepthTimestampDeltaSeconds)
+            : maxRgbConfidenceTimestampDeltaSeconds;
+        return Mathf.Max(0.001f, configuredLimit);
+    }
+
+    private bool IsEnvironmentDepthUnsupported()
+    {
+        return arOcclusionManager &&
+               arOcclusionManager.descriptor != null &&
+               arOcclusionManager.descriptor.environmentDepthImageSupported == Supported.Unsupported;
     }
 
     private static float[] ToArray(Vector3 value)
@@ -2133,6 +2645,46 @@ public class ARKitMeshScanController : MonoBehaviour
 
         surfacePoint = hit.point;
         return true;
+    }
+
+    private bool TryGetCenterDepthSurfacePoint(VisualKeyframe keyframe, out Vector3 surfacePoint)
+    {
+        surfacePoint = default;
+        var depth = keyframe.Depth;
+        if (depth == null)
+            return false;
+
+        var centerX = depth.Width / 2;
+        var centerY = depth.Height / 2;
+        var searchStep = Mathf.Max(1, Mathf.Min(depth.Width, depth.Height) / 40);
+        for (var radius = 0; radius <= 3; radius++)
+        {
+            for (var yOffset = -radius; yOffset <= radius; yOffset++)
+            {
+                for (var xOffset = -radius; xOffset <= radius; xOffset++)
+                {
+                    if (radius > 0 && Mathf.Abs(xOffset) != radius && Mathf.Abs(yOffset) != radius)
+                        continue;
+
+                    var x = Mathf.Clamp(centerX + xOffset * searchStep, 0, depth.Width - 1);
+                    var y = Mathf.Clamp(centerY + yOffset * searchStep, 0, depth.Height - 1);
+                    if (!TryReadDepthMeters(depth, x, y, out var depthMeters) ||
+                        depthMeters < androidDepthMinMeters ||
+                        depthMeters > androidDepthMaxMeters)
+                    {
+                        continue;
+                    }
+
+                    if (TryReadConfidence(keyframe.Confidence, depth, x, y, out var confidence) && confidence == 0)
+                        continue;
+
+                    if (TryUnprojectDepthPixel(keyframe, x, y, depthMeters, out surfacePoint))
+                        return true;
+                }
+            }
+        }
+
+        return false;
     }
 
     private bool TryRaycastLiveMesh(Ray ray, float maxDistance, out Vector3 surfacePoint)
@@ -3241,7 +3793,7 @@ public class ARKitMeshScanController : MonoBehaviour
     private void SetScanningEnabled(bool enabled)
     {
         if (meshManager)
-            meshManager.enabled = enabled;
+            meshManager.enabled = enabled && !IsAndroidDepthScan;
 
         if (planeManager)
             planeManager.enabled = enabled;
@@ -3500,13 +4052,16 @@ public class ARKitMeshScanController : MonoBehaviour
         var pathScore = ScoreRatio(cameraPathMeters, recommendedMinCameraPathMeters) * 15f;
         var confidenceScore = ScoreRatio(averageDepthConfidence, recommendedMinDepthConfidenceRatio) * 20f;
         var surfaceScore = ScoreRatio(surfaceHitRatio, recommendedMinSurfaceHitRatio) * 10f;
-        var meshScore = ScoreRatio(triangleCount, recommendedMinMeshTriangles) * 15f;
+        var geometryScore = IsAndroidDepthScan
+            ? ScoreRatio(depthFrameCount, recommendedMinKeyframes) * 15f
+            : ScoreRatio(triangleCount, recommendedMinMeshTriangles) * 15f;
         var planeScore = ScoreRatio(planeCount, recommendedMinDetectedPlanes) * 10f;
-        var score = Mathf.Clamp(durationScore + keyframeScore + pathScore + confidenceScore + surfaceScore + meshScore + planeScore, 0f, 100f);
+        var score = Mathf.Clamp(durationScore + keyframeScore + pathScore + confidenceScore + surfaceScore + geometryScore + planeScore, 0f, 100f);
 
         var guidance = BuildScanGuidance(
             duration,
             keyframeCount,
+            depthFrameCount,
             cameraPathMeters,
             averageDepthConfidence,
             surfaceHitRatio,
@@ -3559,6 +4114,7 @@ public class ARKitMeshScanController : MonoBehaviour
     private List<string> BuildScanGuidance(
         float duration,
         int keyframeCount,
+        int depthFrameCount,
         float cameraPathMeters,
         float averageDepthConfidence,
         float surfaceHitRatio,
@@ -3576,13 +4132,16 @@ public class ARKitMeshScanController : MonoBehaviour
         if (keyframeCount < recommendedMinKeyframes)
             guidance.Add("Move slowly across each wall to collect more overlapping views.");
 
+        if (IsAndroidDepthScan && depthFrameCount < recommendedMinKeyframes)
+            guidance.Add("Keep textured surfaces in view until more ARCore Depth frames are captured.");
+
         if (cameraPathMeters < recommendedMinCameraPathMeters)
             guidance.Add("Walk along the wall/corners; avoid only rotating in place.");
 
         if (averageDepthConfidence < recommendedMinDepthConfidenceRatio)
             guidance.Add("Point at well-lit matte surfaces and slow down until depth is stable.");
 
-        if (requireSynchronizedRgbdKeyframes && averageRgbdTimestampDeltaMs > maxRgbDepthTimestampDeltaSeconds * 750f)
+        if (requireSynchronizedRgbdKeyframes && averageRgbdTimestampDeltaMs > GetRgbDepthTimestampLimitSeconds() * 750f)
             guidance.Add("Keep moving slowly; RGB-D synchronization is drifting.");
 
         if (surfaceHitRatio < recommendedMinSurfaceHitRatio)
@@ -3591,7 +4150,7 @@ public class ARKitMeshScanController : MonoBehaviour
         if (coverageCellCount > 0 && coverageWeakCellRatio > 0.35f)
             guidance.Add("Rescan the red coverage cells from a second angle before stopping.");
 
-        if (triangleCount < recommendedMinMeshTriangles)
+        if (!IsAndroidDepthScan && triangleCount < recommendedMinMeshTriangles)
             guidance.Add("Rescan sparse surfaces until the mesh becomes denser.");
 
         if (planeCount < recommendedMinDetectedPlanes)
@@ -3987,6 +4546,8 @@ public class ARKitMeshScanController : MonoBehaviour
         public string scanId;
         public string capturedAtUtc;
         public float durationSeconds;
+        public string runtimePlatform;
+        public bool depthOnlyReconstruction;
         public string coordinateSystem;
         public bool hasRawMeshObj;
         public bool hasRgbdRecorderDataset;
@@ -4210,7 +4771,7 @@ public class ARKitMeshScanController : MonoBehaviour
                 && scanMode == ScanMode.Scanning;
 
         if (backButton)
-            backButton.interactable = !mapConfirmationRunning;
+            backButton.interactable = !mapConfirmationRunning && !reconstructionPackageRunning;
     }
 
     private void SetButtonLabel(Button button, string label)

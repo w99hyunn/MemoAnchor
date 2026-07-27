@@ -10,6 +10,7 @@ namespace MemoAnchor
         public static string ReconstructionScanId { get; private set; } = string.Empty;
         public static string ReconstructionResultFile { get; private set; } = string.Empty;
         public static ScanMapCreateRequest PendingMapRequest { get; private set; }
+        public static bool ReturnToMapOnClose { get; private set; }
 
         public static bool HasActiveMap => !string.IsNullOrWhiteSpace(MapId);
         public static bool HasPendingMap => PendingMapRequest != null;
@@ -22,6 +23,7 @@ namespace MemoAnchor
             ReconstructionScanId = string.Empty;
             ReconstructionResultFile = string.Empty;
             PendingMapRequest = pendingMapRequest;
+            ReturnToMapOnClose = false;
         }
 
         public static void ConfirmMap(string mapId)
@@ -36,6 +38,12 @@ namespace MemoAnchor
             ReconstructionScanId = scanId?.Trim() ?? string.Empty;
             ReconstructionResultFile = resultFile?.Trim() ?? string.Empty;
             PendingMapRequest = null;
+            ReturnToMapOnClose = true;
+        }
+
+        public static void RequestReturnToMap()
+        {
+            ReturnToMapOnClose = true;
         }
 
         public static string BuildUploadPath()
@@ -59,6 +67,7 @@ namespace MemoAnchor
             ReconstructionScanId = string.Empty;
             ReconstructionResultFile = string.Empty;
             PendingMapRequest = null;
+            ReturnToMapOnClose = false;
         }
 
         private static string Escape(string value)

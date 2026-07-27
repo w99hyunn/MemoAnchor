@@ -980,7 +980,7 @@ RectTransform:
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 0.5, y: 1}
   m_AnchoredPosition: {x: 32, y: -124}
-  m_SizeDelta: {x: -16, y: 126}
+  m_SizeDelta: {x: -16, y: 190}
   m_Pivot: {x: 0, y: 1}
 --- !u!114 &538982484
 MonoBehaviour:
@@ -1004,7 +1004,7 @@ MonoBehaviour:
       m_Calls: []
   m_FontData:
     m_Font: {fileID: 10102, guid: 0000000000000000e000000000000000, type: 0}
-    m_FontSize: 25
+    m_FontSize: 20
     m_FontStyle: 0
     m_BestFit: 0
     m_MinSize: 10
@@ -1013,7 +1013,7 @@ MonoBehaviour:
     m_AlignByGeometry: 0
     m_RichText: 1
     m_HorizontalOverflow: 0
-    m_VerticalOverflow: 0
+    m_VerticalOverflow: 1
     m_LineSpacing: 1
   m_Text: 'Meshes: 0'
 --- !u!222 &538982485
@@ -1226,7 +1226,7 @@ RectTransform:
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 1, y: 1}
   m_AnchoredPosition: {x: 0, y: -24}
-  m_SizeDelta: {x: -0, y: 260}
+  m_SizeDelta: {x: -0, y: 320}
   m_Pivot: {x: 0, y: 1}
 --- !u!114 &817381705
 MonoBehaviour:
@@ -1740,7 +1740,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 1}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 16, y: -124}
+  m_AnchoredPosition: {x: -16, y: -124}
   m_SizeDelta: {x: -32, y: 40}
   m_Pivot: {x: 1, y: 1}
 --- !u!1 &1673049787
@@ -1818,6 +1818,13 @@ MonoBehaviour:
   recordRgbdDatasetOnScan: 1
   rgbdRecorderFrameIntervalSeconds: 0.2
   rgbdRecorderMaxQueue: 4
+  androidDepthPreviewMaxFrames: 48
+  androidDepthPreviewMaxPointsPerFrame: 1800
+  androidDepthPreviewPixelStride: 6
+  androidDepthMinMeters: 0.15
+  androidDepthMaxMeters: 5
+  androidDepthTriangleMaxDifferenceMeters: 0.18
+  androidMaxRgbDepthTimestampDeltaSeconds: 0.12
   showScanQualityGuidance: 1
   requireMinimumQualityToStop: 1
   minimumStopQualityScore: 78
@@ -2508,8 +2515,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 1}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 16, y: -170}
-  m_SizeDelta: {x: -32, y: 74}
+  m_AnchoredPosition: {x: -16, y: -170}
+  m_SizeDelta: {x: -32, y: 130}
   m_Pivot: {x: 1, y: 1}
 --- !u!114 &2123572787
 MonoBehaviour:
@@ -2533,7 +2540,7 @@ MonoBehaviour:
       m_Calls: []
   m_FontData:
     m_Font: {fileID: 10102, guid: 0000000000000000e000000000000000, type: 0}
-    m_FontSize: 22
+    m_FontSize: 20
     m_FontStyle: 0
     m_BestFit: 0
     m_MinSize: 10
@@ -2542,7 +2549,7 @@ MonoBehaviour:
     m_AlignByGeometry: 0
     m_RichText: 1
     m_HorizontalOverflow: 0
-    m_VerticalOverflow: 0
+    m_VerticalOverflow: 1
     m_LineSpacing: 1
   m_Text: 'Export path: app persistent data'
 --- !u!222 &2123572788

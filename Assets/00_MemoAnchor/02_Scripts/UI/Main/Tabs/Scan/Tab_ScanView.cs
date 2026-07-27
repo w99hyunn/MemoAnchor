@@ -262,6 +262,16 @@ namespace MemoAnchor.UI
             _managerButtonText.SetValueWithoutNotify(friend.DisplayName);
         }
 
+        public void ResetScanForm()
+        {
+            SetSelectedAddress(string.Empty);
+            _spaceNameField.SetValueWithoutNotify(string.Empty);
+            SetSelectedRepairer(ScanFriendOption.Empty);
+            SetSelectedManager(ScanFriendOption.Empty);
+            ClearSpaceNameError();
+            ScanStartReadinessChanged?.Invoke();
+        }
+
         public bool IsScanStartReady()
         {
             return !string.IsNullOrWhiteSpace(SelectedAddress) && !string.IsNullOrWhiteSpace(SpaceName);

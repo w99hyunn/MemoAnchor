@@ -24,6 +24,7 @@ namespace MemoAnchor.UI
         private VisualElement _homeTab, _menuTab, _scanTab, _mapTab, _profileTab;
 
         public event Action<int> TabSwitchRequested;
+        public event Action ScanSceneRequested;
 
         public Button HomeButton => _homeButton;
         public Button MenuButton => _menuButton;
@@ -160,6 +161,11 @@ namespace MemoAnchor.UI
         public void SetScanStartAvailable(bool available)
         {
             _scanStartButton.EnableInClassList("is-disabled", !available);
+        }
+
+        public void SetScanSceneActive(bool active)
+        {
+            _root.EnableInClassList(HIDDEN_CLASS, active);
         }
 
         public void SetTabStripOffset(float x)
