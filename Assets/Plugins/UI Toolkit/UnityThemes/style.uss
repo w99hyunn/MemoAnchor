@@ -132,7 +132,7 @@
     width: 300px;
     height: 250px;
     margin-bottom: 34px;
-    background-image: url("project://database/Assets/00_MemoAnchor/03_Media/Icon/system/icon%201.png?fileID=2800000&guid=c5484f5bd1c29de40898e64802107c7b&type=3#icon%201");
+    background-image: url("project://database/Assets/00_MemoAnchor/03_Media/Icon/system/icon%201.png?fileID=2800000&guid=c5484f5bd1c29de40898e64802107c7b&type=3#icon 1");
     -unity-background-scale-mode: scale-to-fit;
 }
 
@@ -314,7 +314,7 @@
 }
 
 .memo-tab-mode-page {
-    background-color: #535E83;
+    background-color: rgb(83, 94, 131);
 }
 
 .memo-tab-mode-page.is-admin-mode {
@@ -385,7 +385,7 @@
 }
 
 #mode-back {
-    background-color: #535E83;
+    background-color: rgb(83, 94, 131);
 }
 
 #mode-back.is-admin-mode {
@@ -437,7 +437,7 @@
     background-color: var(--brand-pink);
     background-image: url("project://database/Assets/00_MemoAnchor/03_Media/Icon/admin.png?fileID=2800000&guid=5b0fcf6366924744cb2f0df276925867&type=3#admin");
     -unity-background-scale-mode: scale-to-fit;
-    -unity-background-image-tint-color: #FFB6C8;
+    -unity-background-image-tint-color: rgb(255, 182, 200);
     align-self: flex-start;
     transition-property: translate, background-color;
     transition-duration: 0.18s;
@@ -447,14 +447,14 @@
 
 .home-mode-toggle.is-work-mode .home-mode-toggle-thumb {
     translate: 84px 0;
-    background-color: #535E83;
+    background-color: rgb(83, 94, 131);
     background-image: url("project://database/Assets/00_MemoAnchor/03_Media/Icon/user.png?fileID=2800000&guid=3a95cf702d6e3e64ca7c035145fdacfd&type=3#user");
-    -unity-background-image-tint-color: #95ABF9;
+    -unity-background-image-tint-color: rgb(149, 171, 249);
 }
 
 .memo-section-title {
     font-size: 50px;
-    -unity-font-definition: url("project://database/Assets/Plugins/UI%20Toolkit/Fonts/Pretendard-Medium.ttf?fileID=12800000&guid=45ed9c45b09f5f2498d91e1982ab7527&type=3#Pretendard-Medium");
+    -unity-font-definition: url("project://database/Assets/Plugins/UI%20Toolkit/Fonts/Pretendard-SemiBold.ttf?fileID=12800000&guid=7136488b0fb8f924b91754e33f3b5abc&type=3#Pretendard-SemiBold");
 }
 
 .memo-section-more {
@@ -770,7 +770,7 @@
 
 .home-completion-action.is-complete {
     margin-left: 14px;
-    color: #535E83;
+    color: rgb(83, 94, 131);
     background-color: rgb(218, 225, 248);
 }
 
@@ -1337,14 +1337,14 @@
 }
 
 .scan-map-title {
-    font-size: 42px;
+    font-size: 55px;
     color: rgb(245, 245, 245);
     -unity-font-definition: url("project://database/Assets/Plugins/UI%20Toolkit/Fonts/Pretendard-Medium.ttf?fileID=12800000&guid=45ed9c45b09f5f2498d91e1982ab7527&type=3#Pretendard-Medium");
 }
 
 .scan-map-subtitle {
     margin-top: 8px;
-    font-size: 30px;
+    font-size: 40px;
     color: rgba(245, 245, 245, 0.88);
 }
 
@@ -1653,11 +1653,11 @@
 }
 
 #memo-search-input .unity-base-text-field__input {
-    border-color: #95ABF9;
+    border-color: rgb(149, 171, 249);
 }
 
 #memo-search-input .unity-base-text-field__input--placeholder {
-    color: #95ABF9;
+    color: rgb(149, 171, 249);
 }
 
 .memo-search-clear-button {
@@ -2243,7 +2243,7 @@
 }
 
 .memo-filter-date-button.is-selected {
-    border-color: #535E83;
+    border-color: rgb(83, 94, 131);
 }
 
 .memo-filter-date-button.is-selected:hover:enabled {
@@ -2307,7 +2307,7 @@
 }
 
 .memo-filter-date-button.is-selected .memo-filter-calendar-icon {
-    -unity-background-image-tint-color: #535E83;
+    -unity-background-image-tint-color: rgb(83, 94, 131);
 }
 
 .page-overlay.is-admin-mode .memo-filter-date-button.is-selected .memo-filter-calendar-icon {
@@ -2385,7 +2385,7 @@
 .memo-filter-calendar {
     margin-top: 34px;
     border-width: 2px;
-    border-color: #535E83;
+    border-color: rgb(83, 94, 131);
     border-radius: 36px;
     background-color: rgb(255, 255, 255);
     padding-top: 34px;
@@ -2537,7 +2537,7 @@
 
 .memo-filter-calendar-cell.is-selected {
     color: rgb(255, 255, 255);
-    background-color: #535E83;
+    background-color: rgb(83, 94, 131);
     border-radius: 35px;
 }
 
@@ -2597,8 +2597,8 @@
 
 .memo-filter-chip.is-selected,
 .memo-filter-urgency-chip.is-selected {
-    background-color: #535E83;
-    border-color: #535E83;
+    background-color: rgb(83, 94, 131);
+    border-color: rgb(83, 94, 131);
     color: rgb(255, 255, 255);
 }
 
@@ -2707,12 +2707,12 @@
 }
 
 .memo-filter-map-item.is-selected {
-    color: #535E83;
+    color: rgb(83, 94, 131);
     -unity-font-definition: url("project://database/Assets/Plugins/UI%20Toolkit/Fonts/Pretendard-SemiBold.ttf?fileID=12800000&guid=7136488b0fb8f924b91754e33f3b5abc&type=3#Pretendard-SemiBold");
 }
 
 .memo-filter-map-item.is-selected .scan-address-list-text {
-    color: #535E83;
+    color: rgb(83, 94, 131);
     -unity-font-definition: url("project://database/Assets/Plugins/UI%20Toolkit/Fonts/Pretendard-SemiBold.ttf?fileID=12800000&guid=7136488b0fb8f924b91754e33f3b5abc&type=3#Pretendard-SemiBold");
 }
 
@@ -3791,7 +3791,7 @@
     padding-left: 24px;
     padding-right: 24px;
     border-radius: 27px;
-    background-color: #535E83;
+    background-color: rgb(83, 94, 131);
     color: rgb(255, 255, 255);
     font-size: 30px;
     -unity-text-align: middle-center;
@@ -3903,7 +3903,7 @@
     height: 78px;
     margin-left: auto;
     border-radius: 39px;
-    background-color: #535E83;
+    background-color: rgb(83, 94, 131);
     align-items: center;
     justify-content: center;
 }
@@ -3967,7 +3967,7 @@
 
 .profile-switch.is-selected .profile-switch-thumb {
     translate: 82px 0;
-    background-color: #535E83;
+    background-color: rgb(83, 94, 131);
 }
 
 .profile-account-settings-page {
