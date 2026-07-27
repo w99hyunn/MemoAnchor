@@ -28,13 +28,16 @@ builder.Services.AddDbContext<MemoAnchorDbContext>(options =>
 builder.Services.AddScoped<IProfileStore, PostgresPlayerDataService>();
 builder.Services.AddScoped<IMapMemoStore, PostgresMapMemoStore>();
 builder.Services.Configure<ReconstructionOptions>(builder.Configuration.GetSection("Reconstruction"));
+builder.Services.AddSingleton<ReconstructionProcessManager>();
+builder.Services.AddTransient<ReconstructionProcessHandler>();
 builder.Services.AddHttpClient();
 builder.Services.AddHttpClient(ReconstructionOptions.HTTP_CLIENT_NAME, (serviceProvider, client) =>
 {
     ReconstructionOptions reconstruction = serviceProvider.GetRequiredService<IOptions<ReconstructionOptions>>().Value;
     client.BaseAddress = new Uri(reconstruction.BaseUrl.TrimEnd('/') + "/");
     client.Timeout = TimeSpan.FromMinutes(Math.Max(1, reconstruction.TimeoutMinutes));
-});
+})
+    .AddHttpMessageHandler<ReconstructionProcessHandler>();
 builder.Services.Configure<AuthProviderOptions>(builder.Configuration.GetSection("AuthProviders"));
 builder.Services.AddSingleton<OAuthStateStore>();
 string unityProjectId = builder.Configuration["UnityAuthentication:ProjectId"] ?? "";

@@ -26,7 +26,7 @@ namespace MemoAnchor.UI
         private readonly List<Relationship> _availableMapFriendInviteRelationships = new();
         private readonly List<MemoItem> _readOnlyMemos = new();
         private ScanMapItem _readOnlyMap;
-        private Button _mapListButton, _mapDetailButton, _mapPreviewMenuButton, _mapMemoBackButton, _mapMemoSearchClearButton, _mapCreateTextMemoButton, _mapCreateChecklistMemoButton, _mapCreateMediaMemoButton, _mapCreateVoiceMemoButton;
+        private Button _mapListButton, _mapDetailButton, _mapReconstructionButton, _mapPreviewMenuButton, _mapMemoBackButton, _mapMemoSearchClearButton, _mapCreateTextMemoButton, _mapCreateChecklistMemoButton, _mapCreateMediaMemoButton, _mapCreateVoiceMemoButton;
         private Button _mapParticipantsButton, _mapParticipantsInviteButton, _mapParticipantsAddButton;
         private Button _mapFriendInviteBackButton, _mapFriendInviteSubmitButton, _mapFriendInviteLoadMoreButton;
         private VisualElement _mapPreview, _mapMemoPage, _mapMemoListContainer, _mapMemoEmptyState, _mapListOverlay, _mapListSheet, _mapListContent, _mapEmptyState, _mapCreateMemoActions;
@@ -48,6 +48,7 @@ namespace MemoAnchor.UI
             VisualElement mainRoot = _root.Q<VisualElement>("main-root");
             _mapListButton = _root.Q<Button>("map-list-button");
             _mapDetailButton = _root.Q<Button>("map-detail-button");
+            _mapReconstructionButton = _root.Q<Button>("map-reconstruction-button");
             _mapPreviewMenuButton = _root.Q<Button>("map-preview-menu-button");
             _mapMemoBackButton = _root.Q<Button>("map-memo-back-button");
             _mapMemoSearchClearButton = _root.Q<Button>("map-memo-search-clear-button");
@@ -104,6 +105,7 @@ namespace MemoAnchor.UI
             _mapFriendInviteOverlay.AddToClassList(HIDDEN_CLASS);
             _mapListButton.clicked += ShowMapList;
             _mapDetailButton.clicked += ShowMapDetail;
+            _mapReconstructionButton.clicked += OpenSelectedMapReconstruction;
             _mapPreviewMenuButton.clicked += ShowMapMemoPage;
             _mapMemoBackButton.clicked += HideMapMemoPage;
             _mapMemoSearchClearButton.clicked += ClearMapMemoSearch;
@@ -133,6 +135,7 @@ namespace MemoAnchor.UI
         {
             _mapListButton.clicked -= ShowMapList;
             _mapDetailButton.clicked -= ShowMapDetail;
+            _mapReconstructionButton.clicked -= OpenSelectedMapReconstruction;
             _mapPreviewMenuButton.clicked -= ShowMapMemoPage;
             _mapMemoBackButton.clicked -= HideMapMemoPage;
             _mapMemoSearchClearButton.clicked -= ClearMapMemoSearch;
@@ -487,6 +490,7 @@ namespace MemoAnchor.UI
             SetVisible(_mapParticipantsButton, hasMap);
             SetVisible(_mapParticipantsTitle, hasMap && !isReadOnly);
             SetVisible(_mapScanTimeLabel, hasMap);
+            SetVisible(_mapReconstructionButton, hasMap);
             SetVisible(_mapEmptyState, !hasMap);
             SetVisible(_mapCreateMemoActions, hasMap && !isReadOnly);
 
@@ -495,6 +499,7 @@ namespace MemoAnchor.UI
                 _mapCurrentSpaceLabel.text = "3D MAP";
                 _mapCurrentAddressLabel.text = string.Empty;
                 _mapScanTimeLabel.text = string.Empty;
+                _mapReconstructionButton.text = string.Empty;
                 _mapParticipantsManagerSummary.text = string.Empty;
                 _mapParticipantsRepairerSummary.text = string.Empty;
                 return;
@@ -503,6 +508,7 @@ namespace MemoAnchor.UI
             _mapCurrentSpaceLabel.text = selectedMap.spaceName;
             _mapCurrentAddressLabel.text = GetMapAddressKey(selectedMap);
             _mapScanTimeLabel.text = $"스캔일시 : {FormatScanTime(selectedMap.scanCreatedAt)}";
+            ApplyMapReconstructionState(selectedMap);
             if (isReadOnly)
             {
                 _mapParticipantsManagerSummary.text = string.Empty;
@@ -513,6 +519,49 @@ namespace MemoAnchor.UI
                 RefreshMapParticipantsSummary(selectedMap);
             }
             ApplyMapParticipantsInvite(selectedMap);
+        }
+
+        private void ApplyMapReconstructionState(ScanMapItem map)
+        {
+            string state = map.reconstructionState?.Trim().ToLowerInvariant() ?? string.Empty;
+            _mapReconstructionButton.EnableInClassList("is-failed", state == "failed");
+            _mapReconstructionButton.text = state switch
+            {
+                "done" => "3D MAP 보기",
+                "queued" => "3D MAP 생성 대기 중",
+                "uploading" => "3D MAP 업로드 중",
+                "processing" => "3D MAP 생성 중",
+                "failed" => "3D MAP 생성 실패",
+                _ => "스캔 결과 없음"
+            };
+        }
+
+        private void OpenSelectedMapReconstruction()
+        {
+            ScanMapItem map = GetSelectedMap();
+            if (string.IsNullOrWhiteSpace(map.reconstructionScanId))
+            {
+                PopupManager.ShowMessage("3D MAP", "저장된 스캔 결과가 없습니다.", "확인");
+                return;
+            }
+
+            if (string.Equals(map.reconstructionState, "failed", StringComparison.OrdinalIgnoreCase))
+            {
+                string message = string.IsNullOrWhiteSpace(map.reconstructionMessage)
+                    ? "서버에서 맵 생성에 실패했습니다."
+                    : map.reconstructionMessage;
+                PopupManager.ShowMessage("3D MAP 생성 실패", message, "확인");
+                return;
+            }
+
+            _ = OpenSelectedMapReconstructionAsync(map);
+        }
+
+        private async Awaitable OpenSelectedMapReconstructionAsync(ScanMapItem map)
+        {
+            MapScanSession.BeginResultView(map.id, map.reconstructionScanId, map.reconstructionResultFile);
+            SceneHistoryManager.SaveCurrentScene();
+            await _fadeTransition.FadeOutAndLoadSceneAsync(MapScanSession.SCAN_SCENE_NAME);
         }
 
         private void RefreshMapParticipantsSummary(ScanMapItem map)

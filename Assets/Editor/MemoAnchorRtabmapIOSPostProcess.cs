@@ -1,13 +1,17 @@
-#if UNITY_IOS
+#if UNITY_EDITOR
 using UnityEditor;
+using UnityEngine;
+
+#if UNITY_IOS
 using UnityEditor.Callbacks;
 using UnityEditor.iOS.Xcode;
-using UnityEngine;
+#endif
 
 public static class MemoAnchorRtabmapIOSPostProcess
 {
     public const string ENABLE_NATIVE_RTABMAP_DEFINE = "MEMOANCHOR_ENABLE_RTABMAP_NATIVE";
 
+#if UNITY_IOS
     [PostProcessBuild(550)]
     public static void LinkRtabmap(BuildTarget target, string pathToBuiltProject)
     {
@@ -36,5 +40,6 @@ public static class MemoAnchorRtabmapIOSPostProcess
         plist.WriteToFile(plistPath);
         Debug.Log("[MemoAnchorRtabmapIOSPostProcess] Enabled iOS Documents file sharing for RGB-D recorder export.");
     }
+#endif
 }
 #endif

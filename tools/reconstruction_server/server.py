@@ -20,9 +20,20 @@ from urllib.parse import parse_qs, unquote, urlparse
 
 ROOT = Path(__file__).resolve().parent
 WORKSPACE_ROOT = ROOT.parent.parent
-RECONSTRUCTION_TOOL_ROOT = ROOT.parent / "reconstruction"
+PACKAGED_RECONSTRUCTION_TOOL_ROOT = ROOT
+SOURCE_RECONSTRUCTION_TOOL_ROOT = ROOT.parent / "reconstruction"
+RECONSTRUCTION_TOOL_ROOT = (
+    PACKAGED_RECONSTRUCTION_TOOL_ROOT
+    if (PACKAGED_RECONSTRUCTION_TOOL_ROOT / "reconstruct_open3d_tsdf.py").exists()
+    else SOURCE_RECONSTRUCTION_TOOL_ROOT
+)
 RECONSTRUCTION_SCRIPT = RECONSTRUCTION_TOOL_ROOT / "reconstruct_open3d_tsdf.py"
-RECONSTRUCTION_VENV_PYTHON = RECONSTRUCTION_TOOL_ROOT / ".venv" / "bin" / "python"
+PACKAGED_VENV_PYTHON = ROOT / ".venv" / "bin" / "python"
+RECONSTRUCTION_VENV_PYTHON = (
+    PACKAGED_VENV_PYTHON
+    if PACKAGED_VENV_PYTHON.exists()
+    else RECONSTRUCTION_TOOL_ROOT / ".venv" / "bin" / "python"
+)
 DATA_ROOT = ROOT / "data"
 UPLOAD_ROOT = DATA_ROOT / "uploads"
 SCAN_ROOT = DATA_ROOT / "scans"
@@ -32,10 +43,12 @@ DEFAULT_REVIEW_SCAN_ID = "20260626_102656"
 PRUNING_PROFILES = ("geometry", "clean_texture", "safe", "balanced", "aggressive", "rtabmap")
 RGBD_DEFAULT_DEPTH_TRANSFORM = "rotate_270"
 RGBD_DEFAULT_COLOR_TRANSFORM = "rotate_90"
-MAX_UPLOAD_BYTES = 2 * 1024 * 1024 * 1024
+MAX_UPLOAD_BYTES = 5 * 1024 * 1024 * 1024
 MAX_ARCHIVE_MEMBERS = 50_000
 MAX_ARCHIVE_MEMBER_BYTES = 1024 * 1024 * 1024
-MAX_ARCHIVE_UNCOMPRESSED_BYTES = 8 * 1024 * 1024 * 1024
+MAX_ARCHIVE_UNCOMPRESSED_BYTES = 20 * 1024 * 1024 * 1024
+DELETED_SCAN_IDS: set[str] = set()
+DELETED_SCAN_IDS_LOCK = threading.Lock()
 
 
 def ensure_dirs() -> None:
@@ -51,7 +64,25 @@ def safe_scan_id(value: str | None) -> str:
     return cleaned or time.strftime("%Y%m%d_%H%M%S")
 
 
+def is_scan_deleted(scan_id: str) -> bool:
+    with DELETED_SCAN_IDS_LOCK:
+        return scan_id in DELETED_SCAN_IDS
+
+
+def delete_scan_data(scan_id: str) -> bool:
+    removed = False
+    for root in (UPLOAD_ROOT, SCAN_ROOT, RESULT_ROOT, RUN_ROOT):
+        path = root / scan_id
+        if path.exists():
+            shutil.rmtree(path)
+            removed = True
+    return removed
+
+
 def write_status(scan_id: str, **fields: object) -> None:
+    if is_scan_deleted(scan_id):
+        return
+
     path = RESULT_ROOT / scan_id / "status.json"
     path.parent.mkdir(parents=True, exist_ok=True)
     current: dict[str, object] = {}
@@ -1079,10 +1110,140 @@ def reconstruction_worker(scan_id: str, scan_dir: Path) -> None:
         )
     except Exception as exc:  # noqa: BLE001
         write_status(scan_id, state="failed", message=str(exc), resultFile="")
+    finally:
+        if is_scan_deleted(scan_id):
+            delete_scan_data(scan_id)
+
+
+class ReconstructionServer(ThreadingHTTPServer):
+    daemon_threads = True
+
+    def __init__(self, server_address: tuple[str, int], idle_timeout_seconds: int):
+        super().__init__(server_address, Handler)
+        self.idle_timeout_seconds = max(1, idle_timeout_seconds)
+        self.last_activity = time.monotonic()
+        self.active_requests = 0
+        self.active_jobs = 0
+        self.activity_lock = threading.Lock()
+
+    def begin_request(self) -> None:
+        with self.activity_lock:
+            self.active_requests += 1
+            self.last_activity = time.monotonic()
+
+    def end_request(self) -> None:
+        with self.activity_lock:
+            self.active_requests = max(0, self.active_requests - 1)
+            self.last_activity = time.monotonic()
+
+    def begin_job(self) -> None:
+        with self.activity_lock:
+            self.active_jobs += 1
+            self.last_activity = time.monotonic()
+
+    def end_job(self) -> None:
+        with self.activity_lock:
+            self.active_jobs = max(0, self.active_jobs - 1)
+            self.last_activity = time.monotonic()
+
+    def start_idle_watchdog(self) -> None:
+        threading.Thread(target=self.watch_idle_timeout, daemon=True).start()
+
+    def runtime_state(self) -> dict[str, int]:
+        with self.activity_lock:
+            return {
+                "activeRequests": self.active_requests,
+                "activeJobs": self.active_jobs,
+                "idleTimeoutSeconds": self.idle_timeout_seconds,
+            }
+
+    def watch_idle_timeout(self) -> None:
+        while True:
+            time.sleep(1)
+            with self.activity_lock:
+                idle_seconds = time.monotonic() - self.last_activity
+                should_stop = (
+                    self.active_requests == 0
+                    and self.active_jobs == 0
+                    and idle_seconds >= self.idle_timeout_seconds
+                )
+            if should_stop:
+                print(
+                    f"No requests or reconstruction jobs for {self.idle_timeout_seconds}s; stopping.",
+                    flush=True,
+                )
+                self.shutdown()
+                return
+
+
+def run_tracked_reconstruction_job(
+    server: ReconstructionServer,
+    scan_id: str,
+    scan_dir: Path,
+) -> None:
+    try:
+        reconstruction_worker(scan_id, scan_dir)
+    finally:
+        server.end_job()
+
+
+def run_tracked_lab_jobs(
+    server: ReconstructionServer,
+    jobs: list[tuple[str, str, Path, Path, str]],
+) -> None:
+    try:
+        run_lab_profile_jobs(jobs)
+    finally:
+        server.end_job()
+
+
+def resume_pending_reconstruction_jobs(server: ReconstructionServer) -> int:
+    resumed = 0
+    for status_path in RESULT_ROOT.glob("*/status.json"):
+        try:
+            status = json.loads(status_path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError):
+            continue
+
+        if status.get("state") not in ("queued", "processing"):
+            continue
+
+        scan_id = safe_scan_id(str(status.get("scanId") or status_path.parent.name))
+        scan_dir = SCAN_ROOT / scan_id
+        if not scan_dir.exists():
+            write_status(
+                scan_id,
+                state="failed",
+                message="Reconstruction process restarted, but the extracted scan data is missing",
+                resultFile="",
+            )
+            continue
+
+        server.begin_job()
+        thread = threading.Thread(
+            target=run_tracked_reconstruction_job,
+            args=(server, scan_id, scan_dir),
+            daemon=True,
+        )
+        try:
+            thread.start()
+        except Exception:  # noqa: BLE001
+            server.end_job()
+            raise
+        resumed += 1
+
+    return resumed
 
 
 class Handler(BaseHTTPRequestHandler):
     server_version = "MemoAnchorReconstruction/0.1"
+
+    def handle_one_request(self) -> None:
+        self.server.begin_request()
+        try:
+            super().handle_one_request()
+        finally:
+            self.server.end_request()
 
     def do_POST(self) -> None:  # noqa: N802
         parsed = urlparse(self.path)
@@ -1113,8 +1274,13 @@ class Handler(BaseHTTPRequestHandler):
                 jobs.append((scan_id, run_id, scan_dir, result_dir, profile))
                 queued_runs.append({"scanId": scan_id, "runId": run_id, "state": "queued", "profile": profile})
 
-            thread = threading.Thread(target=run_lab_profile_jobs, args=(jobs,), daemon=True)
-            thread.start()
+            self.server.begin_job()
+            thread = threading.Thread(target=run_tracked_lab_jobs, args=(self.server, jobs), daemon=True)
+            try:
+                thread.start()
+            except Exception:  # noqa: BLE001
+                self.server.end_job()
+                raise
             self.send_json(HTTPStatus.ACCEPTED, {"scanId": scan_id, "runs": queued_runs})
             return
 
@@ -1161,9 +1327,32 @@ class Handler(BaseHTTPRequestHandler):
             return
 
         write_status(scan_id, state="queued", message="Upload received", resultFile="")
-        thread = threading.Thread(target=reconstruction_worker, args=(scan_id, scan_dir), daemon=True)
-        thread.start()
+        self.server.begin_job()
+        thread = threading.Thread(
+            target=run_tracked_reconstruction_job,
+            args=(self.server, scan_id, scan_dir),
+            daemon=True,
+        )
+        try:
+            thread.start()
+        except Exception:  # noqa: BLE001
+            self.server.end_job()
+            raise
         self.send_json(HTTPStatus.ACCEPTED, {"scanId": scan_id, "state": "queued"})
+
+    def do_DELETE(self) -> None:  # noqa: N802
+        parsed = urlparse(self.path)
+        parts = [unquote(part) for part in parsed.path.strip("/").split("/") if part]
+        if len(parts) != 2 or parts[0] != "scan":
+            self.send_json(HTTPStatus.NOT_FOUND, {"error": "unknown endpoint"})
+            return
+
+        scan_id = safe_scan_id(parts[1])
+        with DELETED_SCAN_IDS_LOCK:
+            DELETED_SCAN_IDS.add(scan_id)
+        removed = delete_scan_data(scan_id)
+
+        self.send_json(HTTPStatus.OK, {"scanId": scan_id, "removed": removed})
 
     def do_GET(self) -> None:  # noqa: N802
         parsed = urlparse(self.path)
@@ -1225,10 +1414,12 @@ class Handler(BaseHTTPRequestHandler):
             HTTPStatus.OK,
             {
                 "service": "MemoAnchor reconstruction server",
+                **self.server.runtime_state(),
                 "endpoints": [
                     "POST /upload",
                     "GET /status/<scanId>",
                     "GET /result/<scanId>",
+                    "DELETE /scan/<scanId>",
                     "GET /lab",
                     "GET /api/runs/<scanId>",
                     "POST /api/runs/<scanId>",
@@ -1237,7 +1428,8 @@ class Handler(BaseHTTPRequestHandler):
         )
 
     def log_message(self, fmt: str, *args: object) -> None:
-        sys.stderr.write(f"[{self.log_date_time_string()}] {fmt % args}\n")
+        sys.stdout.write(f"[{self.log_date_time_string()}] {fmt % args}\n")
+        sys.stdout.flush()
 
     def send_json(self, status: HTTPStatus, payload: dict[str, object]) -> None:
         data = json.dumps(payload).encode("utf-8")
@@ -1290,11 +1482,20 @@ def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--host", default="0.0.0.0")
     parser.add_argument("--port", type=int, default=8765)
+    parser.add_argument("--idle-timeout-seconds", type=int, default=60)
     args = parser.parse_args()
 
     ensure_dirs()
-    server = ThreadingHTTPServer((args.host, args.port), Handler)
-    print(f"MemoAnchor reconstruction server listening on http://{args.host}:{args.port}")
+    server = ReconstructionServer((args.host, args.port), args.idle_timeout_seconds)
+    resumed_jobs = resume_pending_reconstruction_jobs(server)
+    server.start_idle_watchdog()
+    print(
+        f"MemoAnchor reconstruction server listening on http://{args.host}:{args.port} "
+        f"(idle timeout: {server.idle_timeout_seconds}s)",
+        flush=True,
+    )
+    if resumed_jobs:
+        print(f"Resumed {resumed_jobs} interrupted reconstruction job(s).", flush=True)
     try:
         server.serve_forever()
     except KeyboardInterrupt:

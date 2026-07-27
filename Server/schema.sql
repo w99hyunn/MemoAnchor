@@ -27,8 +27,27 @@ CREATE TABLE IF NOT EXISTS maps (
     address_id uuid NOT NULL REFERENCES addresses (id) ON DELETE RESTRICT,
     space_name varchar(160) NOT NULL,
     created_at timestamptz NOT NULL,
-    scan_created_at timestamptz NOT NULL
+    scan_created_at timestamptz NULL,
+    reconstruction_scan_id varchar(256) NOT NULL DEFAULT '',
+    reconstruction_state varchar(32) NOT NULL DEFAULT '',
+    reconstruction_message varchar(1000) NOT NULL DEFAULT '',
+    reconstruction_result_file varchar(500) NOT NULL DEFAULT '',
+    reconstruction_updated_at timestamptz NULL
 );
+
+ALTER TABLE maps
+ALTER COLUMN scan_created_at DROP NOT NULL;
+
+ALTER TABLE maps
+ADD COLUMN IF NOT EXISTS reconstruction_scan_id varchar(256) NOT NULL DEFAULT '',
+ADD COLUMN IF NOT EXISTS reconstruction_state varchar(32) NOT NULL DEFAULT '',
+ADD COLUMN IF NOT EXISTS reconstruction_message varchar(1000) NOT NULL DEFAULT '',
+ADD COLUMN IF NOT EXISTS reconstruction_result_file varchar(500) NOT NULL DEFAULT '',
+ADD COLUMN IF NOT EXISTS reconstruction_updated_at timestamptz NULL;
+
+UPDATE maps
+SET scan_created_at = NULL
+WHERE reconstruction_scan_id = '';
 
 CREATE INDEX IF NOT EXISTS ix_maps_address_id
 ON maps (address_id);

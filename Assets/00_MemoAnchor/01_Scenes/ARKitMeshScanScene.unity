@@ -1815,9 +1815,9 @@ MonoBehaviour:
   packageReconstructionScanOnStop: 1
   uploadReconstructionPackageOnStop: 1
   reconstructionUploadUrl: 
-  packageRtabmapDatasetOnStop: 1
-  rtabmapDatasetWidth: 640
-  rtabmapDatasetHeight: 480
+  recordRgbdDatasetOnScan: 1
+  rgbdRecorderFrameIntervalSeconds: 0.2
+  rgbdRecorderMaxQueue: 4
   showScanQualityGuidance: 1
   requireMinimumQualityToStop: 1
   minimumStopQualityScore: 78

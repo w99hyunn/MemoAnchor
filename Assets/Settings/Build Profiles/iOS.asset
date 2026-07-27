@@ -18,7 +18,7 @@ MonoBehaviour:
   m_PlatformId: ad48d16a66894befa4d8181998c3cb09
   m_PlatformBuildProfile:
     rid: 6203078953069707264
-  m_OverrideGlobalSceneList: 1
+  m_OverrideGlobalSceneList: 0
   m_Scenes:
   - m_enabled: 1
     m_path: Assets/00_MemoAnchor/01_Scenes/Splash.unity

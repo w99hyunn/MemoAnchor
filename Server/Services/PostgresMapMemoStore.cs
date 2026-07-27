@@ -86,7 +86,7 @@ public sealed class PostgresMapMemoStore : IMapMemoStore
             AddressId = address.Id,
             SpaceName = spaceName,
             CreatedAt = now,
-            ScanCreatedAt = now,
+            ScanCreatedAt = null,
             Members = rolesByPlayerId
                 .Select(item => new MapMemberEntity { UnityPlayerId = item.Key, Role = item.Value })
                 .ToList()
@@ -122,6 +122,72 @@ public sealed class PostgresMapMemoStore : IMapMemoStore
             .AnyAsync(member => member.MapId == id
                 && member.UnityPlayerId == playerId
                 && member.Role == ScanMapRoles.MANAGER, cancellationToken);
+    }
+
+    public async Task<MapReconstructionInfo?> LoadMapReconstructionAsync(string playerId, string mapId, CancellationToken cancellationToken)
+    {
+        if (!Guid.TryParse(mapId, out Guid id))
+        {
+            return null;
+        }
+
+        return await db.Maps
+            .AsNoTracking()
+            .Where(map => map.Id == id
+                && map.Members.Any(member => member.UnityPlayerId == playerId)
+                && map.ReconstructionScanId != string.Empty)
+            .Select(map => new MapReconstructionInfo(
+                map.ReconstructionScanId,
+                map.ReconstructionState,
+                map.ReconstructionMessage,
+                map.ReconstructionResultFile,
+                map.ReconstructionUpdatedAt))
+            .FirstOrDefaultAsync(cancellationToken);
+    }
+
+    public async Task BeginMapReconstructionAsync(string mapId, string scanId, CancellationToken cancellationToken)
+    {
+        Guid id = ParseGuid(mapId, nameof(mapId));
+        MapEntity map = await db.Maps.FirstOrDefaultAsync(item => item.Id == id, cancellationToken)
+            ?? throw new InvalidOperationException("Map not found.");
+        DateTimeOffset now = DateTimeOffset.UtcNow;
+        map.ScanCreatedAt = null;
+        map.ReconstructionScanId = LimitText(scanId, 256);
+        map.ReconstructionState = "uploading";
+        map.ReconstructionMessage = "Uploading reconstruction package";
+        map.ReconstructionResultFile = string.Empty;
+        map.ReconstructionUpdatedAt = now;
+        await db.SaveChangesAsync(cancellationToken);
+    }
+
+    public async Task UpdateMapReconstructionAsync(
+        string mapId,
+        string scanId,
+        string state,
+        string message,
+        string resultFile,
+        DateTimeOffset updatedAt,
+        CancellationToken cancellationToken)
+    {
+        Guid id = ParseGuid(mapId, nameof(mapId));
+        MapEntity? map = await db.Maps.FirstOrDefaultAsync(item => item.Id == id
+            && item.ReconstructionScanId == scanId, cancellationToken);
+        if (map == null)
+        {
+            return;
+        }
+
+        string normalizedState = LimitText(state, 32).ToLowerInvariant();
+        map.ReconstructionState = normalizedState;
+        map.ReconstructionMessage = LimitText(message, 1000);
+        map.ReconstructionResultFile = LimitText(resultFile, 500);
+        map.ReconstructionUpdatedAt = updatedAt;
+        if (normalizedState == "done")
+        {
+            map.ScanCreatedAt = updatedAt;
+        }
+
+        await db.SaveChangesAsync(cancellationToken);
     }
 
     public async Task<MapInviteInfo> IssueMapInviteAsync(string playerId, string mapId, CancellationToken cancellationToken)
@@ -741,7 +807,12 @@ public sealed class PostgresMapMemoStore : IMapMemoStore
             canViewInviteCode ? map.InviteCode : string.Empty,
             canViewInviteCode ? map.InviteCodeExpiresAt : null,
             map.CreatedAt,
-            map.ScanCreatedAt);
+            map.ScanCreatedAt,
+            map.ReconstructionScanId,
+            map.ReconstructionState,
+            map.ReconstructionMessage,
+            map.ReconstructionResultFile,
+            map.ReconstructionUpdatedAt);
     }
 
     private async Task<MapEntity> LoadManagedMapAsync(string playerId, string mapId, CancellationToken cancellationToken)
@@ -819,6 +890,12 @@ public sealed class PostgresMapMemoStore : IMapMemoStore
     private static string Normalize(string? value)
     {
         return value?.Trim() ?? string.Empty;
+    }
+
+    private static string LimitText(string? value, int maxLength)
+    {
+        string normalized = Normalize(value);
+        return normalized.Length <= maxLength ? normalized : normalized[..maxLength];
     }
 
     private static string GetFallbackText(string? value, string fallback)

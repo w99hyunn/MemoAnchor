@@ -1242,6 +1242,33 @@
     background-color: rgb(226, 226, 226);
 }
 
+.map-reconstruction-button {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    border-width: 0;
+    border-radius: 0;
+    background-color: rgba(255, 255, 255, 0);
+    color: rgb(255, 255, 255);
+    font-size: 28px;
+    -unity-font-style: bold;
+    -unity-text-align: middle-center;
+}
+
+.map-reconstruction-button:hover:enabled {
+    background-color: rgba(255, 255, 255, 0.08);
+}
+
+.map-reconstruction-button:active:enabled {
+    background-color: rgba(0, 0, 0, 0.08);
+}
+
+.map-reconstruction-button.is-failed {
+    color: rgb(120, 32, 32);
+}
+
 .map-preview-menu-button {
     position: absolute;
     top: 24px;

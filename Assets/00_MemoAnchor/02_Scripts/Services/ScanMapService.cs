@@ -29,6 +29,11 @@ namespace MemoAnchor
         public string inviteCodeExpiresAt;
         public string createdAt;
         public string scanCreatedAt;
+        public string reconstructionScanId;
+        public string reconstructionState;
+        public string reconstructionMessage;
+        public string reconstructionResultFile;
+        public string reconstructionUpdatedAt;
     }
 
     [Serializable]

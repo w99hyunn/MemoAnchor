@@ -123,18 +123,12 @@ namespace MemoAnchor.UI
                 return;
             }
 
-            _ = CreateTemporaryMapAndStartScanAsync();
+            _ = StartScanAsync();
         }
 
-        private async Awaitable CreateTemporaryMapAndStartScanAsync()
+        private async Awaitable StartScanAsync()
         {
-            string createdMapId = await _scanController.CreateTemporaryMapAsync();
-            if (string.IsNullOrWhiteSpace(createdMapId))
-            {
-                return;
-            }
-
-            MapScanSession.Begin(createdMapId);
+            MapScanSession.BeginScan(_scanController.CreateScanDraft());
             SceneHistoryManager.SaveCurrentScene();
             await _fadeTransition.FadeOutAndLoadSceneAsync(MapScanSession.SCAN_SCENE_NAME);
         }

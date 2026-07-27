@@ -15,10 +15,8 @@ namespace MemoAnchor.UI
         private Tab_ScanView _view;
         private KakaoPostcodeWebView _postcodeWebView;
         private readonly ScanAddressService _scanAddressService = new();
-        private readonly ScanMapService _scanMapService = new();
         private FriendSelectionTarget _friendSelectionTarget;
         private int _friendSelectionRequestToken;
-        private bool _isCreatingTemporaryMap;
 
         private void Awake()
         {
@@ -139,40 +137,18 @@ namespace MemoAnchor.UI
             }
         }
 
-        public async Awaitable<string> CreateTemporaryMapAsync()
+        public ScanMapCreateRequest CreateScanDraft()
         {
-            if (_isCreatingTemporaryMap)
+            ScanAddressItem address = _view.SelectedAddressItem;
+            return new ScanMapCreateRequest
             {
-                return string.Empty;
-            }
-
-            _isCreatingTemporaryMap = true;
-
-            try
-            {
-                ScanAddressItem address = _view.SelectedAddressItem;
-                var payload = new ScanMapCreateRequest
-                {
-                    addressId = address?.id ?? string.Empty,
-                    address = _view.SelectedAddress,
-                    roadAddress = address?.roadAddress ?? _view.SelectedAddress,
-                    spaceName = _view.SpaceName,
-                    repairerPlayerId = _view.SelectedRepairer.Id,
-                    managerPlayerId = _view.SelectedManager.Id
-                };
-
-                ScanMapCreateResult result = await _scanMapService.CreateMapAsync(payload);
-                if (!result.IsSuccess)
-                {
-                    PopupManager.ShowMessage("맵 생성 실패", "서버에 맵을 저장하지 못했습니다.", "확인");
-                }
-
-                return result.IsSuccess ? result.CreatedMapId : string.Empty;
-            }
-            finally
-            {
-                _isCreatingTemporaryMap = false;
-            }
+                addressId = address?.id ?? string.Empty,
+                address = _view.SelectedAddress,
+                roadAddress = address?.roadAddress ?? _view.SelectedAddress,
+                spaceName = _view.SpaceName,
+                repairerPlayerId = _view.SelectedRepairer.Id,
+                managerPlayerId = _view.SelectedManager.Id
+            };
         }
 
         private async Awaitable OpenFriendSelectionAsync(FriendSelectionTarget target)

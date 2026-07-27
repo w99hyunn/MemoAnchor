@@ -58,6 +58,11 @@ public sealed class MemoAnchorDbContext : DbContext
             entity.Property(item => item.InviteCodeExpiresAt).HasColumnName("invite_code_expires_at");
             entity.Property(item => item.CreatedAt).HasColumnName("created_at");
             entity.Property(item => item.ScanCreatedAt).HasColumnName("scan_created_at");
+            entity.Property(item => item.ReconstructionScanId).HasColumnName("reconstruction_scan_id").HasMaxLength(256).IsRequired();
+            entity.Property(item => item.ReconstructionState).HasColumnName("reconstruction_state").HasMaxLength(32).IsRequired();
+            entity.Property(item => item.ReconstructionMessage).HasColumnName("reconstruction_message").HasMaxLength(1000).IsRequired();
+            entity.Property(item => item.ReconstructionResultFile).HasColumnName("reconstruction_result_file").HasMaxLength(500).IsRequired();
+            entity.Property(item => item.ReconstructionUpdatedAt).HasColumnName("reconstruction_updated_at");
             entity.HasOne(item => item.Address)
                 .WithMany(item => item.Maps)
                 .HasForeignKey(item => item.AddressId)
@@ -145,7 +150,12 @@ public sealed class MapEntity
     public string InviteCode { get; set; } = string.Empty;
     public DateTimeOffset? InviteCodeExpiresAt { get; set; }
     public DateTimeOffset CreatedAt { get; set; }
-    public DateTimeOffset ScanCreatedAt { get; set; }
+    public DateTimeOffset? ScanCreatedAt { get; set; }
+    public string ReconstructionScanId { get; set; } = string.Empty;
+    public string ReconstructionState { get; set; } = string.Empty;
+    public string ReconstructionMessage { get; set; } = string.Empty;
+    public string ReconstructionResultFile { get; set; } = string.Empty;
+    public DateTimeOffset? ReconstructionUpdatedAt { get; set; }
     public List<MapMemberEntity> Members { get; set; } = [];
     public List<MemoEntity> Memos { get; set; } = [];
 }

@@ -12,6 +12,9 @@ public interface IMapMemoStore
     Task<ScanMapCreateInfo> AddMapAsync(string playerId, SaveScanMapRequest request, CancellationToken cancellationToken);
     Task<bool> CanAccessMapAsync(string playerId, string mapId, CancellationToken cancellationToken);
     Task<bool> CanManageMapAsync(string playerId, string mapId, CancellationToken cancellationToken);
+    Task<MapReconstructionInfo?> LoadMapReconstructionAsync(string playerId, string mapId, CancellationToken cancellationToken);
+    Task BeginMapReconstructionAsync(string mapId, string scanId, CancellationToken cancellationToken);
+    Task UpdateMapReconstructionAsync(string mapId, string scanId, string state, string message, string resultFile, DateTimeOffset updatedAt, CancellationToken cancellationToken);
     Task<IReadOnlyList<ScanMapInfo>> AddMapMembersAsync(string playerId, string mapId, IReadOnlyList<InviteMapMemberInfo> members, CancellationToken cancellationToken);
     Task<IReadOnlyList<MapFriendProfileInfo>> LoadMapFriendProfilesAsync(IReadOnlyList<string> playerIds, CancellationToken cancellationToken);
     Task<MapInviteInfo> IssueMapInviteAsync(string playerId, string mapId, CancellationToken cancellationToken);
@@ -56,7 +59,19 @@ public sealed record ScanMapInfo(
     string InviteCode,
     DateTimeOffset? InviteCodeExpiresAt,
     DateTimeOffset CreatedAt,
-    DateTimeOffset ScanCreatedAt);
+    DateTimeOffset? ScanCreatedAt,
+    string ReconstructionScanId,
+    string ReconstructionState,
+    string ReconstructionMessage,
+    string ReconstructionResultFile,
+    DateTimeOffset? ReconstructionUpdatedAt);
+
+public sealed record MapReconstructionInfo(
+    string ScanId,
+    string State,
+    string Message,
+    string ResultFile,
+    DateTimeOffset? UpdatedAt);
 
 public sealed record ScanMapCreateInfo(
     string CreatedMapId,

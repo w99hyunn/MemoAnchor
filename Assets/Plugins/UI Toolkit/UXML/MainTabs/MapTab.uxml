@@ -18,6 +18,7 @@
             </ui:VisualElement>
         </ui:Button>
         <ui:VisualElement name="map-preview" class="map-preview">
+            <ui:Button name="map-reconstruction-button" text="스캔 결과 없음" class="map-reconstruction-button is-hidden"/>
             <ui:Button name="map-preview-menu-button" text="☰" class="map-preview-menu-button common-icon-button"/>
             <ui:VisualElement name="map-create-memo-actions" class="map-create-memo-actions is-hidden">
                 <ui:Button name="map-create-text-memo-button" text="타이핑 메모 생성" class="map-create-memo-button"/>

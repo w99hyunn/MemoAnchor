@@ -153,6 +153,8 @@ public class ARKitMeshScanController : MonoBehaviour
     private bool previewHasProjectedColors;
     private float previewProjectedColorCoverage;
     private bool reconstructionPackageRunning;
+    private bool mapConfirmationRunning;
+    private readonly ScanMapService scanMapService = new();
     private static Mesh surfacePointMesh;
     private static Mesh thumbnailQuadMesh;
     private static Mesh coverageQuadMesh;
@@ -279,7 +281,9 @@ public class ARKitMeshScanController : MonoBehaviour
         UpdateButtonStates();
         UpdateStats(force: true);
 
-        if (MapScanSession.HasActiveMap)
+        if (MapScanSession.IsViewingStoredResult)
+            _ = LoadStoredReconstructionAsync();
+        else if (MapScanSession.HasScanTarget)
             StartScan();
     }
 
@@ -343,6 +347,9 @@ public class ARKitMeshScanController : MonoBehaviour
 
     public void StartScan()
     {
+        if (MapScanSession.IsViewingStoredResult || reconstructionPackageRunning)
+            return;
+
         scanMode = ScanMode.Scanning;
         meshesAdded = 0;
         meshesUpdated = 0;
@@ -411,6 +418,9 @@ public class ARKitMeshScanController : MonoBehaviour
 
     public void StopScanAndShowMap()
     {
+        if (MapScanSession.IsViewingStoredResult || reconstructionPackageRunning)
+            return;
+
         if (!meshManager)
         {
             SetExportStatus("Stop failed: ARMeshManager missing");
@@ -452,8 +462,7 @@ public class ARKitMeshScanController : MonoBehaviour
             ? $"Scan stopped. Showing photo-projected LiDAR map.\nCoverage: {previewProjectedColorCoverage:P0}"
             : "Scan stopped. Showing clean structural map.");
 
-        if (packageReconstructionScanOnStop && !reconstructionPackageRunning)
-            _ = PackageAndMaybeUploadReconstructionScanAsync(bounds.Value);
+        _ = FinalizeCompletedScanAsync(bounds.Value);
 
         if (enhancePreviewWithGemini && !geminiEnhancementRunning)
             _ = EnhancePreviewWithGeminiAsync(bounds.Value);
@@ -499,16 +508,43 @@ public class ARKitMeshScanController : MonoBehaviour
         }
     }
 
-    private async Awaitable PackageAndMaybeUploadReconstructionScanAsync(Bounds bounds)
+    private async Awaitable FinalizeCompletedScanAsync(Bounds bounds)
     {
         reconstructionPackageRunning = true;
+        mapConfirmationRunning = MapScanSession.HasPendingMap;
+        UpdateButtonStates();
 
         try
         {
-            SetExportStatus("Packaging RGB-D reconstruction scan...");
-            string zipPath = BuildReconstructionPackage(bounds);
-            Debug.Log($"[ARKitMeshScanController] Reconstruction package: {zipPath}");
-            SetExportStatus($"Reconstruction package ready.\n{Path.GetFileName(zipPath)}");
+            string zipPath = string.Empty;
+            if (packageReconstructionScanOnStop)
+            {
+                SetExportStatus("Packaging RGB-D reconstruction scan...");
+                zipPath = BuildReconstructionPackage(bounds);
+                Debug.Log($"[ARKitMeshScanController] Reconstruction package: {zipPath}");
+                SetExportStatus($"Reconstruction package ready.\n{Path.GetFileName(zipPath)}");
+            }
+
+            if (MapScanSession.HasPendingMap)
+            {
+                SetExportStatus("Scan complete. Saving map...");
+                ScanMapCreateResult result = await scanMapService.CreateMapAsync(MapScanSession.PendingMapRequest);
+                if (!result.IsSuccess)
+                {
+                    SetExportStatus("Scan completed, but the map could not be saved. Return and try again.");
+                    return;
+                }
+
+                MapScanSession.ConfirmMap(result.CreatedMapId);
+                mapConfirmationRunning = false;
+                UpdateButtonStates();
+            }
+
+            if (!packageReconstructionScanOnStop)
+            {
+                SetExportStatus("Scan complete. Map saved.");
+                return;
+            }
 
             if (uploadReconstructionPackageOnStop
                 && (MapScanSession.HasActiveMap || !string.IsNullOrWhiteSpace(reconstructionUploadUrl)))
@@ -523,7 +559,9 @@ public class ARKitMeshScanController : MonoBehaviour
         }
         finally
         {
+            mapConfirmationRunning = false;
             reconstructionPackageRunning = false;
+            UpdateButtonStates();
         }
     }
 
@@ -803,6 +841,12 @@ public class ARKitMeshScanController : MonoBehaviour
                 Debug.LogWarning($"[ARKitMeshScanController] Reconstruction upload failed ({request.responseCode}): {request.error}\n{request.downloadHandler.text}");
             }
         }
+    }
+
+    private async Awaitable LoadStoredReconstructionAsync()
+    {
+        SetExportStatus("Loading saved server reconstruction...");
+        await PollReconstructionStatusAsync(MapScanSession.ReconstructionScanId);
     }
 
     private async Awaitable PollReconstructionStatusAsync(string serverScanId)
@@ -4156,10 +4200,17 @@ public class ARKitMeshScanController : MonoBehaviour
     private void UpdateButtonStates()
     {
         if (resetButton)
-            resetButton.interactable = scanMode != ScanMode.Scanning;
+            resetButton.interactable = !MapScanSession.IsViewingStoredResult
+                && !reconstructionPackageRunning
+                && scanMode != ScanMode.Scanning;
 
         if (exportButton)
-            exportButton.interactable = scanMode == ScanMode.Scanning;
+            exportButton.interactable = !MapScanSession.IsViewingStoredResult
+                && !reconstructionPackageRunning
+                && scanMode == ScanMode.Scanning;
+
+        if (backButton)
+            backButton.interactable = !mapConfirmationRunning;
     }
 
     private void SetButtonLabel(Button button, string label)
