@@ -3,15 +3,17 @@ using UnityEngine.UIElements;
 
 namespace MemoAnchor.UI
 {
-    [RequireComponent(typeof(MainView))]
+    [RequireComponent(typeof(MainView), typeof(Tab_ScanView), typeof(Tab_ScanController))]
+    [RequireComponent(typeof(FadeTransition))]
     public class MainController : MonoBehaviour
     {
-        private const string NavTapDownClass = "is-tapping-down";
-        private const int NavTapDownDurationMs = 105;
+        private const string NAV_TAP_DOWN_CLASS = "is-tapping-down";
+        private const int NAV_TAP_DOWN_DURATION_MS = 105;
 
         private MainView _view;
         private Tab_ScanView _scanView;
         private Tab_ScanController _scanController;
+        private FadeTransition _fadeTransition;
         private int _currentTabIndex;
         private bool _isScanNavModeActive;
         private bool _isRegistered;
@@ -21,6 +23,7 @@ namespace MemoAnchor.UI
             TryGetComponent<MainView>(out _view);
             TryGetComponent<Tab_ScanView>(out _scanView);
             TryGetComponent<Tab_ScanController>(out _scanController);
+            TryGetComponent<FadeTransition>(out _fadeTransition);
         }
 
         private void Start()
@@ -120,19 +123,20 @@ namespace MemoAnchor.UI
                 return;
             }
 
-            _ = CreateTemporaryMapAndShowAsync();
+            _ = CreateTemporaryMapAndStartScanAsync();
         }
 
-        private async Awaitable CreateTemporaryMapAndShowAsync()
+        private async Awaitable CreateTemporaryMapAndStartScanAsync()
         {
-            bool created = await _scanController.CreateTemporaryMapAsync();
-            if (!created)
+            string createdMapId = await _scanController.CreateTemporaryMapAsync();
+            if (string.IsNullOrWhiteSpace(createdMapId))
             {
                 return;
             }
 
-            _isScanNavModeActive = false;
-            ShowTab(3);
+            MapScanSession.Begin(createdMapId);
+            SceneHistoryManager.SaveCurrentScene();
+            await _fadeTransition.FadeOutAndLoadSceneAsync(MapScanSession.SCAN_SCENE_NAME);
         }
 
         private void ShowTab(int tabIndex)
@@ -210,9 +214,9 @@ namespace MemoAnchor.UI
 
         private static void PlayNavTapAnimation(Button button)
         {
-            button.RemoveFromClassList(NavTapDownClass);
-            button.AddToClassList(NavTapDownClass);
-            button.schedule.Execute(() => button.RemoveFromClassList(NavTapDownClass)).ExecuteLater(NavTapDownDurationMs);
+            button.RemoveFromClassList(NAV_TAP_DOWN_CLASS);
+            button.AddToClassList(NAV_TAP_DOWN_CLASS);
+            button.schedule.Execute(() => button.RemoveFromClassList(NAV_TAP_DOWN_CLASS)).ExecuteLater(NAV_TAP_DOWN_DURATION_MS);
         }
     }
 }

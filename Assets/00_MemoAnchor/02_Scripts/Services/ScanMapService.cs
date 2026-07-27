@@ -34,6 +34,7 @@ namespace MemoAnchor
     [Serializable]
     public class ScanMapListResponse
     {
+        public string createdMapId;
         public List<ScanMapItem> maps = new();
     }
 
@@ -108,11 +109,13 @@ namespace MemoAnchor
     public readonly struct ScanMapCreateResult
     {
         public readonly bool IsSuccess;
+        public readonly string CreatedMapId;
         public readonly ScanMapListResponse MapList;
 
-        public ScanMapCreateResult(bool isSuccess, ScanMapListResponse mapList)
+        public ScanMapCreateResult(bool isSuccess, string createdMapId, ScanMapListResponse mapList)
         {
             IsSuccess = isSuccess;
+            CreatedMapId = createdMapId;
             MapList = mapList;
         }
     }
@@ -172,7 +175,7 @@ namespace MemoAnchor
         {
             if (_isCreating || !AuthenticationService.Instance.IsSignedIn)
             {
-                return new ScanMapCreateResult(false, _lastResponse);
+                return new ScanMapCreateResult(false, string.Empty, _lastResponse);
             }
 
             _isCreating = true;
@@ -186,11 +189,11 @@ namespace MemoAnchor
                 if (request.result != UnityWebRequest.Result.Success)
                 {
                     Debug.LogWarning($"Scan map create failed: {request.error}");
-                    return new ScanMapCreateResult(false, _lastResponse);
+                    return new ScanMapCreateResult(false, string.Empty, _lastResponse);
                 }
 
                 _lastResponse = JsonUtility.FromJson<ScanMapListResponse>(request.downloadHandler.text);
-                return new ScanMapCreateResult(true, _lastResponse);
+                return new ScanMapCreateResult(true, _lastResponse.createdMapId, _lastResponse);
             }
             finally
             {

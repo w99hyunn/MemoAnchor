@@ -9,7 +9,9 @@ public interface IMapMemoStore
     Task<IReadOnlyList<ScanAddressInfo>> LoadAddressesAsync(string playerId, CancellationToken cancellationToken);
     Task<IReadOnlyList<ScanAddressInfo>> AddAddressAsync(string playerId, SaveScanAddressRequest request, CancellationToken cancellationToken);
     Task<IReadOnlyList<ScanMapInfo>> LoadMapsAsync(string playerId, CancellationToken cancellationToken);
-    Task<IReadOnlyList<ScanMapInfo>> AddMapAsync(string playerId, SaveScanMapRequest request, CancellationToken cancellationToken);
+    Task<ScanMapCreateInfo> AddMapAsync(string playerId, SaveScanMapRequest request, CancellationToken cancellationToken);
+    Task<bool> CanAccessMapAsync(string playerId, string mapId, CancellationToken cancellationToken);
+    Task<bool> CanManageMapAsync(string playerId, string mapId, CancellationToken cancellationToken);
     Task<IReadOnlyList<ScanMapInfo>> AddMapMembersAsync(string playerId, string mapId, IReadOnlyList<InviteMapMemberInfo> members, CancellationToken cancellationToken);
     Task<IReadOnlyList<MapFriendProfileInfo>> LoadMapFriendProfilesAsync(IReadOnlyList<string> playerIds, CancellationToken cancellationToken);
     Task<MapInviteInfo> IssueMapInviteAsync(string playerId, string mapId, CancellationToken cancellationToken);
@@ -55,6 +57,10 @@ public sealed record ScanMapInfo(
     DateTimeOffset? InviteCodeExpiresAt,
     DateTimeOffset CreatedAt,
     DateTimeOffset ScanCreatedAt);
+
+public sealed record ScanMapCreateInfo(
+    string CreatedMapId,
+    IReadOnlyList<ScanMapInfo> Maps);
 
 public sealed record ScanMapMemberInfo(
     string PlayerId,
@@ -113,9 +119,9 @@ public sealed record MemoCreateResult(
 
 public static class ScanMapRoles
 {
-    public const string Manager = "manager";
-    public const string Repairer = "repairer";
-    public const string ReadOnly = "read-only";
+    public const string MANAGER = "manager";
+    public const string REPAIRER = "repairer";
+    public const string READ_ONLY = "read-only";
 }
 
 public sealed class SaveScanAddressRequest

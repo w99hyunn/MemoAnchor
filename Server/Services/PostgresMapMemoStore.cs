@@ -53,7 +53,7 @@ public sealed class PostgresMapMemoStore : IMapMemoStore
         return maps.Select(map => ToScanMapInfo(map, playerId, usersByPlayerId)).ToList();
     }
 
-    public async Task<IReadOnlyList<ScanMapInfo>> AddMapAsync(string playerId, SaveScanMapRequest request, CancellationToken cancellationToken)
+    public async Task<ScanMapCreateInfo> AddMapAsync(string playerId, SaveScanMapRequest request, CancellationToken cancellationToken)
     {
         string spaceName = Normalize(request.SpaceName);
         if (string.IsNullOrWhiteSpace(spaceName))
@@ -65,19 +65,19 @@ public sealed class PostgresMapMemoStore : IMapMemoStore
         DateTimeOffset now = DateTimeOffset.UtcNow;
         Dictionary<string, string> rolesByPlayerId = new(StringComparer.OrdinalIgnoreCase)
         {
-            [playerId] = ScanMapRoles.Manager
+            [playerId] = ScanMapRoles.MANAGER
         };
 
         string managerPlayerId = Normalize(request.ManagerPlayerId);
         if (!string.IsNullOrWhiteSpace(managerPlayerId))
         {
-            rolesByPlayerId[managerPlayerId] = ScanMapRoles.Manager;
+            rolesByPlayerId[managerPlayerId] = ScanMapRoles.MANAGER;
         }
 
         string repairerPlayerId = Normalize(request.RepairerPlayerId);
         if (!string.IsNullOrWhiteSpace(repairerPlayerId) && !rolesByPlayerId.ContainsKey(repairerPlayerId))
         {
-            rolesByPlayerId[repairerPlayerId] = ScanMapRoles.Repairer;
+            rolesByPlayerId[repairerPlayerId] = ScanMapRoles.REPAIRER;
         }
 
         var map = new MapEntity
@@ -94,7 +94,34 @@ public sealed class PostgresMapMemoStore : IMapMemoStore
 
         db.Maps.Add(map);
         await db.SaveChangesAsync(cancellationToken);
-        return await LoadMapsAsync(playerId, cancellationToken);
+        IReadOnlyList<ScanMapInfo> maps = await LoadMapsAsync(playerId, cancellationToken);
+        return new ScanMapCreateInfo(map.Id.ToString("N"), maps);
+    }
+
+    public async Task<bool> CanAccessMapAsync(string playerId, string mapId, CancellationToken cancellationToken)
+    {
+        if (!Guid.TryParse(mapId, out Guid id))
+        {
+            return false;
+        }
+
+        return await db.MapMembers
+            .AsNoTracking()
+            .AnyAsync(member => member.MapId == id && member.UnityPlayerId == playerId, cancellationToken);
+    }
+
+    public async Task<bool> CanManageMapAsync(string playerId, string mapId, CancellationToken cancellationToken)
+    {
+        if (!Guid.TryParse(mapId, out Guid id))
+        {
+            return false;
+        }
+
+        return await db.MapMembers
+            .AsNoTracking()
+            .AnyAsync(member => member.MapId == id
+                && member.UnityPlayerId == playerId
+                && member.Role == ScanMapRoles.MANAGER, cancellationToken);
     }
 
     public async Task<MapInviteInfo> IssueMapInviteAsync(string playerId, string mapId, CancellationToken cancellationToken)
@@ -134,9 +161,9 @@ public sealed class PostgresMapMemoStore : IMapMemoStore
         {
             if (existingMembers.TryGetValue(member.PlayerId, out MapMemberEntity? existingMember))
             {
-                if (string.Equals(existingMember.Role, ScanMapRoles.ReadOnly, StringComparison.OrdinalIgnoreCase))
+                if (string.Equals(existingMember.Role, ScanMapRoles.READ_ONLY, StringComparison.OrdinalIgnoreCase))
                 {
-                    existingMember.Role = ScanMapRoles.Repairer;
+                    existingMember.Role = ScanMapRoles.REPAIRER;
                     existingMember.DisplayName = member.Name;
                     existingMember.CompanyName = member.CompanyName;
                 }
@@ -147,7 +174,7 @@ public sealed class PostgresMapMemoStore : IMapMemoStore
             {
                 MapId = map.Id,
                 UnityPlayerId = member.PlayerId,
-                Role = ScanMapRoles.Repairer,
+                Role = ScanMapRoles.REPAIRER,
                 DisplayName = member.Name,
                 CompanyName = member.CompanyName
             });
@@ -177,9 +204,9 @@ public sealed class PostgresMapMemoStore : IMapMemoStore
         MapEntity map = await LoadManagedMapAsync(playerId, mapId, cancellationToken);
         MapMemberEntity member = map.Members.FirstOrDefault(item => string.Equals(item.UnityPlayerId, memberPlayerId, StringComparison.OrdinalIgnoreCase))
             ?? throw new InvalidOperationException("Map member not found.");
-        member.Role = string.Equals(member.Role, ScanMapRoles.ReadOnly, StringComparison.OrdinalIgnoreCase)
-            ? ScanMapRoles.Repairer
-            : ScanMapRoles.Manager;
+        member.Role = string.Equals(member.Role, ScanMapRoles.READ_ONLY, StringComparison.OrdinalIgnoreCase)
+            ? ScanMapRoles.REPAIRER
+            : ScanMapRoles.MANAGER;
         await db.SaveChangesAsync(cancellationToken);
         return await LoadMapsAsync(playerId, cancellationToken);
     }
@@ -204,15 +231,15 @@ public sealed class PostgresMapMemoStore : IMapMemoStore
             {
                 MapId = map.Id,
                 UnityPlayerId = playerId,
-                Role = joinAsMember ? ScanMapRoles.Repairer : ScanMapRoles.ReadOnly,
+                Role = joinAsMember ? ScanMapRoles.REPAIRER : ScanMapRoles.READ_ONLY,
                 DisplayName = user?.Name ?? string.Empty,
                 CompanyName = user?.CompanyName ?? string.Empty
             });
             await db.SaveChangesAsync(cancellationToken);
         }
-        else if (joinAsMember && string.Equals(currentMember?.Role, ScanMapRoles.ReadOnly, StringComparison.OrdinalIgnoreCase))
+        else if (joinAsMember && string.Equals(currentMember?.Role, ScanMapRoles.READ_ONLY, StringComparison.OrdinalIgnoreCase))
         {
-            currentMember.Role = ScanMapRoles.Repairer;
+            currentMember.Role = ScanMapRoles.REPAIRER;
             await db.SaveChangesAsync(cancellationToken);
         }
 
@@ -232,9 +259,9 @@ public sealed class PostgresMapMemoStore : IMapMemoStore
         ScanMapInfo mapInfo = ToScanMapInfo(map, isPersistentJoin ? playerId : string.Empty, usersByPlayerId);
         if (!joinAsMember)
         {
-            mapInfo = mapInfo with { CurrentUserRole = ScanMapRoles.ReadOnly, Members = [] };
+            mapInfo = mapInfo with { CurrentUserRole = ScanMapRoles.READ_ONLY, Members = [] };
         }
-        string creatorPlayerId = map.Members.FirstOrDefault(member => string.Equals(member.Role, ScanMapRoles.Manager, StringComparison.OrdinalIgnoreCase))?.UnityPlayerId ?? string.Empty;
+        string creatorPlayerId = map.Members.FirstOrDefault(member => string.Equals(member.Role, ScanMapRoles.MANAGER, StringComparison.OrdinalIgnoreCase))?.UnityPlayerId ?? string.Empty;
         return new ReadOnlyMapInfo(mapInfo, await ToMemoInfosAsync(memos, cancellationToken), creatorPlayerId);
     }
 
@@ -243,8 +270,8 @@ public sealed class PostgresMapMemoStore : IMapMemoStore
         MapEntity map = await LoadManagedMapAsync(playerId, mapId, cancellationToken);
         MapMemberEntity member = map.Members.FirstOrDefault(item => string.Equals(item.UnityPlayerId, memberPlayerId, StringComparison.OrdinalIgnoreCase))
             ?? throw new InvalidOperationException("Map member not found.");
-        if (string.Equals(member.Role, ScanMapRoles.Manager, StringComparison.OrdinalIgnoreCase)
-            && map.Members.Count(item => string.Equals(item.Role, ScanMapRoles.Manager, StringComparison.OrdinalIgnoreCase)) <= 1)
+        if (string.Equals(member.Role, ScanMapRoles.MANAGER, StringComparison.OrdinalIgnoreCase)
+            && map.Members.Count(item => string.Equals(item.Role, ScanMapRoles.MANAGER, StringComparison.OrdinalIgnoreCase)) <= 1)
         {
             throw new InvalidOperationException("The last map manager cannot be removed.");
         }
@@ -263,7 +290,7 @@ public sealed class PostgresMapMemoStore : IMapMemoStore
             .FirstOrDefaultAsync(item => item.Id == id, cancellationToken)
             ?? throw new InvalidOperationException("Map not found.");
         if (!map.Members.Any(member => string.Equals(member.UnityPlayerId, playerId, StringComparison.OrdinalIgnoreCase)
-            && string.Equals(member.Role, ScanMapRoles.Manager, StringComparison.OrdinalIgnoreCase)))
+            && string.Equals(member.Role, ScanMapRoles.MANAGER, StringComparison.OrdinalIgnoreCase)))
         {
             throw new UnauthorizedAccessException("Only a map manager can delete the map.");
         }
@@ -393,7 +420,7 @@ public sealed class PostgresMapMemoStore : IMapMemoStore
         bool isAuthor = string.Equals(memo.AuthorUnityPlayerId, playerId, StringComparison.OrdinalIgnoreCase);
         bool isManager = memo.Map.Members.Any(member =>
             string.Equals(member.UnityPlayerId, playerId, StringComparison.OrdinalIgnoreCase)
-            && string.Equals(member.Role, ScanMapRoles.Manager, StringComparison.OrdinalIgnoreCase));
+            && string.Equals(member.Role, ScanMapRoles.MANAGER, StringComparison.OrdinalIgnoreCase));
         if (!isAuthor && !isManager)
         {
             throw new UnauthorizedAccessException("Only the memo author or map manager can edit this memo.");
@@ -476,7 +503,7 @@ public sealed class PostgresMapMemoStore : IMapMemoStore
         bool isAssignee = string.Equals(memo.AssigneeUnityPlayerId, playerId, StringComparison.OrdinalIgnoreCase);
         bool isManager = memo.Map.Members.Any(member =>
             string.Equals(member.UnityPlayerId, playerId, StringComparison.OrdinalIgnoreCase)
-            && string.Equals(member.Role, ScanMapRoles.Manager, StringComparison.OrdinalIgnoreCase));
+            && string.Equals(member.Role, ScanMapRoles.MANAGER, StringComparison.OrdinalIgnoreCase));
         string normalizedStatus = Normalize(status);
         bool isAllowed = normalizedStatus switch
         {
@@ -688,7 +715,7 @@ public sealed class PostgresMapMemoStore : IMapMemoStore
     private static ScanMapInfo ToScanMapInfo(MapEntity map, string currentPlayerId, IReadOnlyDictionary<string, AppUserEntity> usersByPlayerId)
     {
         string currentRole = map.Members.FirstOrDefault(member => member.UnityPlayerId == currentPlayerId)?.Role ?? string.Empty;
-        bool canViewInviteCode = string.Equals(currentRole, ScanMapRoles.Manager, StringComparison.OrdinalIgnoreCase)
+        bool canViewInviteCode = string.Equals(currentRole, ScanMapRoles.MANAGER, StringComparison.OrdinalIgnoreCase)
             && map.InviteCodeExpiresAt > DateTimeOffset.UtcNow;
         return new ScanMapInfo(
             map.Id.ToString("N"),
@@ -697,10 +724,10 @@ public sealed class PostgresMapMemoStore : IMapMemoStore
             map.Address.RoadAddress,
             map.SpaceName,
             currentRole,
-            string.Equals(currentRole, ScanMapRoles.ReadOnly, StringComparison.OrdinalIgnoreCase)
+            string.Equals(currentRole, ScanMapRoles.READ_ONLY, StringComparison.OrdinalIgnoreCase)
                 ? Array.Empty<ScanMapMemberInfo>()
                 : map.Members
-                .OrderBy(member => string.Equals(member.Role, ScanMapRoles.Manager, StringComparison.OrdinalIgnoreCase) ? 0 : 1)
+                .OrderBy(member => string.Equals(member.Role, ScanMapRoles.MANAGER, StringComparison.OrdinalIgnoreCase) ? 0 : 1)
                 .ThenBy(member => usersByPlayerId.TryGetValue(member.UnityPlayerId, out AppUserEntity? user) ? user.Name : member.UnityPlayerId)
                 .Select(member =>
             {
@@ -728,7 +755,7 @@ public sealed class PostgresMapMemoStore : IMapMemoStore
             throw new InvalidOperationException("Map not found.");
         }
         if (!map.Members.Any(member => string.Equals(member.UnityPlayerId, playerId, StringComparison.OrdinalIgnoreCase)
-            && string.Equals(member.Role, ScanMapRoles.Manager, StringComparison.OrdinalIgnoreCase)))
+            && string.Equals(member.Role, ScanMapRoles.MANAGER, StringComparison.OrdinalIgnoreCase)))
         {
             throw new UnauthorizedAccessException("Only a map manager can manage members.");
         }

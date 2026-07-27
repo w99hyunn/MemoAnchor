@@ -56,6 +56,9 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/Yerin/processingASR.unity
     guid: 8a146735db77d594eae14f29363a9023
+  - enabled: 1
+    path: Assets/Scenes/ARKitMeshScanScene.unity
+    guid: fd682125294954f12b1c670940f890e1
   m_configObjects:
     UnityEditor.XR.ARCore.ARCoreSettings: {fileID: 11400000, guid: 776997c9616f3764787c6a509ae3f090, type: 2}
     UnityEditor.XR.ARKit.ARKitSettings: {fileID: 11400000, guid: 1af485cb88f064d4093b8172c6f19d2b, type: 2}

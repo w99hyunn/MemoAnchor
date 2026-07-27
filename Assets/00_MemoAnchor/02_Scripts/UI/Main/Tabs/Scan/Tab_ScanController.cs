@@ -139,11 +139,11 @@ namespace MemoAnchor.UI
             }
         }
 
-        public async Awaitable<bool> CreateTemporaryMapAsync()
+        public async Awaitable<string> CreateTemporaryMapAsync()
         {
             if (_isCreatingTemporaryMap)
             {
-                return false;
+                return string.Empty;
             }
 
             _isCreatingTemporaryMap = true;
@@ -167,7 +167,7 @@ namespace MemoAnchor.UI
                     PopupManager.ShowMessage("맵 생성 실패", "서버에 맵을 저장하지 못했습니다.", "확인");
                 }
 
-                return result.IsSuccess;
+                return result.IsSuccess ? result.CreatedMapId : string.Empty;
             }
             finally
             {

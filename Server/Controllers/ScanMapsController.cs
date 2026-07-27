@@ -48,8 +48,8 @@ public sealed class ScanMapsController : ControllerBase
             return BadRequest(new { message = "SpaceName is required." });
         }
 
-        IReadOnlyList<ScanMapInfo> maps = await mapMemoStore.AddMapAsync(playerId, request, cancellationToken);
-        return Ok(new ScanMapListResponse(maps));
+        ScanMapCreateInfo result = await mapMemoStore.AddMapAsync(playerId, request, cancellationToken);
+        return Ok(new ScanMapCreateResponse(result.CreatedMapId, result.Maps));
     }
 
     [HttpPost("{mapId}/invite")]
@@ -210,3 +210,4 @@ public sealed class ScanMapsController : ControllerBase
 }
 
 public sealed record ScanMapListResponse(IReadOnlyList<ScanMapInfo> Maps);
+public sealed record ScanMapCreateResponse(string CreatedMapId, IReadOnlyList<ScanMapInfo> Maps);
