@@ -24,7 +24,6 @@ namespace MemoAnchor.UI
         private VisualElement _homeTab, _menuTab, _scanTab, _mapTab, _profileTab;
 
         public event Action<int> TabSwitchRequested;
-        public event Action ScanSceneRequested;
 
         public Button HomeButton => _homeButton;
         public Button MenuButton => _menuButton;

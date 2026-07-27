@@ -1242,6 +1242,22 @@
     background-color: rgb(226, 226, 226);
 }
 
+.map-reconstruction-preview {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+}
+
+.map-reconstruction-spinner.loading-spinner {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    margin-left: -48px;
+    margin-top: -48px;
+}
+
 .map-reconstruction-button {
     position: absolute;
     left: 0;

@@ -1,3 +1,4 @@
+using UnityEngine;
 using UnityEngine.Networking;
 
 namespace MemoAnchor
@@ -11,6 +12,8 @@ namespace MemoAnchor
         public static string ReconstructionResultFile { get; private set; } = string.Empty;
         public static ScanMapCreateRequest PendingMapRequest { get; private set; }
         public static bool ReturnToMapOnClose { get; private set; }
+        public static Mesh CompletedReconstructionMesh { get; private set; }
+        public static Material CompletedReconstructionMaterial { get; private set; }
 
         public static bool HasActiveMap => !string.IsNullOrWhiteSpace(MapId);
         public static bool HasPendingMap => PendingMapRequest != null;
@@ -24,6 +27,8 @@ namespace MemoAnchor
             ReconstructionResultFile = string.Empty;
             PendingMapRequest = pendingMapRequest;
             ReturnToMapOnClose = false;
+            CompletedReconstructionMesh = null;
+            CompletedReconstructionMaterial = null;
         }
 
         public static void ConfirmMap(string mapId)
@@ -39,11 +44,19 @@ namespace MemoAnchor
             ReconstructionResultFile = resultFile?.Trim() ?? string.Empty;
             PendingMapRequest = null;
             ReturnToMapOnClose = true;
+            CompletedReconstructionMesh = null;
+            CompletedReconstructionMaterial = null;
         }
 
         public static void RequestReturnToMap()
         {
             ReturnToMapOnClose = true;
+        }
+
+        public static void SetCompletedReconstruction(Mesh mesh, Material material)
+        {
+            CompletedReconstructionMesh = mesh;
+            CompletedReconstructionMaterial = material;
         }
 
         public static string BuildUploadPath()
@@ -68,6 +81,8 @@ namespace MemoAnchor
             ReconstructionResultFile = string.Empty;
             PendingMapRequest = null;
             ReturnToMapOnClose = false;
+            CompletedReconstructionMesh = null;
+            CompletedReconstructionMaterial = null;
         }
 
         private static string Escape(string value)

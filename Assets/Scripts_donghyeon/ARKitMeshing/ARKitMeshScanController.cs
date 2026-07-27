@@ -1006,6 +1006,7 @@ public class ARKitMeshScanController : MonoBehaviour
 
             ShowServerReconstructionPreview(mesh, serverScanId, localPath);
             SetExportStatus($"Server reconstruction loaded in app.\n{mesh.vertexCount:N0} vertices / {mesh.triangles.Length / 3:N0} triangles");
+            MapScanSession.SetCompletedReconstruction(mesh, previewMaterial);
             reconstructionCompletedSuccessfully = true;
         }
     }
@@ -1753,7 +1754,7 @@ public class ARKitMeshScanController : MonoBehaviour
         Debug.Log($"[ARKitMeshScanController] Showing server reconstruction: {localPath}");
     }
 
-    private static bool TryCreateMeshFromPly(byte[] data, out Mesh mesh, out string error)
+    public static bool TryCreateMeshFromPly(byte[] data, out Mesh mesh, out string error)
     {
         mesh = null;
         error = string.Empty;
@@ -3423,31 +3424,49 @@ public class ARKitMeshScanController : MonoBehaviour
 
     private Material GetPreviewMaterial()
     {
-        var desiredShader = previewHasProjectedColors
-            ? Shader.Find("MemoAnchor/Preview Vertex Colors") ?? Shader.Find("Sprites/Default") ?? Shader.Find("Universal Render Pipeline/Unlit")
-            : Shader.Find("Universal Render Pipeline/Lit") ?? Shader.Find("Standard") ?? Shader.Find("Universal Render Pipeline/Unlit");
+        var desiredShader = FindPreviewShader(previewHasProjectedColors);
 
         if (previewMaterial && previewMaterial.shader == desiredShader)
             return previewMaterial;
 
-        previewMaterial = new Material(desiredShader)
+        previewMaterial = CreatePreviewMaterial(desiredShader, previewHasProjectedColors);
+        return previewMaterial;
+    }
+
+    public static Material CreateReconstructionPreviewMaterial(Mesh mesh)
+    {
+        var colors = mesh.colors;
+        var hasProjectedColors = colors != null && colors.Length == mesh.vertexCount;
+        return CreatePreviewMaterial(FindPreviewShader(hasProjectedColors), hasProjectedColors);
+    }
+
+    private static Shader FindPreviewShader(bool hasProjectedColors)
+    {
+        return hasProjectedColors
+            ? Shader.Find("MemoAnchor/Preview Vertex Colors") ?? Shader.Find("Sprites/Default") ?? Shader.Find("Universal Render Pipeline/Unlit")
+            : Shader.Find("Universal Render Pipeline/Lit") ?? Shader.Find("Standard") ?? Shader.Find("Universal Render Pipeline/Unlit");
+    }
+
+    private static Material CreatePreviewMaterial(Shader shader, bool hasProjectedColors)
+    {
+        var material = new Material(shader)
         {
             name = "Runtime Clean Map Preview Material"
         };
 
-        var color = previewHasProjectedColors ? Color.white : new Color(0.58f, 0.7f, 0.74f, 1f);
-        if (previewMaterial.HasProperty("_BaseColor"))
-            previewMaterial.SetColor("_BaseColor", color);
-        if (previewMaterial.HasProperty("_Color"))
-            previewMaterial.SetColor("_Color", color);
-        if (previewMaterial.HasProperty("_Smoothness"))
-            previewMaterial.SetFloat("_Smoothness", 0.2f);
-        if (previewMaterial.HasProperty("_Metallic"))
-            previewMaterial.SetFloat("_Metallic", 0f);
-        if (previewMaterial.HasProperty("_Cull"))
-            previewMaterial.SetFloat("_Cull", (float)CullMode.Off);
+        var color = hasProjectedColors ? Color.white : new Color(0.58f, 0.7f, 0.74f, 1f);
+        if (material.HasProperty("_BaseColor"))
+            material.SetColor("_BaseColor", color);
+        if (material.HasProperty("_Color"))
+            material.SetColor("_Color", color);
+        if (material.HasProperty("_Smoothness"))
+            material.SetFloat("_Smoothness", 0.2f);
+        if (material.HasProperty("_Metallic"))
+            material.SetFloat("_Metallic", 0f);
+        if (material.HasProperty("_Cull"))
+            material.SetFloat("_Cull", (float)CullMode.Off);
 
-        return previewMaterial;
+        return material;
     }
 
     private bool TryApplyProjectedKeyframeColors(Mesh mesh)

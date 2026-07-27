@@ -7,6 +7,7 @@ using Unity.Services.Authentication;
 using Unity.Services.Friends;
 using Unity.Services.Friends.Models;
 using UnityEngine;
+using UnityEngine.Networking;
 using UnityEngine.UIElements;
 
 namespace MemoAnchor.UI
@@ -29,9 +30,10 @@ namespace MemoAnchor.UI
         private Button _mapListButton, _mapDetailButton, _mapReconstructionButton, _mapPreviewMenuButton, _mapMemoBackButton, _mapMemoSearchClearButton, _mapCreateTextMemoButton, _mapCreateChecklistMemoButton, _mapCreateMediaMemoButton, _mapCreateVoiceMemoButton;
         private Button _mapParticipantsButton, _mapParticipantsInviteButton, _mapParticipantsAddButton;
         private Button _mapFriendInviteBackButton, _mapFriendInviteSubmitButton, _mapFriendInviteLoadMoreButton;
-        private VisualElement _mapPreview, _mapMemoPage, _mapMemoListContainer, _mapMemoEmptyState, _mapListOverlay, _mapListSheet, _mapListContent, _mapEmptyState, _mapCreateMemoActions;
+        private VisualElement _mapPreview, _mapReconstructionSpinner, _mapMemoPage, _mapMemoListContainer, _mapMemoEmptyState, _mapListOverlay, _mapListSheet, _mapListContent, _mapEmptyState, _mapCreateMemoActions;
         private VisualElement _mapParticipantsOverlay, _mapParticipantsSheet, _mapParticipantsList, _mapParticipantsInviteCodeContent;
         private VisualElement _mapFriendInviteOverlay, _mapFriendInviteSheet, _mapFriendInviteList;
+        private Image _mapReconstructionPreviewImage;
         private Label _mapCurrentSpaceLabel, _mapCurrentAddressLabel, _mapMemoSpaceLabel, _mapMemoAddressLabel, _mapScanTimeLabel, _mapParticipantsTitle, _mapParticipantsManagerSummary, _mapParticipantsRepairerSummary;
         private TextField _mapMemoSearchInput;
         private Label _mapParticipantsInviteIssueLabel, _mapParticipantsInviteTimer, _mapParticipantsInviteCodeLabel;
@@ -43,6 +45,10 @@ namespace MemoAnchor.UI
         private int _mapFriendInviteVisibleCount;
         private bool _isMapListLoading;
         private string _preferredMapId = string.Empty;
+        private string _displayedMapPreviewId = string.Empty;
+        private int _mapReconstructionLoadToken;
+        private int _preferredMapRefreshAttempts;
+        private MapReconstructionPreviewRenderer _mapReconstructionPreviewRenderer;
 
         private void RegisterMapPage()
         {
@@ -65,6 +71,8 @@ namespace MemoAnchor.UI
             _mapFriendInviteSubmitButton = _root.Q<Button>("map-friend-invite-submit-button");
             _mapFriendInviteLoadMoreButton = _root.Q<Button>("map-friend-invite-load-more-button");
             _mapPreview = _root.Q<VisualElement>("map-preview");
+            _mapReconstructionPreviewImage = _root.Q<Image>("map-reconstruction-preview");
+            _mapReconstructionSpinner = _root.Q<VisualElement>("map-reconstruction-spinner");
             _mapMemoPage = _root.Q<VisualElement>("map-memo-page");
             _mapMemoListContainer = _root.Q<VisualElement>("map-memo-list-container");
             _mapMemoEmptyState = _root.Q<VisualElement>("map-memo-empty-state");
@@ -91,6 +99,8 @@ namespace MemoAnchor.UI
             _mapFriendInviteOverlay = _root.Q<VisualElement>("map-friend-invite-overlay");
             _mapFriendInviteSheet = _root.Q<VisualElement>("map-friend-invite-sheet");
             _mapFriendInviteList = _root.Q<VisualElement>("map-friend-invite-list");
+            _mapReconstructionPreviewRenderer = gameObject.AddComponent<MapReconstructionPreviewRenderer>();
+            _mapReconstructionPreviewRenderer.Initialize(_mapReconstructionPreviewImage);
 
             mainRoot.Add(_mapListOverlay);
             _mapListOverlay.BringToFront();
@@ -152,6 +162,8 @@ namespace MemoAnchor.UI
             _mapFriendInviteSubmitButton.clicked -= OnClickMapFriendInviteSubmit;
             _mapFriendInviteLoadMoreButton.clicked -= OnClickMapFriendInviteLoadMore;
             _mapParticipantsInviteSchedule.Pause();
+            _mapReconstructionLoadToken++;
+            HideMapReconstructionSpinner();
         }
 
         public async Awaitable RefreshMapListAsync()
@@ -183,10 +195,25 @@ namespace MemoAnchor.UI
                 _scanMaps.Add(_readOnlyMap);
             }
 
-            if (!string.IsNullOrWhiteSpace(_preferredMapId) && _scanMaps.Exists(map => map.id == _preferredMapId))
+            bool hasPreferredMap = !string.IsNullOrWhiteSpace(_preferredMapId)
+                && _scanMaps.Exists(map => map.id == _preferredMapId);
+            if (!string.IsNullOrWhiteSpace(_preferredMapId) && !hasPreferredMap)
+            {
+                RebuildMapList();
+                if (_preferredMapRefreshAttempts < 6)
+                {
+                    _preferredMapRefreshAttempts++;
+                    _ = RetryPreferredMapRefreshAsync(_preferredMapId);
+                }
+                return;
+            }
+
+            if (hasPreferredMap)
             {
                 _selectedMapId = _preferredMapId;
                 _openMapAddresses.Add(GetMapAddressKey(_scanMaps.Find(map => map.id == _preferredMapId)));
+                _preferredMapId = string.Empty;
+                _preferredMapRefreshAttempts = 0;
             }
             else if (_scanMaps.Count == 0)
             {
@@ -198,8 +225,6 @@ namespace MemoAnchor.UI
                 _selectedMapId = _scanMaps[0].id;
                 _openMapAddresses.Add(GetMapAddressKey(_scanMaps[0]));
             }
-            _preferredMapId = string.Empty;
-
             RebuildMapList();
             ApplySelectedMap();
             ScanMapItem selectedMap = GetSelectedMap();
@@ -209,6 +234,15 @@ namespace MemoAnchor.UI
             }
 
             RebuildMemoList();
+        }
+
+        private async Awaitable RetryPreferredMapRefreshAsync(string mapId)
+        {
+            await Awaitable.WaitForSecondsAsync(0.5f);
+            if (_preferredMapId == mapId)
+            {
+                await RefreshMapListAsync();
+            }
         }
 
         private void ShowMapList()
@@ -503,6 +537,10 @@ namespace MemoAnchor.UI
 
             if (!hasMap)
             {
+                _mapReconstructionLoadToken++;
+                _mapReconstructionPreviewRenderer.Clear();
+                HideMapReconstructionSpinner();
+                _displayedMapPreviewId = string.Empty;
                 _mapCurrentSpaceLabel.text = "3D MAP";
                 _mapCurrentAddressLabel.text = string.Empty;
                 _mapScanTimeLabel.text = string.Empty;
@@ -516,6 +554,7 @@ namespace MemoAnchor.UI
             _mapCurrentAddressLabel.text = GetMapAddressKey(selectedMap);
             _mapScanTimeLabel.text = $"스캔일시 : {FormatScanTime(selectedMap.scanCreatedAt)}";
             ApplyMapReconstructionState(selectedMap);
+            _ = LoadMapReconstructionPreviewAsync(selectedMap);
             if (isReadOnly)
             {
                 _mapParticipantsManagerSummary.text = string.Empty;
@@ -532,9 +571,10 @@ namespace MemoAnchor.UI
         {
             string state = map.reconstructionState?.Trim().ToLowerInvariant() ?? string.Empty;
             _mapReconstructionButton.EnableInClassList("is-failed", state == "failed");
+            _mapReconstructionButton.SetEnabled(state == "done" || state == "failed");
             _mapReconstructionButton.text = state switch
             {
-                "done" => "3D MAP 보기",
+                "done" => "3D MAP 불러오는 중",
                 "queued" => "3D MAP 생성 대기 중",
                 "uploading" => "3D MAP 업로드 중",
                 "processing" => "3D MAP 생성 중",
@@ -566,13 +606,117 @@ namespace MemoAnchor.UI
 
         private void OpenSelectedMapReconstruction(ScanMapItem map)
         {
-            MapScanSession.BeginResultView(map.id, map.reconstructionScanId, map.reconstructionResultFile);
-            ScanSceneRequested?.Invoke();
+            _ = LoadMapReconstructionPreviewAsync(map);
         }
 
-        public void PreferMapSelection(string mapId)
+        public void PreferMapSelection(string mapId, Mesh reconstructionMesh, Material reconstructionMaterial)
         {
             _preferredMapId = mapId?.Trim() ?? string.Empty;
+            _preferredMapRefreshAttempts = 0;
+            _mapReconstructionLoadToken++;
+            if (reconstructionMesh)
+            {
+                _mapReconstructionPreviewRenderer.Show(reconstructionMesh, reconstructionMaterial);
+                HideMapReconstructionSpinner();
+                _displayedMapPreviewId = _preferredMapId;
+                _mapReconstructionButton.SetEnabled(true);
+                SetVisible(_mapReconstructionButton, false);
+            }
+            else
+            {
+                _mapReconstructionPreviewRenderer.Clear();
+                _displayedMapPreviewId = string.Empty;
+                ShowMapReconstructionSpinner();
+                _mapReconstructionButton.SetEnabled(false);
+                SetVisible(_mapReconstructionButton, false);
+            }
+        }
+
+        public void SetMapPreviewActive(bool active)
+        {
+            _mapReconstructionPreviewRenderer.SetViewActive(active);
+        }
+
+        private async Awaitable LoadMapReconstructionPreviewAsync(ScanMapItem map)
+        {
+            if (map.id == _displayedMapPreviewId)
+            {
+                HideMapReconstructionSpinner();
+                _mapReconstructionButton.SetEnabled(true);
+                SetVisible(_mapReconstructionButton, false);
+                return;
+            }
+
+            int loadToken = ++_mapReconstructionLoadToken;
+            _mapReconstructionPreviewRenderer.Clear();
+            _displayedMapPreviewId = string.Empty;
+
+            string reconstructionState = map.reconstructionState?.Trim().ToLowerInvariant() ?? string.Empty;
+            if (reconstructionState != "done" || string.IsNullOrWhiteSpace(map.reconstructionScanId))
+            {
+                HideMapReconstructionSpinner();
+                return;
+            }
+
+            ShowMapReconstructionSpinner();
+            SetVisible(_mapReconstructionButton, false);
+            _mapReconstructionButton.SetEnabled(false);
+
+            byte[] data;
+            string mapId = UnityWebRequest.EscapeURL(map.id);
+            string scanId = UnityWebRequest.EscapeURL(map.reconstructionScanId);
+            using (UnityWebRequest request = ServicesManager.CreateAuthorizedGetRequest(
+                $"/api/scan/maps/{mapId}/reconstruction/{scanId}/result"))
+            {
+                request.timeout = 900;
+                await ServicesManager.SendRequestAsync(request);
+                if (loadToken != _mapReconstructionLoadToken)
+                {
+                    return;
+                }
+                if (request.result != UnityWebRequest.Result.Success)
+                {
+                    HideMapReconstructionSpinner();
+                    _mapReconstructionButton.text = "3D MAP 불러오기 실패";
+                    _mapReconstructionButton.SetEnabled(true);
+                    SetVisible(_mapReconstructionButton, true);
+                    return;
+                }
+                data = request.downloadHandler.data;
+            }
+
+            if (!ARKitMeshScanController.TryCreateMeshFromPly(data, out Mesh mesh, out string error))
+            {
+                Debug.LogWarning($"[MainView] Map reconstruction preview failed: {error}");
+                HideMapReconstructionSpinner();
+                _mapReconstructionButton.text = "3D MAP 표시 실패";
+                _mapReconstructionButton.SetEnabled(true);
+                SetVisible(_mapReconstructionButton, true);
+                return;
+            }
+            if (loadToken != _mapReconstructionLoadToken)
+            {
+                Destroy(mesh);
+                return;
+            }
+
+            _mapReconstructionPreviewRenderer.Show(mesh);
+            HideMapReconstructionSpinner();
+            _displayedMapPreviewId = map.id;
+            _mapReconstructionButton.SetEnabled(true);
+            SetVisible(_mapReconstructionButton, false);
+        }
+
+        private void ShowMapReconstructionSpinner()
+        {
+            SetVisible(_mapReconstructionSpinner, true);
+            LoadingSpinnerController.Start(_mapReconstructionSpinner);
+        }
+
+        private void HideMapReconstructionSpinner()
+        {
+            LoadingSpinnerController.Stop(_mapReconstructionSpinner);
+            SetVisible(_mapReconstructionSpinner, false);
         }
 
         private void RefreshMapParticipantsSummary(ScanMapItem map)

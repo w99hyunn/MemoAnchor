@@ -39,7 +39,6 @@ namespace MemoAnchor.UI
             _view.ProfileButton.clicked += OnClickProfile;
             _view.ScanStartButton.clicked += OnClickScanStart;
             _view.TabSwitchRequested += ShowTab;
-            _view.ScanSceneRequested += OnScanSceneRequested;
             _scanView.ScanStartReadinessChanged += UpdateScanStartAvailability;
             _view.TabViewport.RegisterCallback<GeometryChangedEvent>(OnViewportGeometryChanged);
             SceneManager.sceneUnloaded += OnSceneUnloaded;
@@ -62,7 +61,6 @@ namespace MemoAnchor.UI
             _view.ProfileButton.clicked -= OnClickProfile;
             _view.ScanStartButton.clicked -= OnClickScanStart;
             _view.TabSwitchRequested -= ShowTab;
-            _view.ScanSceneRequested -= OnScanSceneRequested;
             _scanView.ScanStartReadinessChanged -= UpdateScanStartAvailability;
             _view.TabViewport.UnregisterCallback<GeometryChangedEvent>(OnViewportGeometryChanged);
             SceneManager.sceneUnloaded -= OnSceneUnloaded;
@@ -140,11 +138,6 @@ namespace MemoAnchor.UI
             await OpenScanSceneAsync();
         }
 
-        private void OnScanSceneRequested()
-        {
-            _ = OpenScanSceneAsync();
-        }
-
         private async Awaitable OpenScanSceneAsync()
         {
             if (_isOpeningScanScene || SceneManager.GetSceneByName(MapScanSession.SCAN_SCENE_NAME).isLoaded)
@@ -196,7 +189,10 @@ namespace MemoAnchor.UI
                 {
                     _scanView.ResetScanForm();
                 }
-                _view.PreferMapSelection(returnMapId);
+                _view.PreferMapSelection(
+                    returnMapId,
+                    MapScanSession.CompletedReconstructionMesh,
+                    MapScanSession.CompletedReconstructionMaterial);
                 ShowTab(3);
             }
 
@@ -226,6 +222,7 @@ namespace MemoAnchor.UI
             SetState(_view.MapButton, _currentTabIndex == 3);
             SetState(_view.ProfileButton, _currentTabIndex == 4);
             _view.SetScanNavMode(_isScanNavModeActive);
+            _view.SetMapPreviewActive(_currentTabIndex == 3);
             UpdateScanStartAvailability();
             UpdateTabStripOffset();
 
