@@ -11,9 +11,9 @@ namespace MemoAnchor.UI
         private const string HOME_WORK_MODE_CLASS = "is-work-mode";
 
         [SerializeField] private string _homeAdminTitle = "관리자";
-        [SerializeField] private string _homeWorkTitle = "작업자";
+        [SerializeField] private string _homeWorkTitle = "수리자";
 
-        private Button _alertButton, _alertBackButton, _homeModeToggle, _memoModeToggle;
+        private Button _alertButton, _alertBackButton, _homeModeToggle, _memoModeToggle, _memoViewAllButton;
         private VisualElement _homeModeBack, _menuTab, _memoFilterPage;
         private VisualElement _alertDialogPage, _alertScroll, _alertList, _alertEmptyState;
         private Label _homeGreetingLabel, _homeModeTitle;
@@ -22,6 +22,7 @@ namespace MemoAnchor.UI
         public Button AlertBackButton => _alertBackButton;
         public Button HomeModeToggle => _homeModeToggle;
         public Button MemoModeToggle => _memoModeToggle;
+        public Button MemoViewAllButton => _memoViewAllButton;
         public VisualElement AlertList => _alertList;
 
         private void Awake()
@@ -33,6 +34,7 @@ namespace MemoAnchor.UI
             _alertBackButton = root.Q<Button>("alert-back-button");
             _homeModeToggle = root.Q<Button>("home-mode-toggle");
             _memoModeToggle = root.Q<Button>("memo-mode-toggle");
+            _memoViewAllButton = root.Q<Button>("home-memo-view-all-button");
             _homeModeBack = root.Q<VisualElement>("mode-back");
             _menuTab = root.Q<VisualElement>("tab-menu");
             _memoFilterPage = root.Q<VisualElement>("memo-filter-page");

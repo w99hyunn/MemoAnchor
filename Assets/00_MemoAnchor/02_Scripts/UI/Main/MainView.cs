@@ -117,6 +117,7 @@ namespace MemoAnchor.UI
             UnregisterMemoSearchPage();
             UnregisterMapPage();
             UnregisterScanActionDialog();
+            ReleaseHomeMapThumbnails();
         }
 
         public void SetScanNavMode(bool enabled)
@@ -175,6 +176,11 @@ namespace MemoAnchor.UI
         private void RequestTabSwitch(int tabIndex)
         {
             TabSwitchRequested?.Invoke(tabIndex);
+        }
+
+        public void ShowMemoCollectionTab()
+        {
+            RequestTabSwitch(1);
         }
 
         public void SetScanStartAvailable(bool available)

@@ -51,7 +51,7 @@
                 <ui:VisualElement class="scan-action-dialog-handle scan-address-dialog-handle"/>
                 <ui:VisualElement class="full-width-list">
                     <ui:Button name="scan-address-add-button" class="scan-address-list-item scan-address-add-button">
-                        <ui:Label text="+" class="scan-address-add-icon"/>
+                        <ui:VisualElement picking-mode="Ignore" class="scan-address-add-icon scan-address-add-image"/>
                         <ui:Label text="주소 추가하기" class="scan-address-list-text"/>
                     </ui:Button>
                     <ui:VisualElement name="scan-address-items-list" class="full-width-list"/>

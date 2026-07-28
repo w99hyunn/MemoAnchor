@@ -127,6 +127,12 @@ namespace MemoAnchor
             CompletedReconstructionMaterial = material;
         }
 
+        public static void SetReconstructionResult(string scanId, string resultFile)
+        {
+            ReconstructionScanId = scanId?.Trim() ?? string.Empty;
+            ReconstructionResultFile = resultFile?.Trim() ?? string.Empty;
+        }
+
         public static void ClearCompletedReconstruction()
         {
             CompletedReconstructionMesh = null;
@@ -146,6 +152,11 @@ namespace MemoAnchor
         public static string BuildResultPath(string scanId)
         {
             return $"/api/scan/maps/{Escape(MapId)}/reconstruction/{Escape(scanId)}/result";
+        }
+
+        public static string BuildThumbnailPath(string scanId)
+        {
+            return $"/api/scan/maps/{Escape(MapId)}/reconstruction/{Escape(scanId)}/thumbnail";
         }
 
         public static string BuildLocalizationPath(string scanId)

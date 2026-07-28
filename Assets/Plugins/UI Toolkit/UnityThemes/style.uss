@@ -6,6 +6,9 @@
     --brand-pink-active: rgb(126, 24, 49);
     --nav-icon-active: var(--brand-pink);
     --nav-bar-radius: 84px;
+    --bottom-sheet-list-title-size: 36px;
+    --bottom-sheet-list-primary-size: 40px;
+    --bottom-sheet-list-secondary-size: 32px;
 }
 
 .unity-label {
@@ -132,7 +135,7 @@
     width: 300px;
     height: 250px;
     margin-bottom: 34px;
-    background-image: url("project://database/Assets/00_MemoAnchor/03_Media/Icon/system/icon%201.png?fileID=2800000&guid=c5484f5bd1c29de40898e64802107c7b&type=3#icon 1");
+    background-image: url("project://database/Assets/00_MemoAnchor/03_Media/Icon/system/icon_new.png?fileID=2800000&guid=c5484f5bd1c29de40898e64802107c7b&type=3#icon_new");
     -unity-background-scale-mode: scale-to-fit;
 }
 
@@ -380,8 +383,8 @@
     margin-left: -50px;
     margin-right: -50px;
     background-color: var(--nav-bg);
-    padding-top: 100px;
-    padding-bottom: 100px;
+    padding-top: 50px;
+    padding-bottom: 50px;
 }
 
 #mode-back {
@@ -642,6 +645,20 @@
     margin-left: auto;
 }
 
+.home-memo-footer-person {
+    flex-direction: row;
+    align-items: flex-end;
+    flex-shrink: 0;
+}
+
+.home-memo-footer-role {
+    margin-right: 10px;
+}
+
+.home-memo-footer-person-name {
+    -unity-font-definition: url("project://database/Assets/Plugins/UI%20Toolkit/Fonts/Pretendard-SemiBold.ttf?fileID=12800000&guid=7136488b0fb8f924b91754e33f3b5abc&type=3#Pretendard-SemiBold");
+}
+
 .home-memo-body-text {
     flex-grow: 1;
     font-size: 40px;
@@ -758,6 +775,7 @@
     margin: 0;
     padding: 0;
     border-width: 0;
+    border-radius: 30px;
     font-size: 43px;
     -unity-font-definition: url("project://database/Assets/Plugins/UI%20Toolkit/Fonts/Pretendard-SemiBold.ttf?fileID=12800000&guid=7136488b0fb8f924b91754e33f3b5abc&type=3#Pretendard-SemiBold");
 }
@@ -768,10 +786,30 @@
     background-color: rgb(255, 215, 220);
 }
 
+.home-completion-action.is-supplement:hover:enabled {
+    border-color: transparent;
+    background-color: rgb(255, 199, 207);
+}
+
+.home-completion-action.is-supplement:active:enabled {
+    border-color: transparent;
+    background-color: rgb(255, 181, 192);
+}
+
 .home-completion-action.is-complete {
     margin-left: 14px;
     color: rgb(83, 94, 131);
     background-color: rgb(218, 225, 248);
+}
+
+.home-completion-action.is-complete:hover:enabled {
+    border-color: transparent;
+    background-color: rgb(203, 213, 244);
+}
+
+.home-completion-action.is-complete:active:enabled {
+    border-color: transparent;
+    background-color: rgb(187, 201, 239);
 }
 
 .map-tab-page {
@@ -1015,29 +1053,6 @@
     -unity-background-image-tint-color: rgb(92, 92, 92);
 }
 
-.map-participants-add-button {
-    height: 104px;
-    margin: 0;
-    padding-left: 48px;
-    border-width: 0;
-    background-color: rgb(255, 255, 255);
-    flex-direction: row;
-    align-items: center;
-    justify-content: flex-start;
-}
-
-.map-participants-add-icon {
-    width: 58px;
-    color: rgb(52, 52, 52);
-    font-size: 54px;
-    -unity-text-align: middle-left;
-}
-
-.map-participants-add-label {
-    color: rgb(45, 45, 45);
-    font-size: 36px;
-}
-
 .map-participant-item {
     height: 116px;
     flex-shrink: 0;
@@ -1050,7 +1065,7 @@
 .map-participant-name {
     width: 190px;
     color: rgb(43, 43, 43);
-    font-size: 36px;
+    font-size: var(--bottom-sheet-list-primary-size);
 }
 
 .map-participant-item.is-manager .map-participant-name {
@@ -1061,13 +1076,13 @@
     flex-grow: 1;
     min-width: 0;
     color: rgb(174, 174, 174);
-    font-size: 30px;
+    font-size: var(--bottom-sheet-list-secondary-size);
 }
 
 .map-participant-role {
     width: 120px;
     color: rgb(157, 157, 157);
-    font-size: 30px;
+    font-size: var(--bottom-sheet-list-secondary-size);
     -unity-text-align: middle-center;
 }
 
@@ -1133,7 +1148,7 @@
 
 .map-friend-invite-title {
     color: rgb(160, 160, 160);
-    font-size: 34px;
+    font-size: var(--bottom-sheet-list-title-size);
     -unity-text-align: middle-center;
 }
 
@@ -1159,12 +1174,12 @@
 .map-friend-invite-item .scan-friend-name {
     flex-grow: 0;
     width: 190px;
-    font-size: 36px;
+    font-size: var(--bottom-sheet-list-primary-size);
 }
 
 .map-friend-invite-item .scan-friend-company {
     flex-grow: 1;
-    font-size: 30px;
+    font-size: var(--bottom-sheet-list-secondary-size);
 }
 
 .map-friend-invite-check {
@@ -1237,6 +1252,7 @@
     position: relative;
     margin-left: -50px;
     margin-right: -50px;
+    margin-bottom: 350px;
     background-color: rgb(172, 172, 172);
     overflow: hidden;
 }
@@ -1311,6 +1327,18 @@
     background-color: rgba(16, 16, 19, 0.96);
 }
 
+.map-reconstruction-memo-card.is-completion-requested {
+    border-color: rgb(232, 58, 81);
+}
+
+.map-reconstruction-memo-card.is-completion-requested .map-reconstruction-memo-card-open {
+    background-color: rgb(232, 58, 81);
+}
+
+.map-reconstruction-memo-card.is-completion-requested .map-reconstruction-memo-card-open-icon {
+    -unity-background-image-tint-color: rgb(255, 255, 255);
+}
+
 .map-reconstruction-memo-card.is-concealed {
     visibility: hidden;
 }
@@ -1366,6 +1394,10 @@
     width: 7px;
     height: 130px;
     background-color: rgb(255, 255, 255);
+}
+
+.map-reconstruction-memo-card-stem.is-completion-requested {
+    background-color: rgb(232, 58, 81);
 }
 
 .map-reconstruction-spinner.loading-spinner {
@@ -1512,16 +1544,71 @@
     height: 760px;
     margin-right: 32px;
     border-radius: 30px;
-    background-color: rgb(132, 132, 132);
+    background-color: rgb(172, 172, 172);
     overflow: hidden;
 }
 
 .scan-map-thumbnail {
     flex-grow: 1;
+    position: relative;
+    overflow: hidden;
+}
+
+.scan-map-thumbnail-image {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+}
+
+.scan-map-thumbnail-spinner.loading-spinner {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    margin-left: -48px;
+    margin-top: -48px;
+}
+
+.home-map-favorite-button {
+    position: absolute;
+    right: 28px;
+    top: 28px;
+    width: 84px;
+    height: 84px;
+    padding: 0;
+    margin: 0;
+    border-width: 0;
+    border-radius: 0;
+    background-color: rgba(0, 0, 0, 0);
+    align-items: center;
+    justify-content: center;
+}
+
+.home-map-favorite-button:hover:enabled,
+.home-map-favorite-button:active:enabled {
+    border-color: transparent;
+    background-color: rgba(0, 0, 0, 0);
+}
+
+.home-map-favorite-button:active:enabled {
+    opacity: 0.72;
+}
+
+.home-map-favorite-icon {
+    width: 72px;
+    height: 72px;
+    background-image: url("project://database/Assets/00_MemoAnchor/03_Media/Icon/star_0.png?fileID=2800000&guid=bbab7b371d832174d987e0139b15e9c3&type=3#star_0");
+    -unity-background-scale-mode: scale-to-fit;
+}
+
+.home-map-favorite-button.is-favorite .home-map-favorite-icon {
+    background-image: url("project://database/Assets/00_MemoAnchor/03_Media/Icon/star_1.png?fileID=2800000&guid=ecd7e51c8e118a44b9dac4765269b1d6&type=3#star_1");
 }
 
 .scan-map-info {
     flex-grow: 0;
+    background-color: rgba(0, 0, 0, 0);
     padding-top: 60px;
     padding-right: 60px;
     padding-bottom: 60px;
@@ -1621,7 +1708,7 @@
     bottom: 20px;
     width: auto;
     height: auto;
-    border-radius: 70px;
+    border-radius: 56px;
     border-left-width: 0;
     border-right-width: 0;
     border-top-width: 0;
@@ -1636,10 +1723,6 @@
     transition-property: background-color, opacity, translate;
     transition-delay: 0.06s;
     visibility: hidden;
-    border-top-left-radius: 60px;
-    border-top-right-radius: 60px;
-    border-bottom-right-radius: 60px;
-    border-bottom-left-radius: 60px;
     color: rgb(255, 255, 255);
     font-size: 44px;
     -unity-font-definition: url("project://database/Assets/Plugins/UI%20Toolkit/Fonts/Pretendard-SemiBold.ttf?fileID=12800000&guid=7136488b0fb8f924b91754e33f3b5abc&type=3#Pretendard-SemiBold");
@@ -1689,7 +1772,7 @@
     width: 164px;
     top: 0;
     height: 164px;
-    border-radius: 70px;
+    border-radius: 65px;
     justify-content: center;
     padding-left: 0;
     padding-right: 0;
@@ -1706,7 +1789,7 @@
 .bottom-nav.is-map-mode #nav-map {
     width: 132px;
     height: 132px;
-    border-radius: 66px;
+    border-radius: 59px;
     margin-left: 0;
     margin-right: 0;
     justify-content: center;
@@ -1729,7 +1812,7 @@
     right: 14px;
     top: 0;
     height: 164px;
-    border-radius: 82px;
+    border-radius: 71px;
     width: auto;
     opacity: 1;
     translate: 0 0;
@@ -1863,6 +1946,14 @@
 
 #memo-search-input .unity-base-text-field__input--placeholder {
     color: rgb(149, 171, 249);
+}
+
+.memo-tab-mode-page.is-admin-mode #memo-search-input .unity-base-text-field__input {
+    border-color: rgb(255, 182, 200);
+}
+
+.memo-tab-mode-page.is-admin-mode #memo-search-input .unity-base-text-field__input--placeholder {
+    color: rgb(255, 182, 200);
 }
 
 .memo-search-clear-button {
@@ -3981,28 +4072,6 @@
     color: rgb(178, 178, 178);
 }
 
-.profile-meta-divider {
-    width: 3px;
-    height: 48px;
-    margin-left: 28px;
-    margin-right: 28px;
-    background-color: rgb(190, 190, 190);
-}
-
-.profile-role-chip {
-    height: 54px;
-    min-width: 116px;
-    margin-right: 16px;
-    padding-left: 24px;
-    padding-right: 24px;
-    border-radius: 27px;
-    background-color: rgb(83, 94, 131);
-    color: rgb(255, 255, 255);
-    font-size: 30px;
-    -unity-text-align: middle-center;
-    -unity-font-definition: url("project://database/Assets/Plugins/UI%20Toolkit/Fonts/Pretendard-SemiBold.ttf?fileID=12800000&guid=7136488b0fb8f924b91754e33f3b5abc&type=3#Pretendard-SemiBold");
-}
-
 .profile-toggle-row {
     height: 158px;
     flex-direction: row;
@@ -4044,8 +4113,12 @@
     padding-right: 62px;
 }
 
-.profile-friend-add-button {
-    margin-right: 24px;
+.scan-address-list-item.profile-friend-add-button {
+    min-height: 112px;
+    margin-bottom: 0;
+    border-radius: 0;
+    border-bottom-width: 1px;
+    border-bottom-color: rgb(232, 232, 232);
 }
 
 .profile-row-title {
@@ -4075,12 +4148,22 @@
     border-top-color: rgb(232, 232, 232);
 }
 
+.profile-friend-list-card .profile-friend-list {
+    margin-left: -32px;
+    margin-right: -32px;
+}
+
 .profile-friend-row {
     height: 112px;
     flex-direction: row;
     align-items: center;
     border-bottom-width: 1px;
     border-bottom-color: rgb(232, 232, 232);
+}
+
+.profile-friend-list-card .profile-friend-row {
+    padding-left: 32px;
+    padding-right: 28px;
 }
 
 .profile-menu-row.profile-friend-row {
@@ -4099,12 +4182,20 @@
     flex-grow: 0;
     flex-shrink: 1;
     -unity-text-align: middle-left;
-    font-size: 28px;
+    font-size: 32px;
     color: rgb(174, 174, 174);
 }
 
+#profile-friend-list-card .profile-friend-name {
+    font-size: 36px;
+}
+
+#profile-friend-list-card .profile-friend-company {
+    font-size: 32px;
+}
+
 .profile-friend-delete-button {
-    width: 78px;
+    width: 112px;
     height: 78px;
     margin-left: auto;
     border-radius: 39px;
@@ -4303,6 +4394,8 @@
 
 .common-confirm-popup-button {
     flex-grow: 1;
+    flex-basis: 0;
+    min-width: 0;
     height: 136px;
     margin-bottom: 0;
     justify-content: center;
@@ -4630,8 +4723,6 @@
     background-color: rgb(237, 240, 245);
 }
 
-
-
 .scan-action-option-icon-placeholder {
     width: 26px;
     height: 26px;
@@ -4705,12 +4796,22 @@
 .scan-address-building-item {
     min-height: 112px;
     margin-top: 8px;
-    background-color: rgb(247, 247, 247);
+    background-color: rgb(255, 255, 255);
 }
 
 .scan-address-add-button {
     margin-bottom: 14px;
+    border-bottom-width: 1px;
+    border-bottom-color: rgb(232, 232, 232);
     background-color: rgb(255, 255, 255);
+}
+
+.scan-address-add-button:hover:enabled,
+.scan-address-add-button:active:enabled,
+.scan-address-add-button:focus,
+.scan-address-add-button:focus:enabled {
+    border-bottom-width: 1px;
+    border-bottom-color: rgb(232, 232, 232);
 }
 
 .scan-address-add-icon {
@@ -4723,6 +4824,11 @@
     -unity-font-definition: url("project://database/Assets/Plugins/UI%20Toolkit/Fonts/Pretendard-Medium.ttf?fileID=12800000&guid=45ed9c45b09f5f2498d91e1982ab7527&type=3#Pretendard-Medium");
 }
 
+.scan-address-add-image {
+    background-image: url("project://database/Assets/00_MemoAnchor/03_Media/Icon/plus.png?fileID=2800000&guid=677ca14c81130814eb32f699d83aad00&type=3#plus");
+    -unity-background-scale-mode: scale-to-fit;
+}
+
 .scan-address-add-button .scan-address-list-text {
     height: 42px;
 }
@@ -4730,7 +4836,7 @@
 .scan-address-list-text {
     flex-grow: 1;
     min-width: 0;
-    font-size: 40px;
+    font-size: var(--bottom-sheet-list-primary-size);
     white-space: normal;
     color: rgb(31, 31, 31);
     -unity-text-align: middle-left;
@@ -4739,11 +4845,12 @@
 
 .scan-address-list-chevron {
     width: 36px;
+    height: 36px;
     margin-left: 22px;
-    font-size: 42px;
-    color: rgb(70, 70, 70);
-    -unity-text-align: middle-center;
-    -unity-font-definition: url("project://database/Assets/Plugins/UI%20Toolkit/Fonts/Pretendard-Regular.ttf?fileID=12800000&guid=c19593ccf51a3b643a58d19da7851c10&type=3#Pretendard-Regular");
+    background-image: url("project://database/Assets/00_MemoAnchor/03_Media/Icon/chevron_forward.png?fileID=2800000&guid=3ca432206e7cabb45abd1dfc722e509d&type=3#chevron_forward");
+    -unity-background-scale-mode: scale-to-fit;
+    -unity-background-image-tint-color: rgb(70, 70, 70);
+    rotate: 180deg;
 }
 
 .map-list-overlay.scan-address-dialog-overlay {
@@ -4772,7 +4879,7 @@
 .map-list-title {
     height: 44px;
     margin-bottom: 42px;
-    font-size: 32px;
+    font-size: var(--bottom-sheet-list-title-size);
     color: rgb(165, 165, 165);
     -unity-text-align: middle-center;
 }
@@ -4798,7 +4905,7 @@
 
 .map-list-address-text.scan-address-list-text,
 .map-list-space-text.scan-address-list-text {
-    font-size: 32px;
+    font-size: var(--bottom-sheet-list-primary-size);
     color: rgb(45, 45, 45);
     -unity-font-definition: url("project://database/Assets/Plugins/UI%20Toolkit/Fonts/Pretendard-Medium.ttf?fileID=12800000&guid=45ed9c45b09f5f2498d91e1982ab7527&type=3#Pretendard-Medium");
 }
@@ -4836,7 +4943,7 @@
 .scan-friend-name {
     flex-grow: 1;
     min-width: 0;
-    font-size: 40px;
+    font-size: var(--bottom-sheet-list-primary-size);
     color: rgb(31, 31, 31);
     margin-right: 28px;
     -unity-text-align: middle-left;
@@ -4844,7 +4951,7 @@
 }
 
 .scan-friend-company {
-    font-size: 32px;
+    font-size: var(--bottom-sheet-list-secondary-size);
     color: rgb(157, 157, 157);
     -unity-text-align: middle-left;
     -unity-font-definition: url("project://database/Assets/Plugins/UI%20Toolkit/Fonts/Pretendard-Regular.ttf?fileID=12800000&guid=c19593ccf51a3b643a58d19da7851c10&type=3#Pretendard-Regular");

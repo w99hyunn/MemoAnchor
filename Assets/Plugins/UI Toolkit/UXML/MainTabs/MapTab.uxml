@@ -113,11 +113,10 @@
                         </ui:VisualElement>
                     </ui:Button>
                 </ui:VisualElement>
-                <ui:Button name="map-participants-add-button" class="map-participants-add-button">
-                    <ui:Label text="+" picking-mode="Ignore" class="map-participants-add-icon"/>
-                    <ui:Label text="새 멤버 초대하기" picking-mode="Ignore" class="map-participants-add-label"/>
+                <ui:Button name="map-participants-add-button" class="scan-address-list-item scan-address-add-button">
+                    <ui:VisualElement picking-mode="Ignore" class="scan-address-add-icon scan-address-add-image"/>
+                    <ui:Label text="새 멤버 초대하기" picking-mode="Ignore" class="scan-address-list-text"/>
                 </ui:Button>
-                <ui:VisualElement class="memo-filter-divider"/>
                 <ui:ScrollView mode="Vertical" horizontal-scroller-visibility="Hidden" vertical-scroller-visibility="Hidden" touch-scroll-type="Elastic" class="full-width-list page-scroll">
                     <ui:VisualElement name="map-participants-list" class="full-width-list content-list"/>
                 </ui:ScrollView>

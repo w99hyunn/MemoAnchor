@@ -215,8 +215,20 @@ namespace MemoAnchor.UI
 
             string personName = isManagerCard ? item.Author : item.Assignee;
             string roleLabel = isManagerCard ? "관리자" : "수리자";
-            Label person = new(string.IsNullOrWhiteSpace(personName) ? roleLabel : $"{roleLabel} {personName}");
-            person.AddToClassList("memo-footer-text");
+            VisualElement person = new();
+            person.AddToClassList("home-memo-footer-person");
+            Label role = new(roleLabel);
+            role.AddToClassList("memo-footer-text");
+            role.AddToClassList("home-memo-footer-role");
+            person.Add(role);
+            if (!string.IsNullOrWhiteSpace(personName))
+            {
+                Label name = new(personName);
+                name.AddToClassList("memo-footer-text");
+                name.AddToClassList("home-memo-footer-person-name");
+                person.Add(name);
+            }
+
             Label location = new(FormatHomeMemoLocation(item.Location));
             location.AddToClassList("memo-footer-text");
             location.AddToClassList("home-memo-footer-location");

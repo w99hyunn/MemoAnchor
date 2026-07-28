@@ -354,6 +354,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7ad7983a77196a844b61d2f6d54f2a41, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::MemoAnchor.UI.MainView
+  _homeMapCardAsset: {fileID: 9197481963319205126, guid: 5c66422cc92d4c9c89db3448e8b27ff9, type: 3}
   _memoListItemAsset: {fileID: 9197481963319205126, guid: fd34d1f1c1b6ecd4287e00e18419777e, type: 3}
   _memoCreateChecklistInputAsset: {fileID: 9197481963319205126, guid: 93219ba7802d4d23943b3b169ccbab69, type: 3}
   _memoCreateMediaItemAsset: {fileID: 9197481963319205126, guid: d412fa0443174813be77943b063cc0a9, type: 3}
@@ -379,7 +380,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::MemoAnchor.UI.Tab_HomeView
   _homeAdminTitle: "\uAD00\uB9AC\uC790"
-  _homeWorkTitle: "\uC791\uC5C5\uC790"
+  _homeWorkTitle: "\uC218\uB9AC\uC790"
 --- !u!114 &1996884584
 MonoBehaviour:
   m_ObjectHideFlags: 0

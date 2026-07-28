@@ -660,7 +660,9 @@ public class ARKitMeshScanController : MonoBehaviour
         ScanMapListResponse response = null;
         try
         {
-            response = await scanMapService.ConfirmMapAsync(MapScanSession.MapId);
+            byte[] thumbnail = await CaptureCompletionThumbnailAsync();
+            if (thumbnail != null && await UploadReconstructionThumbnailAsync(thumbnail))
+                response = await scanMapService.ConfirmMapAsync(MapScanSession.MapId);
         }
         catch (Exception ex)
         {
@@ -677,6 +679,67 @@ public class ARKitMeshScanController : MonoBehaviour
 
         MapScanSession.RequestReturnToMap();
         CloseScanScene();
+    }
+
+    private async Awaitable<byte[]> CaptureCompletionThumbnailAsync()
+    {
+        if (!completionPreviewTexture || !completionPreviewCamera)
+        {
+            EnsureCompletionPreviewTexture();
+            await Awaitable.NextFrameAsync();
+            if (!completionPreviewTexture || !completionPreviewCamera)
+                return null;
+        }
+
+        Color previousBackground = completionPreviewCamera.backgroundColor;
+        completionPreviewCamera.backgroundColor = new Color32(172, 172, 172, 255);
+        completionPreviewCamera.enabled = true;
+        await Awaitable.EndOfFrameAsync();
+
+        RenderTexture resolvedTexture = RenderTexture.GetTemporary(
+            completionPreviewTexture.width,
+            completionPreviewTexture.height,
+            0,
+            RenderTextureFormat.ARGB32);
+        Graphics.Blit(completionPreviewTexture, resolvedTexture);
+        RenderTexture previousActive = RenderTexture.active;
+        RenderTexture.active = resolvedTexture;
+        Texture2D thumbnailTexture = new(
+            completionPreviewTexture.width,
+            completionPreviewTexture.height,
+            TextureFormat.RGB24,
+            false);
+        thumbnailTexture.ReadPixels(
+            new Rect(0f, 0f, completionPreviewTexture.width, completionPreviewTexture.height),
+            0,
+            0);
+        thumbnailTexture.Apply(false, false);
+        byte[] thumbnail = thumbnailTexture.EncodeToJPG(88);
+        RenderTexture.active = previousActive;
+        RenderTexture.ReleaseTemporary(resolvedTexture);
+        Destroy(thumbnailTexture);
+        completionPreviewCamera.backgroundColor = previousBackground;
+        return thumbnail;
+    }
+
+    private async Awaitable<bool> UploadReconstructionThumbnailAsync(byte[] thumbnail)
+    {
+        if (string.IsNullOrWhiteSpace(MapScanSession.ReconstructionScanId))
+            return false;
+
+        using var request = ServicesManager.CreateAuthorizedRequest(
+            MapScanSession.BuildThumbnailPath(MapScanSession.ReconstructionScanId),
+            UnityWebRequest.kHttpVerbPUT);
+        request.uploadHandler = new UploadHandlerRaw(thumbnail);
+        request.SetRequestHeader("Content-Type", "image/jpeg");
+        request.timeout = RECONSTRUCTION_REQUEST_TIMEOUT_SECONDS;
+        await ServicesManager.SendRequestAsync(request);
+        if (request.result == UnityWebRequest.Result.Success)
+            return true;
+
+        Debug.LogWarning(
+            $"[ARKitMeshScanController] Reconstruction thumbnail upload failed ({request.responseCode}): {request.error}");
+        return false;
     }
 
     public void ExportCurrentMeshToObj()
@@ -1198,6 +1261,8 @@ public class ARKitMeshScanController : MonoBehaviour
             {
                 ShowServerReconstructionPreview(mesh, serverScanId, localPath);
                 SetExportStatus($"Server reconstruction loaded in app.\n{mesh.vertexCount:N0} vertices / {mesh.triangles.Length / 3:N0} triangles");
+                if (useMemoAnchorServer)
+                    MapScanSession.SetReconstructionResult(serverScanId, fileName);
                 MapScanSession.SetCompletedReconstruction(mesh, previewMaterial);
                 reconstructionCompletedSuccessfully = true;
             }

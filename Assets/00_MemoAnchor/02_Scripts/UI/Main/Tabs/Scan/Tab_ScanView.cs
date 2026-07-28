@@ -104,7 +104,7 @@ namespace MemoAnchor.UI
                 text.AddToClassList("scan-address-list-text");
                 button.Add(text);
 
-                Label chevron = new("›");
+                VisualElement chevron = new();
                 chevron.AddToClassList("scan-address-list-chevron");
                 button.Add(chevron);
 

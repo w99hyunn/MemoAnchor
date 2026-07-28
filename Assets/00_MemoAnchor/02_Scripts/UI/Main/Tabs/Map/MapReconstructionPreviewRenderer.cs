@@ -167,6 +167,8 @@ namespace MemoAnchor.UI
             _memoCardKind.RemoveFromClassList("memo-list-item-icon-mic");
             _memoCardKind.RemoveFromClassList("memo-list-item-icon-gallery");
             _memoCardKind.AddToClassList(marker.KindClass);
+            _memoCard.EnableInClassList("is-completion-requested", marker.IsCompletionRequested);
+            _memoCardStem.EnableInClassList("is-completion-requested", marker.IsCompletionRequested);
             _memoCard.RemoveFromClassList("is-concealed");
             UpdateMemoMarkerPositions();
         }
@@ -186,6 +188,8 @@ namespace MemoAnchor.UI
             _selectedMemoMarkerIndex = -1;
             _memoCard.AddToClassList("is-concealed");
             _memoCardStem.AddToClassList("is-concealed");
+            _memoCard.RemoveFromClassList("is-completion-requested");
+            _memoCardStem.RemoveFromClassList("is-completion-requested");
         }
 
         private void ClearMemoMarkers()

@@ -1,0 +1,15 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements">
+    <ui:VisualElement name="home-map-card" class="scan-map-card">
+        <ui:VisualElement name="home-map-thumbnail" picking-mode="Ignore" class="scan-map-thumbnail">
+            <ui:Image name="home-map-thumbnail-image" picking-mode="Ignore" scale-mode="ScaleAndCrop" class="scan-map-thumbnail-image"/>
+            <ui:VisualElement name="home-map-thumbnail-spinner" picking-mode="Ignore" class="loading-spinner scan-map-thumbnail-spinner is-hidden"/>
+        </ui:VisualElement>
+        <ui:VisualElement picking-mode="Ignore" class="scan-map-info">
+            <ui:Label name="home-map-title" picking-mode="Ignore" class="scan-map-title"/>
+            <ui:Label name="home-map-address" picking-mode="Ignore" class="scan-map-subtitle"/>
+        </ui:VisualElement>
+        <ui:Button name="home-map-favorite-button" class="home-map-favorite-button">
+            <ui:VisualElement picking-mode="Ignore" class="home-map-favorite-icon"/>
+        </ui:Button>
+    </ui:VisualElement>
+</ui:UXML>

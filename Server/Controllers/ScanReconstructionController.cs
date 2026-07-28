@@ -21,17 +21,20 @@ public sealed class ScanReconstructionController : ControllerBase
     private readonly IMapMemoStore mapMemoStore;
     private readonly IHttpClientFactory httpClientFactory;
     private readonly ReconstructionOptions options;
+    private readonly IWebHostEnvironment environment;
     private readonly ILogger<ScanReconstructionController> logger;
 
     public ScanReconstructionController(
         IMapMemoStore mapMemoStore,
         IHttpClientFactory httpClientFactory,
         IOptions<ReconstructionOptions> options,
+        IWebHostEnvironment environment,
         ILogger<ScanReconstructionController> logger)
     {
         this.mapMemoStore = mapMemoStore;
         this.httpClientFactory = httpClientFactory;
         this.options = options.Value;
+        this.environment = environment;
         this.logger = logger;
     }
 
@@ -184,6 +187,73 @@ public sealed class ScanReconstructionController : ControllerBase
             logger.LogError(exception, "Reconstruction result proxy failed for map {MapId}", mapId);
             Response.StatusCode = StatusCodes.Status502BadGateway;
         }
+    }
+
+    [HttpGet("{scanId}/thumbnail")]
+    public async Task<IActionResult> Thumbnail(string mapId, string scanId, CancellationToken cancellationToken)
+    {
+        if (!await CanReadScanAsync(mapId, scanId, cancellationToken))
+        {
+            return new EmptyResult();
+        }
+
+        string thumbnailPath = GetThumbnailPath(scanId);
+        if (!System.IO.File.Exists(thumbnailPath))
+        {
+            return NotFound(new { message = "Reconstruction thumbnail not found." });
+        }
+        return PhysicalFile(thumbnailPath, JPEG_CONTENT_TYPE, enableRangeProcessing: true);
+    }
+
+    [HttpPut("{scanId}/thumbnail")]
+    [DisableRequestSizeLimit]
+    public async Task<IActionResult> SaveThumbnail(string mapId, string scanId, CancellationToken cancellationToken)
+    {
+        if (!await CanReadScanAsync(mapId, scanId, cancellationToken))
+        {
+            return new EmptyResult();
+        }
+
+        if (Request.ContentType == null
+            || !Request.ContentType.StartsWith(JPEG_CONTENT_TYPE, StringComparison.OrdinalIgnoreCase))
+        {
+            return StatusCode(StatusCodes.Status415UnsupportedMediaType);
+        }
+        if (!Request.ContentLength.HasValue)
+        {
+            return StatusCode(StatusCodes.Status411LengthRequired);
+        }
+        if (Request.ContentLength.Value <= 0 || Request.ContentLength.Value > 8 * 1024 * 1024)
+        {
+            return StatusCode(StatusCodes.Status413PayloadTooLarge);
+        }
+
+        string thumbnailPath = GetThumbnailPath(scanId);
+        Directory.CreateDirectory(Path.GetDirectoryName(thumbnailPath)!);
+        string temporaryPath = $"{thumbnailPath}.{Guid.NewGuid():N}.tmp";
+        try
+        {
+            await using (var output = new FileStream(
+                temporaryPath,
+                FileMode.CreateNew,
+                FileAccess.Write,
+                FileShare.None,
+                81920,
+                FileOptions.Asynchronous | FileOptions.SequentialScan))
+            {
+                await Request.Body.CopyToAsync(output, cancellationToken);
+            }
+            System.IO.File.Move(temporaryPath, thumbnailPath, true);
+        }
+        finally
+        {
+            if (System.IO.File.Exists(temporaryPath))
+            {
+                System.IO.File.Delete(temporaryPath);
+            }
+        }
+
+        return NoContent();
     }
 
     [HttpPost("{scanId}/localize")]
@@ -352,6 +422,21 @@ public sealed class ScanReconstructionController : ControllerBase
     private HttpClient CreateClient()
     {
         return httpClientFactory.CreateClient(ReconstructionOptions.HTTP_CLIENT_NAME);
+    }
+
+    private string GetThumbnailPath(string scanId)
+    {
+        string workingDirectory = Path.IsPathRooted(options.WorkingDirectory)
+            ? options.WorkingDirectory
+            : Path.Combine(environment.ContentRootPath, options.WorkingDirectory);
+        string resultRoot = Path.GetFullPath(Path.Combine(workingDirectory, "data", "results"));
+        string thumbnailPath = Path.GetFullPath(Path.Combine(resultRoot, scanId, "thumbnail.jpg"));
+        string resultRootPrefix = resultRoot.TrimEnd(Path.DirectorySeparatorChar) + Path.DirectorySeparatorChar;
+        if (!thumbnailPath.StartsWith(resultRootPrefix, StringComparison.Ordinal))
+        {
+            throw new InvalidOperationException("Invalid reconstruction thumbnail path.");
+        }
+        return thumbnailPath;
     }
 
     private async Task CopyStreamResponseAsync(HttpResponseMessage proxyResponse, CancellationToken cancellationToken)

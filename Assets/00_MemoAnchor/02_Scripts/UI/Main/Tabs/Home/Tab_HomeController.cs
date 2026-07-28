@@ -24,6 +24,7 @@ namespace MemoAnchor.UI
             _view.AlertBackButton.clicked += HideAlertDialog;
             _view.HomeModeToggle.clicked += ToggleHomeMode;
             _view.MemoModeToggle.clicked += ToggleHomeMode;
+            _view.MemoViewAllButton.clicked += ShowMemoCollection;
             _mainTabView.FriendRequestAlertsChanged += RebuildAlertItems;
             _isRegistered = true;
 
@@ -44,6 +45,7 @@ namespace MemoAnchor.UI
             _view.AlertBackButton.clicked -= HideAlertDialog;
             _view.HomeModeToggle.clicked -= ToggleHomeMode;
             _view.MemoModeToggle.clicked -= ToggleHomeMode;
+            _view.MemoViewAllButton.clicked -= ShowMemoCollection;
             _mainTabView.FriendRequestAlertsChanged -= RebuildAlertItems;
             _isRegistered = false;
         }
@@ -53,6 +55,12 @@ namespace MemoAnchor.UI
             _isHomeWorkMode = !_isHomeWorkMode;
             _view.ApplyHomeMode(_isHomeWorkMode);
             _mainTabView.ApplyMemoRoleMode(_isHomeWorkMode);
+        }
+
+        private void ShowMemoCollection()
+        {
+            _mainTabView.ApplyMemoRoleMode(_isHomeWorkMode);
+            _mainTabView.ShowMemoCollectionTab();
         }
 
         private void ShowAlertDialog()
