@@ -461,14 +461,10 @@ public class ARKitMeshScanController : MonoBehaviour
         if (scanMode != ScanMode.Scanning)
             return;
 
-        var bounds = meshManager ? BuildPreviewFromLiveMeshes() : null;
-        if (!bounds.HasValue && IsAndroidDepthScan)
-        {
-            bounds = BuildPreviewFromDepthKeyframes();
-            depthOnlyPreview = bounds.HasValue;
-        }
-
-        if (!bounds.HasValue)
+        UpdateStats(force: true);
+        bool hasScanData = (meshManager && HasLiveMeshData())
+            || (IsAndroidDepthScan && HasDepthKeyframeData());
+        if (!hasScanData)
         {
             stopGuidanceHoldUntil = Time.unscaledTime + 8f;
             SetExportStatus(IsAndroidDepthScan
@@ -480,10 +476,8 @@ public class ARKitMeshScanController : MonoBehaviour
             return;
         }
 
-        latestScanQuality = BuildScanQualityReport(bounds.Value);
         if (requireMinimumQualityToStop && latestScanQuality != null && latestScanQuality.score < minimumStopQualityScore)
         {
-            DestroyPreview();
             stopGuidanceHoldUntil = Time.unscaledTime + 8f;
             SetExportStatus(
                 $"아직 완료할 수 없습니다.\n품질 {latestScanQuality.score:0}% / 필요 {minimumStopQualityScore:0}%\n" +
@@ -493,28 +487,68 @@ public class ARKitMeshScanController : MonoBehaviour
         }
 
         scanMode = ScanMode.Preview;
+        reconstructionPackageRunning = true;
+        mapConfirmationRunning = MapScanSession.HasPendingMap;
         SetScanCaptureEnabled(false);
-        StopRgbdRecorder();
         SetLiveMeshesVisible(false);
         DestroyLiveCoverageOverlay();
-        ShowPreviewCamera(bounds.Value, false);
-
-        BuildVisualKeyframePreview(bounds.Value);
-
-        SetExportStatus(depthOnlyPreview
-            ? "Scan stopped. Showing ARCore Depth preview."
-            : previewHasProjectedColors
-                ? $"Scan stopped. Showing photo-projected LiDAR map.\nCoverage: {previewProjectedColorCoverage:P0}"
-                : "Scan stopped. Showing clean structural map.");
-
-        _ = FinalizeCompletedScanAsync(bounds.Value);
-
-        if (enhancePreviewWithGemini && !geminiEnhancementRunning)
-            _ = EnhancePreviewWithGeminiAsync(bounds.Value);
-
+        SetExportStatus("스캔 데이터를 정리하고 있습니다...");
         UpdateSessionState(ARSession.state);
         UpdateButtonStates();
-        UpdateStats(force: true);
+
+        _ = StopScanAndShowMapAsync();
+    }
+
+    private async Awaitable StopScanAndShowMapAsync()
+    {
+        try
+        {
+            await Awaitable.NextFrameAsync();
+            await StopRgbdRecorderAsync();
+
+            Bounds? bounds = null;
+            depthOnlyPreview = false;
+            if (meshManager && HasLiveMeshData())
+                bounds = await BuildPreviewFromLiveMeshesAsync();
+            if (!bounds.HasValue && IsAndroidDepthScan)
+            {
+                bounds = await BuildPreviewFromDepthKeyframesAsync();
+                depthOnlyPreview = bounds.HasValue;
+            }
+            if (!bounds.HasValue)
+            {
+                reconstructionPackageRunning = false;
+                mapConfirmationRunning = false;
+                SetExportStatus("맵 미리보기를 생성하지 못했습니다. 다시 스캔해주세요.");
+                UpdateButtonStates();
+                return;
+            }
+
+            latestScanQuality = BuildScanQualityReport(bounds.Value);
+            ShowPreviewCamera(bounds.Value, false);
+            BuildVisualKeyframePreview(bounds.Value);
+
+            SetExportStatus(depthOnlyPreview
+                ? "Scan stopped. Showing ARCore Depth preview."
+                : previewHasProjectedColors
+                    ? $"Scan stopped. Showing photo-projected LiDAR map.\nCoverage: {previewProjectedColorCoverage:P0}"
+                    : "Scan stopped. Showing clean structural map.");
+
+            if (enhancePreviewWithGemini && !geminiEnhancementRunning)
+                _ = EnhancePreviewWithGeminiAsync(bounds.Value);
+
+            UpdateSessionState(ARSession.state);
+            UpdateStats(force: true);
+            await FinalizeCompletedScanAsync(bounds.Value);
+        }
+        catch (Exception ex)
+        {
+            reconstructionPackageRunning = false;
+            mapConfirmationRunning = false;
+            Debug.LogException(ex);
+            SetExportStatus("스캔 데이터 정리에 실패했습니다. 다시 시도해주세요.");
+            UpdateButtonStates();
+        }
     }
 
     public void ResetScan()
@@ -637,7 +671,7 @@ public class ARKitMeshScanController : MonoBehaviour
             if (packageReconstructionScanOnStop)
             {
                 SetExportStatus("Packaging RGB-D reconstruction scan...");
-                zipPath = BuildReconstructionPackage(bounds);
+                zipPath = await BuildReconstructionPackageAsync(bounds);
                 Debug.Log($"[ARKitMeshScanController] Reconstruction package: {zipPath}");
                 SetExportStatus($"Reconstruction package ready.\n{Path.GetFileName(zipPath)}");
             }
@@ -687,24 +721,30 @@ public class ARKitMeshScanController : MonoBehaviour
         }
     }
 
-    private string BuildReconstructionPackage(Bounds bounds)
+    private async Awaitable<string> BuildReconstructionPackageAsync(Bounds bounds)
     {
         var id = string.IsNullOrWhiteSpace(scanId) ? DateTime.UtcNow.ToString("yyyyMMdd_HHmmss") : scanId;
         var root = Path.Combine(Application.persistentDataPath, "ReconstructionScans");
         var scanFolder = Path.Combine(root, id);
         var framesFolder = Path.Combine(scanFolder, "frames");
 
-        if (Directory.Exists(scanFolder))
-            Directory.Delete(scanFolder, true);
+        await Awaitable.BackgroundThreadAsync();
+        try
+        {
+            if (Directory.Exists(scanFolder))
+                Directory.Delete(scanFolder, true);
 
-        Directory.CreateDirectory(framesFolder);
+            Directory.CreateDirectory(framesFolder);
+        }
+        finally
+        {
+            await Awaitable.MainThreadAsync();
+        }
 
         if (HasLiveMeshData())
-            WriteObj(Path.Combine(scanFolder, "raw_mesh.obj"), meshManager.meshes);
+            await WriteObjAsync(Path.Combine(scanFolder, "raw_mesh.obj"), meshManager.meshes);
 
-        var rgbdDatasetFolder = string.Empty;
-        if (TryCopyRgbdRecorderDataset(scanFolder, out var copiedRgbdDatasetFolder))
-            rgbdDatasetFolder = copiedRgbdDatasetFolder;
+        string rgbdDatasetFolder = await CopyRgbdRecorderDatasetAsync(scanFolder);
 
         var frameDtos = new List<ReconstructionFrameDto>(keyframes.Count);
         for (var i = 0; i < keyframes.Count; i++)
@@ -714,6 +754,7 @@ public class ARKitMeshScanController : MonoBehaviour
             Directory.CreateDirectory(frameFolder);
 
             frameDtos.Add(WriteReconstructionFrame(keyframes[i], i + 1, frameFolderName, frameFolder));
+            await Awaitable.NextFrameAsync();
         }
 
         var manifest = new ReconstructionScanManifest
@@ -743,34 +784,51 @@ public class ARKitMeshScanController : MonoBehaviour
             frames = frameDtos.ToArray()
         };
 
-        File.WriteAllText(Path.Combine(scanFolder, "manifest.json"), JsonUtility.ToJson(manifest, true));
-
         var zipPath = Path.Combine(root, $"{id}.zip");
-        if (File.Exists(zipPath))
-            File.Delete(zipPath);
+        string manifestJson = JsonUtility.ToJson(manifest, true);
+        await Awaitable.BackgroundThreadAsync();
+        try
+        {
+            File.WriteAllText(Path.Combine(scanFolder, "manifest.json"), manifestJson);
+            if (File.Exists(zipPath))
+                File.Delete(zipPath);
 
-        ZipFile.CreateFromDirectory(scanFolder, zipPath, System.IO.Compression.CompressionLevel.Fastest, false);
+            ZipFile.CreateFromDirectory(scanFolder, zipPath, System.IO.Compression.CompressionLevel.Fastest, false);
+        }
+        finally
+        {
+            await Awaitable.MainThreadAsync();
+        }
+
         return zipPath;
     }
 
-    private bool TryCopyRgbdRecorderDataset(string scanFolder, out string relativeDatasetFolder)
+    private async Awaitable<string> CopyRgbdRecorderDatasetAsync(string scanFolder)
     {
-        relativeDatasetFolder = string.Empty;
-
         if (string.IsNullOrWhiteSpace(lastRgbdRecorderDatasetPath) || !Directory.Exists(lastRgbdRecorderDatasetPath))
-            return false;
+            return string.Empty;
 
         if (!File.Exists(Path.Combine(lastRgbdRecorderDatasetPath, "session.json")) ||
             !File.Exists(Path.Combine(lastRgbdRecorderDatasetPath, "frames.jsonl")))
-            return false;
+            return string.Empty;
 
-        relativeDatasetFolder = "rgbd_dataset";
+        string relativeDatasetFolder = "rgbd_dataset";
+        string source = lastRgbdRecorderDatasetPath;
         var destination = Path.Combine(scanFolder, relativeDatasetFolder);
-        if (Directory.Exists(destination))
-            Directory.Delete(destination, true);
+        await Awaitable.BackgroundThreadAsync();
+        try
+        {
+            if (Directory.Exists(destination))
+                Directory.Delete(destination, true);
 
-        CopyDirectory(lastRgbdRecorderDatasetPath, destination);
-        return true;
+            CopyDirectory(source, destination);
+        }
+        finally
+        {
+            await Awaitable.MainThreadAsync();
+        }
+
+        return relativeDatasetFolder;
     }
 
     private static void CopyDirectory(string sourceDirectory, string destinationDirectory)
@@ -1143,60 +1201,90 @@ public class ARKitMeshScanController : MonoBehaviour
         var normalOffset = 0;
 
         foreach (var meshFilter in meshFilters)
-        {
-            if (!meshFilter || !meshFilter.sharedMesh)
-                continue;
-
-            var mesh = meshFilter.sharedMesh;
-            builder.AppendLine($"o {meshFilter.name}");
-
-            foreach (var vertex in mesh.vertices)
-            {
-                var world = meshFilter.transform.TransformPoint(vertex);
-                builder.Append("v ");
-                builder.Append(world.x.ToString("F6", CultureInfo.InvariantCulture)).Append(' ');
-                builder.Append(world.y.ToString("F6", CultureInfo.InvariantCulture)).Append(' ');
-                builder.Append(world.z.ToString("F6", CultureInfo.InvariantCulture)).AppendLine();
-            }
-
-            foreach (var normal in mesh.normals)
-            {
-                var worldNormal = meshFilter.transform.TransformDirection(normal).normalized;
-                builder.Append("vn ");
-                builder.Append(worldNormal.x.ToString("F6", CultureInfo.InvariantCulture)).Append(' ');
-                builder.Append(worldNormal.y.ToString("F6", CultureInfo.InvariantCulture)).Append(' ');
-                builder.Append(worldNormal.z.ToString("F6", CultureInfo.InvariantCulture)).AppendLine();
-            }
-
-            var triangles = mesh.triangles;
-            var hasNormals = mesh.normals != null && mesh.normals.Length == mesh.vertexCount;
-
-            for (var i = 0; i < triangles.Length; i += 3)
-            {
-                var a = triangles[i] + 1 + vertexOffset;
-                var b = triangles[i + 1] + 1 + vertexOffset;
-                var c = triangles[i + 2] + 1 + vertexOffset;
-
-                if (hasNormals)
-                {
-                    var na = triangles[i] + 1 + normalOffset;
-                    var nb = triangles[i + 1] + 1 + normalOffset;
-                    var nc = triangles[i + 2] + 1 + normalOffset;
-                    builder.AppendLine($"f {a}//{na} {b}//{nb} {c}//{nc}");
-                }
-                else
-                {
-                    builder.AppendLine($"f {a} {b} {c}");
-                }
-            }
-
-            vertexOffset += mesh.vertexCount;
-            if (hasNormals)
-                normalOffset += mesh.normals.Length;
-        }
+            AppendObjMesh(builder, meshFilter, ref vertexOffset, ref normalOffset);
 
         Directory.CreateDirectory(Path.GetDirectoryName(filePath));
         File.WriteAllText(filePath, builder.ToString());
+    }
+
+    private async Awaitable WriteObjAsync(string filePath, System.Collections.Generic.IList<MeshFilter> meshFilters)
+    {
+        var builder = new StringBuilder(1024 * 128);
+        builder.AppendLine("# MemoAnchor ARKit mesh scan export");
+
+        var vertexOffset = 0;
+        var normalOffset = 0;
+
+        foreach (var meshFilter in meshFilters)
+        {
+            AppendObjMesh(builder, meshFilter, ref vertexOffset, ref normalOffset);
+            await Awaitable.NextFrameAsync();
+        }
+
+        string obj = builder.ToString();
+        await Awaitable.BackgroundThreadAsync();
+        try
+        {
+            Directory.CreateDirectory(Path.GetDirectoryName(filePath));
+            File.WriteAllText(filePath, obj);
+        }
+        finally
+        {
+            await Awaitable.MainThreadAsync();
+        }
+    }
+
+    private static void AppendObjMesh(StringBuilder builder, MeshFilter meshFilter, ref int vertexOffset, ref int normalOffset)
+    {
+        if (!meshFilter || !meshFilter.sharedMesh)
+            return;
+
+        var mesh = meshFilter.sharedMesh;
+        var normals = mesh.normals;
+        builder.AppendLine($"o {meshFilter.name}");
+
+        foreach (var vertex in mesh.vertices)
+        {
+            var world = meshFilter.transform.TransformPoint(vertex);
+            builder.Append("v ");
+            builder.Append(world.x.ToString("F6", CultureInfo.InvariantCulture)).Append(' ');
+            builder.Append(world.y.ToString("F6", CultureInfo.InvariantCulture)).Append(' ');
+            builder.Append(world.z.ToString("F6", CultureInfo.InvariantCulture)).AppendLine();
+        }
+
+        foreach (var normal in normals)
+        {
+            var worldNormal = meshFilter.transform.TransformDirection(normal).normalized;
+            builder.Append("vn ");
+            builder.Append(worldNormal.x.ToString("F6", CultureInfo.InvariantCulture)).Append(' ');
+            builder.Append(worldNormal.y.ToString("F6", CultureInfo.InvariantCulture)).Append(' ');
+            builder.Append(worldNormal.z.ToString("F6", CultureInfo.InvariantCulture)).AppendLine();
+        }
+
+        var triangles = mesh.triangles;
+        bool hasNormals = normals.Length == mesh.vertexCount;
+        for (var i = 0; i < triangles.Length; i += 3)
+        {
+            var a = triangles[i] + 1 + vertexOffset;
+            var b = triangles[i + 1] + 1 + vertexOffset;
+            var c = triangles[i + 2] + 1 + vertexOffset;
+
+            if (hasNormals)
+            {
+                var na = triangles[i] + 1 + normalOffset;
+                var nb = triangles[i + 1] + 1 + normalOffset;
+                var nc = triangles[i + 2] + 1 + normalOffset;
+                builder.AppendLine($"f {a}//{na} {b}//{nb} {c}//{nc}");
+            }
+            else
+            {
+                builder.AppendLine($"f {a} {b} {c}");
+            }
+        }
+
+        vertexOffset += mesh.vertexCount;
+        if (hasNormals)
+            normalOffset += normals.Length;
     }
 
     private void GoBack()
@@ -1330,6 +1418,27 @@ public class ARKitMeshScanController : MonoBehaviour
         rgbdRecorder.Stop();
         rgbdRecorder.Dispose();
         rgbdRecorder = null;
+    }
+
+    private async Awaitable StopRgbdRecorderAsync()
+    {
+        if (rgbdRecorder == null)
+            return;
+
+        RgbdDatasetRecorder recorder = rgbdRecorder;
+        lastRgbdRecorderDatasetPath = recorder.DatasetPath;
+        rgbdRecorder = null;
+
+        await Awaitable.BackgroundThreadAsync();
+        try
+        {
+            recorder.Stop();
+            recorder.Dispose();
+        }
+        finally
+        {
+            await Awaitable.MainThreadAsync();
+        }
     }
 
     private void UpdateSessionState(ARSessionState state)
@@ -1573,7 +1682,7 @@ public class ARKitMeshScanController : MonoBehaviour
         UpdateScanHud();
     }
 
-    private Bounds? BuildPreviewFromLiveMeshes()
+    private async Awaitable<Bounds?> BuildPreviewFromLiveMeshesAsync()
     {
         DestroyPreview();
         previewHasProjectedColors = false;
@@ -1600,6 +1709,7 @@ public class ARKitMeshScanController : MonoBehaviour
 
             liveMeshCount++;
             AppendCleanTriangles(sourceFilter, vertices, triangles, vertexMap);
+            await Awaitable.NextFrameAsync();
         }
 
         if (vertices.Count == 0 || triangles.Count == 0)
@@ -1608,7 +1718,7 @@ public class ARKitMeshScanController : MonoBehaviour
             return null;
         }
 
-        SmoothVertices(vertices, triangles);
+        await SmoothVerticesAsync(vertices, triangles);
 
         var previewMesh = new Mesh
         {
@@ -1654,7 +1764,18 @@ public class ARKitMeshScanController : MonoBehaviour
         return false;
     }
 
-    private Bounds? BuildPreviewFromDepthKeyframes()
+    private bool HasDepthKeyframeData()
+    {
+        foreach (VisualKeyframe keyframe in keyframes)
+        {
+            if (keyframe.Depth != null && keyframe.HasIntrinsics)
+                return true;
+        }
+
+        return false;
+    }
+
+    private async Awaitable<Bounds?> BuildPreviewFromDepthKeyframesAsync()
     {
         DestroyPreview();
         previewHasProjectedColors = false;
@@ -1690,6 +1811,8 @@ public class ARKitMeshScanController : MonoBehaviour
             AppendDepthFramePreview(keyframe, vertices, triangles, colors);
             if (vertices.Count > vertexCountBefore)
                 appendedFrameCount++;
+
+            await Awaitable.NextFrameAsync();
         }
 
         if (vertices.Count == 0)
@@ -3875,7 +3998,7 @@ public class ARKitMeshScanController : MonoBehaviour
         return index;
     }
 
-    private void SmoothVertices(List<Vector3> vertices, List<int> triangles)
+    private async Awaitable SmoothVerticesAsync(List<Vector3> vertices, List<int> triangles)
     {
         var passes = Mathf.Clamp(smoothingPasses, 0, 3);
         if (passes == 0 || vertices.Count == 0 || triangles.Count == 0)
@@ -3908,6 +4031,8 @@ public class ARKitMeshScanController : MonoBehaviour
 
                 vertices[i] = Vector3.Lerp(vertices[i], sums[i] / counts[i], strength);
             }
+
+            await Awaitable.NextFrameAsync();
         }
     }
 

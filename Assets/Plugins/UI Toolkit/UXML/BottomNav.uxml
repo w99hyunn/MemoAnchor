@@ -23,8 +23,11 @@
                 <ui:VisualElement class="nav-icon" style="background-image: url(&quot;project://database/Assets/00_MemoAnchor/03_Media/Icon/profile.png?fileID=2800000&amp;guid=5049c0bf482af2549afeca45a3efd61c&amp;type=3#profile&quot;);"/>
             </ui:Button>
         </ui:VisualElement>
-        <ui:VisualElement name="scan-start-bg" class="scan-start-bg">
-            <ui:Button name="nav-scan-start" text="스캔 시작" class="scan-nav-start"/>
+        <ui:VisualElement name="scan-start-bg" class="scan-start-bg scan-nav-action-bg">
+            <ui:Button name="nav-scan-start" text="스캔 시작" picking-mode="Ignore" class="scan-nav-start"/>
+        </ui:VisualElement>
+        <ui:VisualElement name="map-memo-add-bg" class="scan-start-bg map-nav-action-bg">
+            <ui:Button name="nav-map-memo-add" text="이 공간에 메모 추가" picking-mode="Ignore" class="scan-nav-start"/>
         </ui:VisualElement>
         <ui:VisualElement name="memo-filter-bottom-bar" class="nav-action-bar is-hidden">
             <ui:Button name="memo-filter-reset-button" text="초기화" class="nav-action-button nav-action-secondary"/>

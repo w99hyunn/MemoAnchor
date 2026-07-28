@@ -1520,18 +1520,24 @@
 .bottom-nav.is-scan-mode #nav-home,
 .bottom-nav.is-scan-mode #nav-menu,
 .bottom-nav.is-scan-mode #nav-map,
-.bottom-nav.is-scan-mode #nav-profile {
+.bottom-nav.is-scan-mode #nav-profile,
+.bottom-nav.is-map-mode #nav-home,
+.bottom-nav.is-map-mode #nav-menu,
+.bottom-nav.is-map-mode #nav-scan,
+.bottom-nav.is-map-mode #nav-profile {
     opacity: 0;
     translate: 0 22px;
     position: absolute;
     visibility: hidden;
 }
 
-.bottom-nav-wrapper.is-scan-mode {
+.bottom-nav-wrapper.is-scan-mode,
+.bottom-nav-wrapper.is-map-mode {
     justify-content: flex-start;
 }
 
-.bottom-nav-wrapper.is-scan-mode .bottom-nav {
+.bottom-nav-wrapper.is-scan-mode .bottom-nav,
+.bottom-nav-wrapper.is-map-mode .bottom-nav {
     left: 0;
     right: auto;
     width: 164px;
@@ -1543,13 +1549,15 @@
     padding-right: 0;
 }
 
-#nav-scan {
+#nav-scan,
+#nav-map {
     transition-duration: 0.22s;
     transition-timing-function: ease-out;
     transition-property: width, height, border-radius, margin-left;
 }
 
-.bottom-nav.is-scan-mode #nav-scan {
+.bottom-nav.is-scan-mode #nav-scan,
+.bottom-nav.is-map-mode #nav-map {
     width: 132px;
     height: 132px;
     border-radius: 66px;
@@ -1565,7 +1573,12 @@
     -unity-background-image-tint-color: rgb(255, 53, 87);
 }
 
-.bottom-nav-wrapper.is-scan-mode .scan-start-bg {
+.bottom-nav.is-map-mode #nav-map .nav-icon {
+    -unity-background-image-tint-color: rgb(255, 53, 87);
+}
+
+.bottom-nav-wrapper.is-scan-mode .scan-nav-action-bg,
+.bottom-nav-wrapper.is-map-mode .map-nav-action-bg {
     left: 188px;
     right: 14px;
     top: 0;
@@ -1577,7 +1590,8 @@
     visibility: visible;
 }
 
-.bottom-nav-wrapper.is-scan-mode .scan-start-bg .scan-nav-start {
+.bottom-nav-wrapper.is-scan-mode .scan-nav-action-bg .scan-nav-start,
+.bottom-nav-wrapper.is-map-mode .map-nav-action-bg .scan-nav-start {
     opacity: 1;
     translate: 0 0;
     visibility: visible;

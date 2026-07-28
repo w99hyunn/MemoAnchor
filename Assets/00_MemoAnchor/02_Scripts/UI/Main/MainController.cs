@@ -18,6 +18,7 @@ namespace MemoAnchor.UI
         private Camera _mainCamera;
         private int _currentTabIndex;
         private bool _isScanNavModeActive;
+        private bool _isMapNavModeActive;
         private bool _isRegistered;
         private bool _isOpeningScanScene;
 
@@ -103,6 +104,15 @@ namespace MemoAnchor.UI
         private void OnClickMap()
         {
             PlayNavTapAnimation(_view.MapButton);
+
+            if (_isMapNavModeActive)
+            {
+                _isMapNavModeActive = false;
+                ShowTab(3);
+                return;
+            }
+
+            _isMapNavModeActive = true;
             ShowTab(3);
         }
 
@@ -204,6 +214,7 @@ namespace MemoAnchor.UI
         {
             _view.HideProfileAccountSettings();
             int nextTabIndex = Mathf.Clamp(tabIndex, 0, 4);
+            bool enteringMapTab = _currentTabIndex != nextTabIndex && nextTabIndex == 3;
             if (_currentTabIndex != nextTabIndex)
             {
                 _view.HideMemoOverlayPages();
@@ -215,6 +226,14 @@ namespace MemoAnchor.UI
                 _isScanNavModeActive = false;
                 _view.HideScanActionDialog();
             }
+            if (_currentTabIndex != 3)
+            {
+                _isMapNavModeActive = false;
+            }
+            else if (enteringMapTab)
+            {
+                _isMapNavModeActive = true;
+            }
 
             SetState(_view.HomeButton, _currentTabIndex == 0);
             SetState(_view.MenuButton, _currentTabIndex == 1);
@@ -222,6 +241,7 @@ namespace MemoAnchor.UI
             SetState(_view.MapButton, _currentTabIndex == 3);
             SetState(_view.ProfileButton, _currentTabIndex == 4);
             _view.SetScanNavMode(_isScanNavModeActive);
+            _view.SetMapNavMode(_isMapNavModeActive);
             _view.SetMapPreviewActive(_currentTabIndex == 3);
             UpdateScanStartAvailability();
             UpdateTabStripOffset();

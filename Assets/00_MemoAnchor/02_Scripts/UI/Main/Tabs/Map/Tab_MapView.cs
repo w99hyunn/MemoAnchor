@@ -118,6 +118,7 @@ namespace MemoAnchor.UI
             _mapDetailButton.clicked += ShowMapDetail;
             _mapReconstructionButton.clicked += OpenSelectedMapReconstruction;
             _mapPreviewMenuButton.clicked += ShowMapMemoPage;
+            _mapMemoAddButton.clicked += ToggleMapMemoCreateActions;
             _mapMemoBackButton.clicked += HideMapMemoPage;
             _mapMemoSearchClearButton.clicked += ClearMapMemoSearch;
             _mapMemoSearchInput.RegisterValueChangedCallback(OnMapMemoSearchChanged);
@@ -148,6 +149,7 @@ namespace MemoAnchor.UI
             _mapDetailButton.clicked -= ShowMapDetail;
             _mapReconstructionButton.clicked -= OpenSelectedMapReconstruction;
             _mapPreviewMenuButton.clicked -= ShowMapMemoPage;
+            _mapMemoAddButton.clicked -= ToggleMapMemoCreateActions;
             _mapMemoBackButton.clicked -= HideMapMemoPage;
             _mapMemoSearchClearButton.clicked -= ClearMapMemoSearch;
             _mapMemoSearchInput.UnregisterValueChangedCallback(OnMapMemoSearchChanged);
@@ -354,6 +356,7 @@ namespace MemoAnchor.UI
                 return;
             }
 
+            SetVisible(_mapCreateMemoActions, false);
             _mapMemoSpaceLabel.text = map.spaceName;
             _mapMemoAddressLabel.text = string.IsNullOrWhiteSpace(map.roadAddress) ? map.address : map.roadAddress;
             _mapMemoSearchInput.SetValueWithoutNotify(string.Empty);
@@ -361,6 +364,17 @@ namespace MemoAnchor.UI
             SetVisible(_mapMemoPage, true);
             RebuildMapMemoList();
             _ = RefreshMapMemoPageAsync();
+        }
+
+        private void ToggleMapMemoCreateActions()
+        {
+            ScanMapItem map = GetSelectedMap();
+            if (!IsMapManager(map))
+            {
+                return;
+            }
+
+            SetVisible(_mapCreateMemoActions, _mapCreateMemoActions.ClassListContains(HIDDEN_CLASS));
         }
 
         private async Awaitable RefreshMapMemoPageAsync()
@@ -526,6 +540,7 @@ namespace MemoAnchor.UI
             ScanMapItem selectedMap = GetSelectedMap();
             bool hasMap = selectedMap != null;
             bool isReadOnly = hasMap && string.Equals(selectedMap.currentUserRole, "read-only", StringComparison.OrdinalIgnoreCase);
+            bool canCreateMemo = IsMapManager(selectedMap);
             _mapPreview.EnableInClassList("is-empty", !hasMap);
             _mapParticipantsButton.EnableInClassList("is-read-only", isReadOnly);
             SetVisible(_mapParticipantsButton, hasMap);
@@ -533,7 +548,8 @@ namespace MemoAnchor.UI
             SetVisible(_mapScanTimeLabel, hasMap);
             SetVisible(_mapReconstructionButton, hasMap);
             SetVisible(_mapEmptyState, !hasMap);
-            SetVisible(_mapCreateMemoActions, hasMap && !isReadOnly);
+            SetVisible(_mapCreateMemoActions, false);
+            SetMapMemoAddAvailable(canCreateMemo);
 
             if (!hasMap)
             {
@@ -1288,17 +1304,24 @@ namespace MemoAnchor.UI
         private void ShowMapMemoCreatePageForSelectedMap(string kind)
         {
             ScanMapItem selectedMap = GetSelectedMap();
-            if (selectedMap == null)
+            if (!IsMapManager(selectedMap))
             {
                 return;
             }
 
+            SetVisible(_mapCreateMemoActions, false);
             ShowMapMemoCreatePage(selectedMap, kind);
         }
 
         private ScanMapItem GetSelectedMap()
         {
             return _scanMaps.Find(map => map.id == _selectedMapId);
+        }
+
+        private static bool IsMapManager(ScanMapItem map)
+        {
+            return map != null
+                && string.Equals(map.currentUserRole, "manager", StringComparison.OrdinalIgnoreCase);
         }
 
         private static string GetMapAddressKey(ScanMapItem map)

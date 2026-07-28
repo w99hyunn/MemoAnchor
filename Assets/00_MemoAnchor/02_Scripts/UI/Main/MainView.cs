@@ -19,7 +19,7 @@ namespace MemoAnchor.UI
         private const long MEMO_DELETE_LONG_PRESS_MS = 520;
         private const float MEMO_DELETE_LONG_PRESS_MOVE_TOLERANCE = 18f;
 
-        private Button _homeButton, _menuButton, _scanButton, _mapButton, _profileButton, _scanStartButton;
+        private Button _homeButton, _menuButton, _scanButton, _mapButton, _profileButton, _scanStartButton, _mapMemoAddButton;
         private VisualElement _root, _tabViewport, _tabStrip, _bottomNavWrapper, _bottomNav, _memoFilterBottomBar, _memoDetailBottomBar, _memoCreateBottomBar, _memoTrashBottomBar;
         private VisualElement _homeTab, _menuTab, _scanTab, _mapTab, _profileTab;
 
@@ -44,6 +44,7 @@ namespace MemoAnchor.UI
             _mapButton = _root.Q<Button>("nav-map");
             _profileButton = _root.Q<Button>("nav-profile");
             _scanStartButton = _root.Q<Button>("nav-scan-start");
+            _mapMemoAddButton = _root.Q<Button>("nav-map-memo-add");
             _memoFilterButton = _root.Q<Button>("memo-filter-button");
             _profileSettingsButton = _root.Q<Button>("profile-settings-button");
             _profileAccountSettingsBackButton = _root.Q<Button>("profile-account-settings-back-button");
@@ -121,6 +122,23 @@ namespace MemoAnchor.UI
             _bottomNavWrapper.EnableInClassList("is-scan-mode", enabled);
             _bottomNav.EnableInClassList("is-scan-mode", enabled);
             _scanStartButton.pickingMode = enabled ? PickingMode.Position : PickingMode.Ignore;
+        }
+
+        public void SetMapNavMode(bool enabled)
+        {
+            _bottomNavWrapper.EnableInClassList("is-map-mode", enabled);
+            _bottomNav.EnableInClassList("is-map-mode", enabled);
+            _mapMemoAddButton.pickingMode = enabled ? PickingMode.Position : PickingMode.Ignore;
+            if (!enabled)
+            {
+                SetVisible(_mapCreateMemoActions, false);
+            }
+        }
+
+        private void SetMapMemoAddAvailable(bool available)
+        {
+            _mapMemoAddButton.SetEnabled(available);
+            _mapMemoAddButton.EnableInClassList("is-disabled", !available);
         }
 
         private static void SetVisible(VisualElement element, bool visible)

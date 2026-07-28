@@ -443,9 +443,12 @@ public sealed class PostgresMapMemoStore : IMapMemoStore
             throw new InvalidOperationException("Map not found.");
         }
 
-        if (!map.Members.Any(member => member.UnityPlayerId == playerId))
+        bool isManager = map.Members.Any(member =>
+            string.Equals(member.UnityPlayerId, playerId, StringComparison.OrdinalIgnoreCase)
+            && string.Equals(member.Role, ScanMapRoles.MANAGER, StringComparison.OrdinalIgnoreCase));
+        if (!isManager)
         {
-            throw new UnauthorizedAccessException("Player is not a map member.");
+            throw new UnauthorizedAccessException("Only a map manager can create memos.");
         }
 
         DateTimeOffset now = DateTimeOffset.UtcNow;
