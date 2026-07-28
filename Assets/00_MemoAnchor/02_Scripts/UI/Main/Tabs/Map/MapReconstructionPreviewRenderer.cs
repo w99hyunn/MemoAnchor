@@ -13,6 +13,7 @@ namespace MemoAnchor.UI
         private Camera _previewCamera;
         private RenderTexture _renderTexture;
         private GameObject _previewRoot;
+        private Transform _previewSurface;
         private Mesh _mesh;
         private Material _material;
         private Material _markerMaterial;
@@ -63,8 +64,10 @@ namespace MemoAnchor.UI
 
             GameObject surface = new("Map Reconstruction Surface");
             surface.transform.SetParent(_previewRoot.transform, false);
+            surface.transform.localScale = new Vector3(1f, 1f, -1f);
             surface.layer = PREVIEW_LAYER;
             surface.AddComponent<MeshFilter>().sharedMesh = _mesh;
+            _previewSurface = surface.transform;
 
             MeshRenderer meshRenderer = surface.AddComponent<MeshRenderer>();
             meshRenderer.sharedMaterial = _material;
@@ -113,7 +116,7 @@ namespace MemoAnchor.UI
                 GameObject marker = GameObject.CreatePrimitive(PrimitiveType.Sphere);
                 marker.name = "Spatial Memo Marker";
                 marker.transform.SetParent(_markerRoot.transform, false);
-                marker.transform.localPosition = new Vector3(position.x, position.y, -position.z);
+                marker.transform.localPosition = position;
                 marker.transform.localScale = Vector3.one * markerSize;
                 marker.layer = PREVIEW_LAYER;
                 if (marker.TryGetComponent<MeshRenderer>(out var renderer))
@@ -318,7 +321,7 @@ namespace MemoAnchor.UI
 
         private void UpdateCameraTransform()
         {
-            Vector3 center = _previewRoot.transform.TransformPoint(_mesh.bounds.center);
+            Vector3 center = _previewSurface.TransformPoint(_mesh.bounds.center);
             Quaternion orbit = Quaternion.Euler(_pitch, _yaw, 0f);
             _previewCamera.transform.position = center - orbit * Vector3.forward * _distance;
             _previewCamera.transform.rotation = Quaternion.LookRotation(center - _previewCamera.transform.position, Vector3.up);
@@ -346,6 +349,7 @@ namespace MemoAnchor.UI
             }
 
             _previewRoot = null;
+            _previewSurface = null;
             _markerRoot = null;
             _material = null;
             _mesh = null;
