@@ -41,6 +41,7 @@ namespace MemoAnchor.UI
             _view.ScanStartButton.clicked += OnClickScanStart;
             _view.TabSwitchRequested += ShowTab;
             _view.MapMemoPlacementRequested += OnMapMemoPlacementRequested;
+            _view.MapNavAvailabilityChanged += OnMapNavAvailabilityChanged;
             _scanView.ScanStartReadinessChanged += UpdateScanStartAvailability;
             _view.TabViewport.RegisterCallback<GeometryChangedEvent>(OnViewportGeometryChanged);
             SceneManager.sceneUnloaded += OnSceneUnloaded;
@@ -64,6 +65,7 @@ namespace MemoAnchor.UI
             _view.ScanStartButton.clicked -= OnClickScanStart;
             _view.TabSwitchRequested -= ShowTab;
             _view.MapMemoPlacementRequested -= OnMapMemoPlacementRequested;
+            _view.MapNavAvailabilityChanged -= OnMapNavAvailabilityChanged;
             _scanView.ScanStartReadinessChanged -= UpdateScanStartAvailability;
             _view.TabViewport.UnregisterCallback<GeometryChangedEvent>(OnViewportGeometryChanged);
             SceneManager.sceneUnloaded -= OnSceneUnloaded;
@@ -114,7 +116,7 @@ namespace MemoAnchor.UI
                 return;
             }
 
-            _isMapNavModeActive = true;
+            _isMapNavModeActive = _view.IsMapNavAvailable;
             ShowTab(3);
         }
 
@@ -250,7 +252,7 @@ namespace MemoAnchor.UI
             }
             else if (enteringMapTab)
             {
-                _isMapNavModeActive = true;
+                _isMapNavModeActive = _view.IsMapNavAvailable;
             }
 
             SetState(_view.HomeButton, _currentTabIndex == 0);
@@ -272,6 +274,17 @@ namespace MemoAnchor.UI
             {
                 _ = _view.RefreshMemoListAsync();
             }
+        }
+
+        private void OnMapNavAvailabilityChanged(bool available)
+        {
+            if (_currentTabIndex != 3)
+            {
+                return;
+            }
+
+            _isMapNavModeActive = available;
+            _view.SetMapNavMode(_isMapNavModeActive);
         }
 
         private void UpdateScanStartAvailability()

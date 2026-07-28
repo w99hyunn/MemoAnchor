@@ -1182,9 +1182,12 @@
 }
 
 .map-friend-invite-submit-button {
-    height: 126px;
+    height: 140px;
     flex-shrink: 0;
-    margin: 0;
+    margin-top: 0;
+    margin-right: -14px;
+    margin-bottom: 0;
+    margin-left: -14px;
     border-width: 0;
     border-radius: 0;
     background-color: rgb(247, 247, 247);
@@ -1248,6 +1251,121 @@
     right: 0;
     top: 0;
     bottom: 0;
+}
+
+.map-reconstruction-memo-overlay,
+.map-reconstruction-memo-markers {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+}
+
+.map-reconstruction-memo-marker {
+    position: absolute;
+    width: 64px;
+    height: 77px;
+    margin-left: -32px;
+    margin-top: -77px;
+    padding: 0;
+    border-width: 0;
+    border-radius: 0;
+    background-color: rgba(0, 0, 0, 0);
+    background-image: url("project://database/Assets/00_MemoAnchor/03_Media/Icon/map_view_memo.png?fileID=2800000&guid=e6ab136ea6706684dba43034af755e4d&type=3#map_view_memo");
+    -unity-background-scale-mode: scale-to-fit;
+}
+
+.map-reconstruction-memo-marker:hover:enabled {
+    background-color: rgba(0, 0, 0, 0);
+}
+
+.map-reconstruction-memo-marker.is-completion-requested {
+    background-image: url("project://database/Assets/00_MemoAnchor/03_Media/Icon/map_view_memo_ok.png?fileID=2800000&guid=7930cab31825cf44ca19a72f40266cec&type=3#map_view_memo_ok");
+}
+
+.map-reconstruction-memo-marker:active:enabled {
+    background-color: rgba(0, 0, 0, 0);
+    opacity: 0.72;
+}
+
+.map-reconstruction-memo-card {
+    position: absolute;
+    width: 380px;
+    height: 320px;
+    padding: 28px;
+    overflow: visible;
+    border-width: 8px;
+    border-color: rgb(255, 255, 255);
+    border-radius: 28px;
+    background-color: rgba(27, 27, 30, 0.94);
+    flex-direction: column;
+    align-items: stretch;
+}
+
+.map-reconstruction-memo-card:hover:enabled {
+    background-color: rgba(38, 38, 42, 0.96);
+}
+
+.map-reconstruction-memo-card:active:enabled {
+    background-color: rgba(16, 16, 19, 0.96);
+}
+
+.map-reconstruction-memo-card.is-concealed {
+    visibility: hidden;
+}
+
+.map-reconstruction-memo-card-stem.is-concealed {
+    visibility: hidden;
+}
+
+.map-reconstruction-memo-card-header {
+    height: 54px;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.map-reconstruction-memo-card-kind {
+    width: 52px;
+    height: 52px;
+    -unity-background-scale-mode: scale-to-fit;
+    -unity-background-image-tint-color: rgb(255, 255, 255);
+}
+
+.map-reconstruction-memo-card-open {
+    width: 54px;
+    height: 54px;
+    border-radius: 27px;
+    background-color: rgba(255, 255, 255, 0.88);
+    align-items: center;
+    justify-content: center;
+}
+
+.map-reconstruction-memo-card-open-icon {
+    width: 30px;
+    height: 30px;
+    background-image: url("project://database/Assets/00_MemoAnchor/03_Media/Icon/right_arrow.png?fileID=2800000&guid=cadbdb304307a2f4488fb68a287323c0&type=3#right_arrow");
+    -unity-background-scale-mode: scale-to-fit;
+    -unity-background-image-tint-color: rgb(30, 30, 34);
+    rotate: -45deg;
+}
+
+.map-reconstruction-memo-card-title {
+    flex-grow: 1;
+    margin-top: 34px;
+    color: rgb(255, 255, 255);
+    font-size: 48px;
+    white-space: normal;
+    -unity-text-align: upper-left;
+    -unity-font-definition: url("project://database/Assets/Plugins/UI%20Toolkit/Fonts/Pretendard-SemiBold.ttf?fileID=12800000&guid=7136488b0fb8f924b91754e33f3b5abc&type=3#Pretendard-SemiBold");
+}
+
+.map-reconstruction-memo-card-stem {
+    position: absolute;
+    width: 7px;
+    height: 130px;
+    background-color: rgb(255, 255, 255);
 }
 
 .map-reconstruction-spinner.loading-spinner {
@@ -1571,7 +1689,7 @@
     width: 164px;
     top: 0;
     height: 164px;
-    border-radius: 82px;
+    border-radius: 70px;
     justify-content: center;
     padding-left: 0;
     padding-right: 0;
@@ -4512,16 +4630,7 @@
     background-color: rgb(237, 240, 245);
 }
 
-.scan-action-option-icon-slot {
-    width: 44px;
-    height: 44px;
-    border-radius: 22px;
-    background-color: rgb(255, 230, 234);
-    margin-right: 50px;
-    flex-shrink: 0;
-    align-items: center;
-    justify-content: center;
-}
+
 
 .scan-action-option-icon-placeholder {
     width: 26px;

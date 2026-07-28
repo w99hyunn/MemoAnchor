@@ -3,12 +3,9 @@
     <ui:VisualElement name="scan-action-dialog-overlay" class="scan-action-dialog-overlay">
         <ui:VisualElement name="scan-action-dialog-sheet" class="scan-action-dialog-sheet">
             <ui:VisualElement class="scan-action-dialog-handle"/>
-            <ui:Label text="맵 생성방식을 선택해주세요." class="scan-action-dialog-title"/>
+            <ui:Label text="맵에 참여하거나, 새로 생성할 수 있어요." class="scan-action-dialog-title"/>
             <ui:VisualElement class="scan-action-list">
                 <ui:Button name="scan-action-join-button" class="scan-action-list-item">
-                    <ui:VisualElement class="scan-action-option-icon-slot">
-                        <ui:VisualElement class="scan-action-option-icon-placeholder"/>
-                    </ui:VisualElement>
                     <ui:VisualElement class="flex-text-column">
                         <ui:Label text="참여하기" class="scan-action-option-title"/>
                         <ui:Label text="참여코드를 받았다면 참여할 수 있어요." class="scan-action-option-description"/>
@@ -16,9 +13,6 @@
                     <ui:Label text="›" class="scan-action-list-chevron"/>
                 </ui:Button>
                 <ui:Button name="scan-action-create-button" class="scan-action-list-item">
-                    <ui:VisualElement class="scan-action-option-icon-slot">
-                        <ui:VisualElement class="scan-action-option-icon-placeholder"/>
-                    </ui:VisualElement>
                     <ui:VisualElement class="flex-text-column">
                         <ui:Label text="생성하기" class="scan-action-option-title"/>
                         <ui:Label text="새로운 맵을 스캔할 수 있어요." class="scan-action-option-description"/>

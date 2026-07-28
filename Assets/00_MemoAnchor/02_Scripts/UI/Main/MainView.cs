@@ -23,6 +23,7 @@ namespace MemoAnchor.UI
 
         public event Action<int> TabSwitchRequested;
         public event Action<ScanMapItem> MapMemoPlacementRequested;
+        public event Action<bool> MapNavAvailabilityChanged;
 
         public Button HomeButton => _homeButton;
         public Button MenuButton => _menuButton;
@@ -31,6 +32,7 @@ namespace MemoAnchor.UI
         public Button ProfileButton => _profileButton;
         public Button ScanStartButton => _scanStartButton;
         public VisualElement TabViewport => _tabViewport;
+        public bool IsMapNavAvailable => _isMapNavAvailable;
 
         private void Awake()
         {

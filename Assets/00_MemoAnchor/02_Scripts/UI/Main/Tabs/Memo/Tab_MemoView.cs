@@ -34,7 +34,7 @@ namespace MemoAnchor.UI
         private bool _isMemoTrashLoading;
         private bool _isCreatingMemo;
         private bool _isMemoTrashSelecting;
-        private bool _memoDetailReturnsToMapMemoPage;
+        private MemoDetailReturnTarget _memoDetailReturnTarget;
         private Texture2D _memoMediaViewerTexture;
         private RenderTexture _memoMediaViewerVideoTexture;
         private VideoPlayer _memoMediaViewerVideoPlayer;
@@ -449,9 +449,11 @@ namespace MemoAnchor.UI
             row.Q<Label>("memo-list-item-assignee-label").text = item.Assignee;
         }
 
-        private void ShowMemoDetailPage(MemoDetailItem item, bool returnToMapMemoPage = false)
+        private void ShowMemoDetailPage(
+            MemoDetailItem item,
+            MemoDetailReturnTarget returnTarget = MemoDetailReturnTarget.MemoTab)
         {
-            _memoDetailReturnsToMapMemoPage = returnToMapMemoPage;
+            _memoDetailReturnTarget = returnTarget;
             _currentMemoDetailItem = item;
             bool canManageMemo = CanManageMemo(item) || CanDeleteMemo(item);
             _memoDetailPlaceLabel.text = item.Place;
@@ -465,19 +467,23 @@ namespace MemoAnchor.UI
 
         private void OnClickMemoDetailBack()
         {
-            bool returnToMapMemoPage = _memoDetailReturnsToMapMemoPage;
+            MemoDetailReturnTarget returnTarget = _memoDetailReturnTarget;
             HideMemoDetailPage();
-            if (returnToMapMemoPage)
+            if (returnTarget == MemoDetailReturnTarget.MapMemoList)
             {
                 RequestTabSwitch(3);
                 SetVisible(_mapMemoPage, true);
                 RebuildMapMemoList();
             }
+            else if (returnTarget == MemoDetailReturnTarget.MapPreview)
+            {
+                RequestTabSwitch(3);
+            }
         }
 
         private void HideMemoDetailPage()
         {
-            _memoDetailReturnsToMapMemoPage = false;
+            _memoDetailReturnTarget = MemoDetailReturnTarget.MemoTab;
             _currentMemoDetailItem = null;
             StopMemoVoicePreview();
             HideMemoMediaViewer();
@@ -596,7 +602,7 @@ namespace MemoAnchor.UI
                 MemoDetailItem updatedItem = _memoDetailItems.Find(memo => memo.Id == item.Id);
                 if (showDetail && updatedItem != null)
                 {
-                    ShowMemoDetailPage(updatedItem, _memoDetailReturnsToMapMemoPage);
+                    ShowMemoDetailPage(updatedItem, _memoDetailReturnTarget);
                 }
             }
             finally
@@ -1677,6 +1683,13 @@ namespace MemoAnchor.UI
             }
 
             return string.Empty;
+        }
+
+        private enum MemoDetailReturnTarget
+        {
+            MemoTab,
+            MapMemoList,
+            MapPreview
         }
 
         private enum MemoDetailKind

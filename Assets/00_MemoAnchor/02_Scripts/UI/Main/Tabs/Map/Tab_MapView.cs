@@ -27,15 +27,15 @@ namespace MemoAnchor.UI
         private readonly List<Relationship> _availableMapFriendInviteRelationships = new();
         private readonly List<MemoItem> _readOnlyMemos = new();
         private ScanMapItem _readOnlyMap;
-        private Button _mapListButton, _mapDetailButton, _mapReconstructionButton, _mapPreviewMenuButton, _mapMemoBackButton, _mapMemoSearchClearButton, _mapCreateTextMemoButton, _mapCreateChecklistMemoButton, _mapCreateMediaMemoButton, _mapCreateVoiceMemoButton;
+        private Button _mapListButton, _mapDetailButton, _mapReconstructionButton, _mapPreviewMenuButton, _mapReconstructionMemoCard, _mapMemoBackButton, _mapMemoSearchClearButton, _mapCreateTextMemoButton, _mapCreateChecklistMemoButton, _mapCreateMediaMemoButton, _mapCreateVoiceMemoButton;
         private Button _mapParticipantsButton, _mapParticipantsInviteButton, _mapParticipantsAddButton, _mapMemoPlacementStartButton;
         private Button _mapFriendInviteBackButton, _mapFriendInviteSubmitButton, _mapFriendInviteLoadMoreButton;
-        private VisualElement _mapPreview, _mapReconstructionSpinner, _mapMemoPage, _mapMemoListContainer, _mapMemoEmptyState, _mapListOverlay, _mapListSheet, _mapListContent, _mapEmptyState, _mapCreateMemoActions;
+        private VisualElement _mapPreview, _mapReconstructionSpinner, _mapReconstructionMemoMarkers, _mapReconstructionMemoCardKind, _mapReconstructionMemoCardStem, _mapMemoPage, _mapMemoListContainer, _mapMemoEmptyState, _mapListOverlay, _mapListSheet, _mapListContent, _mapEmptyState, _mapCreateMemoActions;
         private VisualElement _mapParticipantsOverlay, _mapParticipantsSheet, _mapParticipantsList, _mapParticipantsInviteCodeContent;
         private VisualElement _mapMemoPlacementOverlay, _mapMemoPlacementSheet;
         private VisualElement _mapFriendInviteOverlay, _mapFriendInviteSheet, _mapFriendInviteList;
         private Image _mapReconstructionPreviewImage;
-        private Label _mapCurrentSpaceLabel, _mapCurrentAddressLabel, _mapMemoSpaceLabel, _mapMemoAddressLabel, _mapScanTimeLabel, _mapParticipantsTitle, _mapParticipantsManagerSummary, _mapParticipantsRepairerSummary;
+        private Label _mapCurrentSpaceLabel, _mapCurrentAddressLabel, _mapReconstructionMemoCardTitle, _mapMemoSpaceLabel, _mapMemoAddressLabel, _mapScanTimeLabel, _mapParticipantsTitle, _mapParticipantsManagerSummary, _mapParticipantsRepairerSummary;
         private TextField _mapMemoSearchInput;
         private Label _mapParticipantsInviteIssueLabel, _mapParticipantsInviteTimer, _mapParticipantsInviteCodeLabel;
         private IVisualElementScheduledItem _mapParticipantsInviteSchedule;
@@ -49,6 +49,7 @@ namespace MemoAnchor.UI
         private string _displayedMapPreviewId = string.Empty;
         private int _mapReconstructionLoadToken;
         private int _preferredMapRefreshAttempts;
+        private bool _isMapNavAvailable;
         private MapReconstructionPreviewRenderer _mapReconstructionPreviewRenderer;
 
         private void RegisterMapPage()
@@ -75,6 +76,11 @@ namespace MemoAnchor.UI
             _mapPreview = _root.Q<VisualElement>("map-preview");
             _mapReconstructionPreviewImage = _root.Q<Image>("map-reconstruction-preview");
             _mapReconstructionSpinner = _root.Q<VisualElement>("map-reconstruction-spinner");
+            _mapReconstructionMemoMarkers = _root.Q<VisualElement>("map-reconstruction-memo-markers");
+            _mapReconstructionMemoCard = _root.Q<Button>("map-reconstruction-memo-card");
+            _mapReconstructionMemoCardKind = _root.Q<VisualElement>("map-reconstruction-memo-card-kind");
+            _mapReconstructionMemoCardStem = _root.Q<VisualElement>("map-reconstruction-memo-card-stem");
+            _mapReconstructionMemoCardTitle = _root.Q<Label>("map-reconstruction-memo-card-title");
             _mapMemoPage = _root.Q<VisualElement>("map-memo-page");
             _mapMemoListContainer = _root.Q<VisualElement>("map-memo-list-container");
             _mapMemoEmptyState = _root.Q<VisualElement>("map-memo-empty-state");
@@ -104,7 +110,13 @@ namespace MemoAnchor.UI
             _mapMemoPlacementOverlay = _root.Q<VisualElement>("map-memo-placement-overlay");
             _mapMemoPlacementSheet = _root.Q<VisualElement>("map-memo-placement-sheet");
             _mapReconstructionPreviewRenderer = gameObject.AddComponent<MapReconstructionPreviewRenderer>();
-            _mapReconstructionPreviewRenderer.Initialize(_mapReconstructionPreviewImage);
+            _mapReconstructionPreviewRenderer.Initialize(
+                _mapReconstructionPreviewImage,
+                _mapReconstructionMemoMarkers,
+                _mapReconstructionMemoCard,
+                _mapReconstructionMemoCardKind,
+                _mapReconstructionMemoCardStem,
+                _mapReconstructionMemoCardTitle);
 
             mainRoot.Add(_mapListOverlay);
             PopupManager.RegisterBottomSheet(_mapListOverlay, _mapListSheet, HideMapList);
@@ -436,7 +448,7 @@ namespace MemoAnchor.UI
                 {
                     HideMapMemoPage();
                     RequestTabSwitch(1);
-                    ShowMemoDetailPage(item, true);
+                    ShowMemoDetailPage(item, MemoDetailReturnTarget.MapMemoList);
                 });
                 _mapMemoListContainer.Add(template);
             }
@@ -549,6 +561,11 @@ namespace MemoAnchor.UI
             SetVisible(_mapEmptyState, !hasMap);
             SetVisible(_mapCreateMemoActions, false);
             SetMapMemoAddAvailable(canCreateMemo);
+            if (_isMapNavAvailable != canCreateMemo)
+            {
+                _isMapNavAvailable = canCreateMemo;
+                MapNavAvailabilityChanged?.Invoke(_isMapNavAvailable);
+            }
 
             if (!hasMap)
             {
@@ -741,18 +758,25 @@ namespace MemoAnchor.UI
             ScanMapItem map = GetSelectedMap();
             if (map == null || map.id != _displayedMapPreviewId)
             {
-                _mapReconstructionPreviewRenderer.SetMarkers(Array.Empty<Vector3>());
+                _mapReconstructionPreviewRenderer.SetMarkers(Array.Empty<MapPreviewMemoMarker>());
                 return;
             }
 
-            _mapReconstructionPreviewRenderer.SetMarkers(GetSpatialMemoPositions(map));
+            List<MapPreviewMemoMarker> markers = GetSpatialMemosForMap(map)
+                .Select(item => new MapPreviewMemoMarker(
+                    item.SpatialPosition,
+                    item.Title,
+                    GetMemoListIconClass(item.Kind),
+                    string.Equals(item.WorkStatus, "completion-requested", StringComparison.OrdinalIgnoreCase),
+                    () => OpenMapPreviewMemoDetail(item)))
+                .ToList();
+            _mapReconstructionPreviewRenderer.SetMarkers(markers);
         }
 
-        public List<Vector3> GetSpatialMemoPositions(ScanMapItem map)
+        private void OpenMapPreviewMemoDetail(MemoDetailItem item)
         {
-            return GetSpatialMemosForMap(map)
-                .Select(item => item.SpatialPosition)
-                .ToList();
+            RequestTabSwitch(1);
+            ShowMemoDetailPage(item, MemoDetailReturnTarget.MapPreview);
         }
 
         public List<MapScanSession.ExistingMemoMarker> GetSpatialMemoMarkers(ScanMapItem map)

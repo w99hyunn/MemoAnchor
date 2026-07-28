@@ -1,9 +1,33 @@
+using System;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UIElements;
-using System.Collections.Generic;
 
 namespace MemoAnchor.UI
 {
+    public readonly struct MapPreviewMemoMarker
+    {
+        public readonly Vector3 Position;
+        public readonly string Title;
+        public readonly string KindClass;
+        public readonly bool IsCompletionRequested;
+        public readonly Action OpenDetail;
+
+        public MapPreviewMemoMarker(
+            Vector3 position,
+            string title,
+            string kindClass,
+            bool isCompletionRequested,
+            Action openDetail)
+        {
+            Position = position;
+            Title = title;
+            KindClass = kindClass;
+            IsCompletionRequested = isCompletionRequested;
+            OpenDetail = openDetail;
+        }
+    }
+
     public sealed class MapReconstructionPreviewRenderer : MonoBehaviour
     {
         private const int PREVIEW_LAYER = 31;
@@ -16,8 +40,13 @@ namespace MemoAnchor.UI
         private Transform _previewSurface;
         private Mesh _mesh;
         private Material _material;
-        private Material _markerMaterial;
-        private GameObject _markerRoot;
+        private VisualElement _memoMarkerContainer;
+        private Button _memoCard;
+        private VisualElement _memoCardKind;
+        private VisualElement _memoCardStem;
+        private Label _memoCardTitle;
+        private readonly List<MapPreviewMemoMarker> _memoMarkers = new();
+        private readonly List<Button> _memoMarkerButtons = new();
         private Vector3 _previousPointerPosition;
         private Vector2 _firstPointerPosition;
         private Vector2 _secondPointerPosition;
@@ -30,18 +59,31 @@ namespace MemoAnchor.UI
         private float _pinchStartCameraDistance;
         private int _firstPointerId = -1;
         private int _secondPointerId = -1;
+        private int _selectedMemoMarkerIndex = -1;
         private bool _isDragging;
         private bool _isViewActive;
 
-        public void Initialize(Image target)
+        public void Initialize(
+            Image target,
+            VisualElement memoMarkerContainer,
+            Button memoCard,
+            VisualElement memoCardKind,
+            VisualElement memoCardStem,
+            Label memoCardTitle)
         {
             _target = target;
+            _memoMarkerContainer = memoMarkerContainer;
+            _memoCard = memoCard;
+            _memoCardKind = memoCardKind;
+            _memoCardStem = memoCardStem;
+            _memoCardTitle = memoCardTitle;
             _target.RegisterCallback<GeometryChangedEvent>(OnGeometryChanged);
             _target.RegisterCallback<PointerDownEvent>(OnPointerDown);
             _target.RegisterCallback<PointerMoveEvent>(OnPointerMove);
             _target.RegisterCallback<PointerUpEvent>(OnPointerUp);
             _target.RegisterCallback<PointerCancelEvent>(OnPointerCancel);
             _target.RegisterCallback<WheelEvent>(OnWheel);
+            _memoCard.clicked += OpenSelectedMemoDetail;
 
             CreatePreviewCamera();
         }
@@ -88,42 +130,135 @@ namespace MemoAnchor.UI
             }
         }
 
-        public void SetMarkers(IReadOnlyList<Vector3> positions)
+        public void SetMarkers(IReadOnlyList<MapPreviewMemoMarker> markers)
         {
-            if (_markerRoot)
-                Destroy(_markerRoot);
+            ClearMemoMarkers();
+            for (int i = 0; i < markers.Count; i++)
+            {
+                int markerIndex = i;
+                Button markerButton = new()
+                {
+                    pickingMode = PickingMode.Position
+                };
+                markerButton.AddToClassList("map-reconstruction-memo-marker");
+                markerButton.EnableInClassList("is-completion-requested", markers[i].IsCompletionRequested);
+                markerButton.clicked += () => SelectMemoMarker(markerIndex);
+                _memoMarkerContainer.Add(markerButton);
+                _memoMarkerButtons.Add(markerButton);
+                _memoMarkers.Add(markers[i]);
+            }
 
-            _markerRoot = null;
-            if (!_previewRoot || positions.Count == 0)
+            UpdateMemoMarkerPositions();
+        }
+
+        private void SelectMemoMarker(int markerIndex)
+        {
+            if (_selectedMemoMarkerIndex == markerIndex)
+            {
+                OpenSelectedMemoDetail();
+                return;
+            }
+
+            _selectedMemoMarkerIndex = markerIndex;
+            MapPreviewMemoMarker marker = _memoMarkers[markerIndex];
+            _memoCardTitle.text = marker.Title;
+            _memoCardKind.RemoveFromClassList("memo-list-item-icon-text");
+            _memoCardKind.RemoveFromClassList("memo-list-item-icon-check");
+            _memoCardKind.RemoveFromClassList("memo-list-item-icon-mic");
+            _memoCardKind.RemoveFromClassList("memo-list-item-icon-gallery");
+            _memoCardKind.AddToClassList(marker.KindClass);
+            _memoCard.RemoveFromClassList("is-concealed");
+            UpdateMemoMarkerPositions();
+        }
+
+        private void OpenSelectedMemoDetail()
+        {
+            if (_selectedMemoMarkerIndex < 0)
                 return;
 
-            _markerRoot = new GameObject("Map Memo Markers");
-            _markerRoot.transform.SetParent(_previewRoot.transform, false);
-            _markerRoot.layer = PREVIEW_LAYER;
+            Action openDetail = _memoMarkers[_selectedMemoMarkerIndex].OpenDetail;
+            HideSelectedMemoCard();
+            openDetail();
+        }
 
-            if (!_markerMaterial)
+        private void HideSelectedMemoCard()
+        {
+            _selectedMemoMarkerIndex = -1;
+            _memoCard.AddToClassList("is-concealed");
+            _memoCardStem.AddToClassList("is-concealed");
+        }
+
+        private void ClearMemoMarkers()
+        {
+            HideSelectedMemoCard();
+            _memoMarkerContainer.Clear();
+            _memoMarkerButtons.Clear();
+            _memoMarkers.Clear();
+        }
+
+        private void UpdateMemoMarkerPositions()
+        {
+            if (!_mesh || _memoMarkers.Count == 0)
+                return;
+
+            float panelWidth = _target.resolvedStyle.width;
+            float panelHeight = _target.resolvedStyle.height;
+            bool selectedMarkerVisible = false;
+            Vector2 selectedAnchor = default;
+            for (int i = 0; i < _memoMarkers.Count; i++)
             {
-                Shader shader = Shader.Find("Universal Render Pipeline/Unlit") ?? Shader.Find("Unlit/Color");
-                _markerMaterial = new Material(shader)
+                Vector3 worldPosition = _previewRoot.transform.TransformPoint(_memoMarkers[i].Position);
+                Vector3 viewportPosition = _previewCamera.WorldToViewportPoint(worldPosition);
+                bool visible = viewportPosition.z > 0f
+                    && viewportPosition.x >= 0f
+                    && viewportPosition.x <= 1f
+                    && viewportPosition.y >= 0f
+                    && viewportPosition.y <= 1f;
+                Button markerButton = _memoMarkerButtons[i];
+                markerButton.EnableInClassList("is-hidden", !visible);
+                if (!visible)
+                    continue;
+
+                float left = viewportPosition.x * panelWidth;
+                float top = (1f - viewportPosition.y) * panelHeight;
+                markerButton.style.left = left;
+                markerButton.style.top = top;
+                if (i == _selectedMemoMarkerIndex)
                 {
-                    color = new Color(0.91f, 0.23f, 0.32f, 1f)
-                };
+                    selectedMarkerVisible = true;
+                    selectedAnchor = new Vector2(left, top);
+                }
             }
 
-            float markerSize = Mathf.Max(_mesh.bounds.extents.magnitude * 0.035f, 0.035f);
-            foreach (Vector3 position in positions)
-            {
-                GameObject marker = GameObject.CreatePrimitive(PrimitiveType.Sphere);
-                marker.name = "Spatial Memo Marker";
-                marker.transform.SetParent(_markerRoot.transform, false);
-                marker.transform.localPosition = position;
-                marker.transform.localScale = Vector3.one * markerSize;
-                marker.layer = PREVIEW_LAYER;
-                if (marker.TryGetComponent<MeshRenderer>(out var renderer))
-                    renderer.sharedMaterial = _markerMaterial;
-                if (marker.TryGetComponent<Collider>(out var collider))
-                    Destroy(collider);
-            }
+            _memoCard.EnableInClassList("is-concealed", _selectedMemoMarkerIndex < 0 || !selectedMarkerVisible);
+            _memoCardStem.EnableInClassList("is-concealed", _selectedMemoMarkerIndex < 0 || !selectedMarkerVisible);
+            if (selectedMarkerVisible)
+                PositionMemoCard(selectedAnchor, panelWidth, panelHeight);
+        }
+
+        private void PositionMemoCard(Vector2 anchor, float panelWidth, float panelHeight)
+        {
+            float cardWidth = _memoCard.resolvedStyle.width;
+            float cardHeight = _memoCard.resolvedStyle.height;
+            float markerHeight = _memoMarkerButtons[_selectedMemoMarkerIndex].resolvedStyle.height;
+            float edgeMargin = markerHeight * 0.35f;
+            float desiredStemHeight = markerHeight * 1.7f;
+            float maximumCardTop = Mathf.Max(edgeMargin, panelHeight - cardHeight - edgeMargin);
+            float cardLeft = Mathf.Clamp(
+                anchor.x - cardWidth * 0.5f,
+                edgeMargin,
+                Mathf.Max(edgeMargin, panelWidth - cardWidth - edgeMargin));
+            float cardTop = Mathf.Clamp(
+                anchor.y - markerHeight - desiredStemHeight - cardHeight,
+                edgeMargin,
+                maximumCardTop);
+            float stemHeight = Mathf.Max(0f, anchor.y - markerHeight - cardTop - cardHeight);
+
+            _memoCard.style.left = cardLeft;
+            _memoCard.style.top = cardTop;
+            _memoCardStem.style.left = anchor.x - _memoCardStem.resolvedStyle.width * 0.5f;
+            _memoCardStem.style.top = cardTop + cardHeight;
+            _memoCardStem.style.height = stemHeight;
         }
 
         public void SetViewActive(bool active)
@@ -329,11 +464,13 @@ namespace MemoAnchor.UI
             float radius = Mathf.Max(_mesh.bounds.extents.magnitude, 0.1f);
             _previewCamera.nearClipPlane = Mathf.Max(0.01f, _distance - radius * 2f);
             _previewCamera.farClipPlane = _distance + radius * 4f;
+            UpdateMemoMarkerPositions();
         }
 
         private void ClearMesh()
         {
             ResetPointerInput();
+            ClearMemoMarkers();
 
             if (_previewRoot)
             {
@@ -350,7 +487,6 @@ namespace MemoAnchor.UI
 
             _previewRoot = null;
             _previewSurface = null;
-            _markerRoot = null;
             _material = null;
             _mesh = null;
         }
@@ -396,9 +532,8 @@ namespace MemoAnchor.UI
             _target.UnregisterCallback<PointerUpEvent>(OnPointerUp);
             _target.UnregisterCallback<PointerCancelEvent>(OnPointerCancel);
             _target.UnregisterCallback<WheelEvent>(OnWheel);
+            _memoCard.clicked -= OpenSelectedMemoDetail;
             ClearMesh();
-            if (_markerMaterial)
-                Destroy(_markerMaterial);
             ReleaseRenderTexture();
         }
     }

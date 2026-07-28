@@ -1,8 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using Unity.Services.Friends;
-using Unity.Services.Friends.Models;
 using UnityEngine;
 using UnityEngine.Networking;
 using UnityEngine.UIElements;
@@ -194,7 +192,7 @@ namespace MemoAnchor.UI
             _memoCreateTargetMap = map;
             RequestTabSwitch(1);
             ResetMemoCreateForm(kind);
-            _ = RebuildMemoCreateRepairerListAsync();
+            RebuildMemoCreateRepairerList();
             HideMemoDetailPage();
             SetVisible(_memoCreatePage, true);
             SetMemoCreateNavMode(true);
@@ -233,7 +231,7 @@ namespace MemoAnchor.UI
             _memoCreateDueChanged = false;
             BuildMemoCreateCalendar();
             BuildMemoCreateTimePicker();
-            _ = RebuildMemoCreateRepairerListAsync();
+            RebuildMemoCreateRepairerList();
             HideMemoDetailPage();
             SetVisible(_memoCreatePage, true);
             SetMemoCreateNavMode(true);
@@ -553,7 +551,7 @@ namespace MemoAnchor.UI
             SetMemoCreateRepairerExpanded(!_memoCreateRepairerExpanded);
             if (_memoCreateRepairerExpanded)
             {
-                _ = RebuildMemoCreateRepairerListAsync();
+                RebuildMemoCreateRepairerList();
             }
         }
 
@@ -942,39 +940,34 @@ namespace MemoAnchor.UI
             _memoCreateRepairerChevron.EnableInClassList(SELECTED_CLASS, expanded);
         }
 
-        private async Awaitable RebuildMemoCreateRepairerListAsync()
+        private void RebuildMemoCreateRepairerList()
         {
             _memoCreateRepairerItemsList.Clear();
-            if (!_friendsInitialized)
+            int repairerCount = 0;
+            foreach (ScanMapMemberItem member in _memoCreateTargetMap.members)
             {
-                await InitializeFriendsAsync();
+                if (!string.Equals(member.role, "repairer", StringComparison.OrdinalIgnoreCase))
+                {
+                    continue;
+                }
+
+                AddMemoCreateRepairerRow(member);
+                repairerCount++;
             }
 
-            if (!_friendsInitialized)
+            if (repairerCount == 0)
             {
-                AddMemoCreateRepairerStatus("친구 정보를 불러오는 중입니다.");
-                return;
-            }
-
-            if (FriendsService.Instance.Friends.Count == 0)
-            {
-                AddMemoCreateRepairerStatus("등록된 친구가 없습니다.");
-                return;
-            }
-
-            foreach (Relationship relationship in FriendsService.Instance.Friends)
-            {
-                AddMemoCreateRepairerRow(relationship);
+                AddMemoCreateRepairerStatus("이 맵에 등록된 수리자가 없습니다.");
             }
         }
 
-        private void AddMemoCreateRepairerRow(Relationship relationship)
+        private void AddMemoCreateRepairerRow(ScanMapMemberItem member)
         {
             TemplateContainer item = _memoCreateRepairerRowAsset.Instantiate();
             Button row = item.Q<Button>("memo-create-repairer-row");
             row.EnableInClassList("is-first", _memoCreateRepairerItemsList.childCount == 0);
-            string memberId = relationship.Member.Id;
-            string memberName = GetMemberDisplayName(relationship.Member);
+            string memberId = member.playerId;
+            string memberName = string.IsNullOrWhiteSpace(member.name) ? member.playerId : member.name;
             row.clicked += () =>
             {
                 _memoCreateRepairerPlayerId = memberId;
@@ -982,9 +975,8 @@ namespace MemoAnchor.UI
                 SetMemoCreateRepairerExpanded(false);
             };
 
-            _mapFriendInviteProfiles.TryGetValue(memberId, out MapFriendProfileItem profile);
-            item.Q<Label>("memo-create-repairer-name").text = string.IsNullOrWhiteSpace(profile?.name) ? memberName : profile.name;
-            item.Q<Label>("memo-create-repairer-company").text = profile?.companyName ?? string.Empty;
+            item.Q<Label>("memo-create-repairer-name").text = memberName;
+            item.Q<Label>("memo-create-repairer-company").text = member.companyName;
             _memoCreateRepairerItemsList.Add(row);
         }
 

@@ -7,7 +7,7 @@ namespace MemoAnchor
 {
     public class ServicesManager : MonoBehaviour
     {
-        private const string DEFAULT_SERVER_BASE_URL = "https://memoanchorserver.bindgames.kr";
+        private const string DEFAULT_SERVER_BASE_URL = "https://memoanchorserver.w99hyun.com";
         private const string DEFAULT_LOCAL_SERVER_BASE_URL = "http://localhost:5108";
         private const string AUTHORIZATION_HEADER = "Authorization";
         private const string CONTENT_TYPE_HEADER = "Content-Type";

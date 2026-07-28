@@ -19,6 +19,19 @@
         </ui:Button>
         <ui:VisualElement name="map-preview" class="map-preview">
             <ui:Image name="map-reconstruction-preview" picking-mode="Position" scale-mode="StretchToFill" class="map-reconstruction-preview is-hidden"/>
+            <ui:VisualElement name="map-reconstruction-memo-overlay" picking-mode="Ignore" class="map-reconstruction-memo-overlay">
+                <ui:VisualElement name="map-reconstruction-memo-markers" picking-mode="Ignore" class="map-reconstruction-memo-markers"/>
+                <ui:VisualElement name="map-reconstruction-memo-card-stem" picking-mode="Ignore" class="map-reconstruction-memo-card-stem is-concealed"/>
+                <ui:Button name="map-reconstruction-memo-card" picking-mode="Position" class="map-reconstruction-memo-card is-concealed">
+                    <ui:VisualElement picking-mode="Ignore" class="map-reconstruction-memo-card-header">
+                        <ui:VisualElement name="map-reconstruction-memo-card-kind" picking-mode="Ignore" class="map-reconstruction-memo-card-kind memo-list-item-icon-text"/>
+                        <ui:VisualElement picking-mode="Ignore" class="map-reconstruction-memo-card-open">
+                            <ui:VisualElement picking-mode="Ignore" class="map-reconstruction-memo-card-open-icon"/>
+                        </ui:VisualElement>
+                    </ui:VisualElement>
+                    <ui:Label name="map-reconstruction-memo-card-title" text="" picking-mode="Ignore" class="map-reconstruction-memo-card-title"/>
+                </ui:Button>
+            </ui:VisualElement>
             <ui:VisualElement name="map-reconstruction-spinner" picking-mode="Ignore" class="loading-spinner map-reconstruction-spinner is-hidden"/>
             <ui:Button name="map-reconstruction-button" text="스캔 결과 없음" class="map-reconstruction-button is-hidden"/>
             <ui:Button name="map-preview-menu-button" class="map-preview-menu-button common-icon-button">
