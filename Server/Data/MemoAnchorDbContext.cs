@@ -118,6 +118,15 @@ public sealed class MemoAnchorDbContext : DbContext
             entity.Property(item => item.AssigneeName).HasColumnName("assignee_name").HasMaxLength(120).IsRequired();
             entity.Property(item => item.WorkStatus).HasColumnName("work_status").HasMaxLength(32).IsRequired();
             entity.Property(item => item.DueText).HasColumnName("due_text").HasMaxLength(80).IsRequired();
+            entity.Property(item => item.HasSpatialAnchor).HasColumnName("has_spatial_anchor");
+            entity.Property(item => item.ReconstructionScanId).HasColumnName("reconstruction_scan_id").HasMaxLength(256).IsRequired();
+            entity.Property(item => item.PositionX).HasColumnName("position_x");
+            entity.Property(item => item.PositionY).HasColumnName("position_y");
+            entity.Property(item => item.PositionZ).HasColumnName("position_z");
+            entity.Property(item => item.RotationX).HasColumnName("rotation_x");
+            entity.Property(item => item.RotationY).HasColumnName("rotation_y");
+            entity.Property(item => item.RotationZ).HasColumnName("rotation_z");
+            entity.Property(item => item.RotationW).HasColumnName("rotation_w");
             entity.Property(item => item.ChecklistItemsJson).HasColumnName("checklist_items").HasColumnType("jsonb").IsRequired();
             entity.Property(item => item.VoiceItemsJson).HasColumnName("voice_items").HasColumnType("jsonb").IsRequired();
             entity.Property(item => item.ImageUrlsJson).HasColumnName("image_urls").HasColumnType("jsonb").IsRequired();
@@ -208,6 +217,15 @@ public sealed class MemoEntity
     public string AssigneeName { get; set; } = string.Empty;
     public string WorkStatus { get; set; } = "active";
     public string DueText { get; set; } = string.Empty;
+    public bool HasSpatialAnchor { get; set; }
+    public string ReconstructionScanId { get; set; } = string.Empty;
+    public double PositionX { get; set; }
+    public double PositionY { get; set; }
+    public double PositionZ { get; set; }
+    public double RotationX { get; set; }
+    public double RotationY { get; set; }
+    public double RotationZ { get; set; }
+    public double RotationW { get; set; } = 1d;
     public string ChecklistItemsJson { get; set; } = "[]";
     public string VoiceItemsJson { get; set; } = "[]";
     public string ImageUrlsJson { get; set; } = "[]";

@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.UIElements;
+using System.Collections.Generic;
 
 namespace MemoAnchor.UI
 {
@@ -14,6 +15,8 @@ namespace MemoAnchor.UI
         private GameObject _previewRoot;
         private Mesh _mesh;
         private Material _material;
+        private Material _markerMaterial;
+        private GameObject _markerRoot;
         private Vector3 _previousPointerPosition;
         private Vector2 _firstPointerPosition;
         private Vector2 _secondPointerPosition;
@@ -79,6 +82,44 @@ namespace MemoAnchor.UI
             if (_isViewActive && _renderTexture)
             {
                 _previewCamera.enabled = true;
+            }
+        }
+
+        public void SetMarkers(IReadOnlyList<Vector3> positions)
+        {
+            if (_markerRoot)
+                Destroy(_markerRoot);
+
+            _markerRoot = null;
+            if (!_previewRoot || positions.Count == 0)
+                return;
+
+            _markerRoot = new GameObject("Map Memo Markers");
+            _markerRoot.transform.SetParent(_previewRoot.transform, false);
+            _markerRoot.layer = PREVIEW_LAYER;
+
+            if (!_markerMaterial)
+            {
+                Shader shader = Shader.Find("Universal Render Pipeline/Unlit") ?? Shader.Find("Unlit/Color");
+                _markerMaterial = new Material(shader)
+                {
+                    color = new Color(0.91f, 0.23f, 0.32f, 1f)
+                };
+            }
+
+            float markerSize = Mathf.Max(_mesh.bounds.extents.magnitude * 0.035f, 0.035f);
+            foreach (Vector3 position in positions)
+            {
+                GameObject marker = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+                marker.name = "Spatial Memo Marker";
+                marker.transform.SetParent(_markerRoot.transform, false);
+                marker.transform.localPosition = new Vector3(position.x, position.y, -position.z);
+                marker.transform.localScale = Vector3.one * markerSize;
+                marker.layer = PREVIEW_LAYER;
+                if (marker.TryGetComponent<MeshRenderer>(out var renderer))
+                    renderer.sharedMaterial = _markerMaterial;
+                if (marker.TryGetComponent<Collider>(out var collider))
+                    Destroy(collider);
             }
         }
 
@@ -305,6 +346,7 @@ namespace MemoAnchor.UI
             }
 
             _previewRoot = null;
+            _markerRoot = null;
             _material = null;
             _mesh = null;
         }
@@ -351,6 +393,8 @@ namespace MemoAnchor.UI
             _target.UnregisterCallback<PointerCancelEvent>(OnPointerCancel);
             _target.UnregisterCallback<WheelEvent>(OnWheel);
             ClearMesh();
+            if (_markerMaterial)
+                Destroy(_markerMaterial);
             ReleaseRenderTexture();
         }
     }

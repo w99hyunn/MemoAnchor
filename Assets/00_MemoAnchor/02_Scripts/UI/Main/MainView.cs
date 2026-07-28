@@ -7,8 +7,6 @@ namespace MemoAnchor.UI
     [RequireComponent(typeof(UIDocument))]
     public partial class MainView : MonoBehaviour
     {
-        private const string DIALOG_OPEN_CLASS = "is-open";
-        private const string DIALOG_ANIM_READY_CLASS = "is-anim-ready";
         private const string MEMO_DELETE_OPEN_CLASS = "is-delete-open";
         private const string MEMO_DELETE_PRESS_CLASS = "is-delete-press";
         private const string SELECTED_CLASS = "is-selected";
@@ -24,6 +22,7 @@ namespace MemoAnchor.UI
         private VisualElement _homeTab, _menuTab, _scanTab, _mapTab, _profileTab;
 
         public event Action<int> TabSwitchRequested;
+        public event Action<ScanMapItem> MapMemoPlacementRequested;
 
         public Button HomeButton => _homeButton;
         public Button MenuButton => _menuButton;
@@ -115,6 +114,7 @@ namespace MemoAnchor.UI
             UnregisterMemoFilterPage();
             UnregisterMemoSearchPage();
             UnregisterMapPage();
+            UnregisterScanActionDialog();
         }
 
         public void SetScanNavMode(bool enabled)

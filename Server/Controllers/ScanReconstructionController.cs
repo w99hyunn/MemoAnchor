@@ -13,6 +13,7 @@ namespace ASP.NET_core_MemoAnchor_Server.Controllers;
 public sealed class ScanReconstructionController : ControllerBase
 {
     private const string ZIP_CONTENT_TYPE = "application/zip";
+    private const string JPEG_CONTENT_TYPE = "image/jpeg";
     private const string SCAN_ID_HEADER = "X-MemoAnchor-Scan-Id";
     private const string FILE_NAME_HEADER = "X-MemoAnchor-Filename";
 
@@ -182,6 +183,80 @@ public sealed class ScanReconstructionController : ControllerBase
         {
             logger.LogError(exception, "Reconstruction result proxy failed for map {MapId}", mapId);
             Response.StatusCode = StatusCodes.Status502BadGateway;
+        }
+    }
+
+    [HttpPost("{scanId}/localize")]
+    [DisableRequestSizeLimit]
+    public async Task<IActionResult> Localize(string mapId, string scanId, CancellationToken cancellationToken)
+    {
+        if (!await CanReadScanAsync(mapId, scanId, cancellationToken))
+        {
+            return new EmptyResult();
+        }
+
+        string? playerId = GetUnityPlayerId();
+        if (string.IsNullOrWhiteSpace(playerId))
+        {
+            return Unauthorized();
+        }
+
+        if (!await mapMemoStore.CanManageMapAsync(playerId, mapId, cancellationToken))
+        {
+            return StatusCode(StatusCodes.Status403Forbidden);
+        }
+
+        if (Request.ContentType == null
+            || !Request.ContentType.StartsWith(JPEG_CONTENT_TYPE, StringComparison.OrdinalIgnoreCase))
+        {
+            return StatusCode(StatusCodes.Status415UnsupportedMediaType);
+        }
+
+        if (!Request.ContentLength.HasValue)
+        {
+            return StatusCode(StatusCodes.Status411LengthRequired);
+        }
+
+        if (Request.ContentLength.Value <= 0 || Request.ContentLength.Value > 12 * 1024 * 1024)
+        {
+            return StatusCode(StatusCodes.Status413PayloadTooLarge);
+        }
+
+        using var proxyRequest = new HttpRequestMessage(
+            HttpMethod.Post,
+            $"localize/{Uri.EscapeDataString(scanId)}");
+        foreach (string header in new[]
+        {
+            "X-MemoAnchor-Fx",
+            "X-MemoAnchor-Fy",
+            "X-MemoAnchor-Cx",
+            "X-MemoAnchor-Cy"
+        })
+        {
+            if (Request.Headers.TryGetValue(header, out var value))
+            {
+                proxyRequest.Headers.TryAddWithoutValidation(header, value.ToString());
+            }
+        }
+        proxyRequest.Content = new StreamContent(Request.Body);
+        proxyRequest.Content.Headers.ContentType = new MediaTypeHeaderValue(JPEG_CONTENT_TYPE);
+        proxyRequest.Content.Headers.ContentLength = Request.ContentLength.Value;
+
+        try
+        {
+            using HttpResponseMessage proxyResponse = await CreateClient().SendAsync(proxyRequest, cancellationToken);
+            string responseBody = await proxyResponse.Content.ReadAsStringAsync(cancellationToken);
+            return CopyTextResponse(proxyResponse, responseBody);
+        }
+        catch (HttpRequestException exception)
+        {
+            logger.LogError(exception, "Reconstruction localization proxy failed for map {MapId}", mapId);
+            return StatusCode(StatusCodes.Status502BadGateway, new { message = "Reconstruction server is unavailable." });
+        }
+        catch (TaskCanceledException exception) when (!cancellationToken.IsCancellationRequested)
+        {
+            logger.LogError(exception, "Reconstruction localization proxy timed out for map {MapId}", mapId);
+            return StatusCode(StatusCodes.Status504GatewayTimeout, new { message = "Reconstruction localization timed out." });
         }
     }
 

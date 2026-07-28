@@ -9,9 +9,6 @@ namespace MemoAnchor.UI
     [RequireComponent(typeof(UIDocument))]
     public class Tab_ScanView : MonoBehaviour
     {
-        private const string DIALOG_OPEN_CLASS = "is-open";
-        private const string DIALOG_ANIM_READY_CLASS = "is-anim-ready";
-        private const string HIDDEN_CLASS = "is-hidden";
         private Button _addressButton;
         private TextField _addressButtonText;
         private VisualElement _addressInputBox;
@@ -26,8 +23,6 @@ namespace MemoAnchor.UI
         private Button _addressAddButton;
         private VisualElement _friendDialogOverlay;
         private VisualElement _friendItemsList;
-        private int _addressDialogTransitionToken;
-        private int _friendDialogTransitionToken;
 
         public Button AddressButton => _addressButton;
         public Button AddressAddButton => _addressAddButton;
@@ -75,20 +70,20 @@ namespace MemoAnchor.UI
             _friendItemsList = root.Q<VisualElement>("scan-friend-items-list");
 
             mainRoot.Add(_addressDialogOverlay);
-            _addressDialogOverlay.BringToFront();
-            _addressDialogOverlay.AddToClassList(DIALOG_ANIM_READY_CLASS);
-            _addressDialogOverlay.RegisterCallback<ClickEvent>(_ => HideAddressDialog());
-            addressDialogSheet.RegisterCallback<ClickEvent>(evt => evt.StopPropagation());
+            PopupManager.RegisterBottomSheet(_addressDialogOverlay, addressDialogSheet, HideAddressDialog);
 
             mainRoot.Add(_friendDialogOverlay);
-            _friendDialogOverlay.BringToFront();
-            _friendDialogOverlay.AddToClassList(DIALOG_ANIM_READY_CLASS);
-            _friendDialogOverlay.RegisterCallback<ClickEvent>(_ => HideFriendDialog());
-            friendDialogSheet.RegisterCallback<ClickEvent>(evt => evt.StopPropagation());
+            PopupManager.RegisterBottomSheet(_friendDialogOverlay, friendDialogSheet, HideFriendDialog);
 
             SetSelectedAddress(string.Empty);
             SetSelectedRepairer(ScanFriendOption.Empty);
             SetSelectedManager(ScanFriendOption.Empty);
+        }
+
+        private void OnDisable()
+        {
+            PopupManager.UnregisterBottomSheet(_addressDialogOverlay);
+            PopupManager.UnregisterBottomSheet(_friendDialogOverlay);
         }
 
         public void RebuildAddressItems(IReadOnlyList<ScanAddressItem> addresses, Action<ScanAddressItem> onSelectAddress)
@@ -164,72 +159,22 @@ namespace MemoAnchor.UI
 
         public void ShowAddressDialog()
         {
-            _addressDialogTransitionToken++;
-            _addressDialogOverlay.RemoveFromClassList(HIDDEN_CLASS);
-            _addressDialogOverlay.RemoveFromClassList(DIALOG_OPEN_CLASS);
-
-            int token = _addressDialogTransitionToken;
-            _addressDialogOverlay.schedule.Execute(() =>
-            {
-                if (token != _addressDialogTransitionToken)
-                {
-                    return;
-                }
-
-                _addressDialogOverlay.AddToClassList(DIALOG_OPEN_CLASS);
-            }).ExecuteLater(16);
+            PopupManager.ShowBottomSheet(_addressDialogOverlay);
         }
 
         public void HideAddressDialog()
         {
-            _addressDialogTransitionToken++;
-            int token = _addressDialogTransitionToken;
-
-            _addressDialogOverlay.RemoveFromClassList(DIALOG_OPEN_CLASS);
-            _addressDialogOverlay.schedule.Execute(() =>
-            {
-                if (token != _addressDialogTransitionToken)
-                {
-                    return;
-                }
-
-                _addressDialogOverlay.AddToClassList(HIDDEN_CLASS);
-            }).ExecuteLater(240);
+            PopupManager.HideBottomSheet(_addressDialogOverlay);
         }
 
         public void ShowFriendDialog()
         {
-            _friendDialogTransitionToken++;
-            _friendDialogOverlay.RemoveFromClassList(HIDDEN_CLASS);
-            _friendDialogOverlay.RemoveFromClassList(DIALOG_OPEN_CLASS);
-
-            int token = _friendDialogTransitionToken;
-            _friendDialogOverlay.schedule.Execute(() =>
-            {
-                if (token != _friendDialogTransitionToken)
-                {
-                    return;
-                }
-
-                _friendDialogOverlay.AddToClassList(DIALOG_OPEN_CLASS);
-            }).ExecuteLater(16);
+            PopupManager.ShowBottomSheet(_friendDialogOverlay);
         }
 
         public void HideFriendDialog()
         {
-            _friendDialogTransitionToken++;
-            int token = _friendDialogTransitionToken;
-
-            _friendDialogOverlay.RemoveFromClassList(DIALOG_OPEN_CLASS);
-            _friendDialogOverlay.schedule.Execute(() =>
-            {
-                if (token != _friendDialogTransitionToken)
-                {
-                    return;
-                }
-
-                _friendDialogOverlay.AddToClassList(HIDDEN_CLASS);
-            }).ExecuteLater(240);
+            PopupManager.HideBottomSheet(_friendDialogOverlay);
         }
 
         public void SetSelectedAddress(string address)

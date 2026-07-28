@@ -471,6 +471,26 @@ public sealed class PostgresMapMemoStore : IMapMemoStore
             throw new ArgumentException("At least one voice recording is required.", nameof(request.VoiceItems));
         }
 
+        if (request.HasSpatialAnchor)
+        {
+            if (!string.Equals(map.ReconstructionState, "done", StringComparison.OrdinalIgnoreCase)
+                || !string.Equals(map.ReconstructionScanId, Normalize(request.ReconstructionScanId), StringComparison.OrdinalIgnoreCase))
+            {
+                throw new ArgumentException("The spatial anchor does not belong to the current map reconstruction.", nameof(request.ReconstructionScanId));
+            }
+
+            if (!double.IsFinite(request.PositionX)
+                || !double.IsFinite(request.PositionY)
+                || !double.IsFinite(request.PositionZ)
+                || !double.IsFinite(request.RotationX)
+                || !double.IsFinite(request.RotationY)
+                || !double.IsFinite(request.RotationZ)
+                || !double.IsFinite(request.RotationW))
+            {
+                throw new ArgumentException("The spatial anchor pose is invalid.", nameof(request));
+            }
+        }
+
         var memo = new MemoEntity
         {
             Id = Guid.NewGuid(),
@@ -483,6 +503,15 @@ public sealed class PostgresMapMemoStore : IMapMemoStore
             AssigneeUnityPlayerId = Normalize(request.AssigneePlayerId),
             AssigneeName = Normalize(request.AssigneeName),
             DueText = Normalize(request.DueText),
+            HasSpatialAnchor = request.HasSpatialAnchor,
+            ReconstructionScanId = request.HasSpatialAnchor ? Normalize(request.ReconstructionScanId) : string.Empty,
+            PositionX = request.HasSpatialAnchor ? request.PositionX : 0d,
+            PositionY = request.HasSpatialAnchor ? request.PositionY : 0d,
+            PositionZ = request.HasSpatialAnchor ? request.PositionZ : 0d,
+            RotationX = request.HasSpatialAnchor ? request.RotationX : 0d,
+            RotationY = request.HasSpatialAnchor ? request.RotationY : 0d,
+            RotationZ = request.HasSpatialAnchor ? request.RotationZ : 0d,
+            RotationW = request.HasSpatialAnchor ? request.RotationW : 1d,
             ChecklistItemsJson = SerializeJson(checklistItems),
             VoiceItemsJson = SerializeJson(voiceItems),
             ImageUrlsJson = SerializeJson(imageUrls),
@@ -915,6 +944,15 @@ public sealed class PostgresMapMemoStore : IMapMemoStore
             GetFallbackText(assignee?.Name, memo.AssigneeName),
             memo.WorkStatus,
             memo.DueText,
+            memo.HasSpatialAnchor,
+            memo.ReconstructionScanId,
+            memo.PositionX,
+            memo.PositionY,
+            memo.PositionZ,
+            memo.RotationX,
+            memo.RotationY,
+            memo.RotationZ,
+            memo.RotationW,
             memo.CreatedAt,
             memo.UpdatedAt,
             memo.DeletedAt,

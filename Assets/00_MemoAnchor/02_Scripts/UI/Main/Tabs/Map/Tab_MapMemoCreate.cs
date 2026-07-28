@@ -50,8 +50,6 @@ namespace MemoAnchor.UI
         private int _memoCreateSelectedMinute;
         private bool _memoCreateIsPm;
         private bool _isMemoCreateTimeScrollSyncing;
-        private int _memoCreateMediaSourceTransitionToken;
-
         private void RegisterMapMemoCreatePage()
         {
             VisualElement mainRoot = _root.Q<VisualElement>("main-root");
@@ -105,9 +103,10 @@ namespace MemoAnchor.UI
             _memoCreateDefaultRepairerLabel = _memoCreateRepairerLabel.text;
 
             mainRoot.Add(_memoCreateMediaSourceOverlay);
-            _memoCreateMediaSourceOverlay.BringToFront();
-            _memoCreateMediaSourceOverlay.AddToClassList(DIALOG_ANIM_READY_CLASS);
-            _memoCreateMediaSourceOverlay.AddToClassList(HIDDEN_CLASS);
+            PopupManager.RegisterBottomSheet(
+                _memoCreateMediaSourceOverlay,
+                _memoCreateMediaSourceSheet,
+                HideMemoCreateMediaSourceDialog);
             SetMemoCreateDateTimeToNow();
             BuildMemoCreateCalendar();
             BuildMemoCreateTimePicker();
@@ -120,8 +119,6 @@ namespace MemoAnchor.UI
             _memoCreateMediaAddButton.clicked += ShowMemoCreateMediaSourceDialog;
             _memoCreateMediaGalleryButton.clicked += ShowMemoCreateGalleryPicker;
             _memoCreateMediaCameraButton.clicked += ShowMemoCreateCamera;
-            _memoCreateMediaSourceOverlay.RegisterCallback<ClickEvent>(OnClickMemoCreateMediaSourceOverlay);
-            _memoCreateMediaSourceSheet.RegisterCallback<ClickEvent>(OnClickMemoCreateMediaSourceSheet);
             _memoCreateDateButton.clicked += ShowMemoCreateCalendar;
             _memoCreateTimeButton.clicked += ShowMemoCreateTimePicker;
             _memoCreateCalendarCloseButton.clicked += HideMemoCreateCalendar;
@@ -158,8 +155,7 @@ namespace MemoAnchor.UI
             _memoCreateMediaAddButton.clicked -= ShowMemoCreateMediaSourceDialog;
             _memoCreateMediaGalleryButton.clicked -= ShowMemoCreateGalleryPicker;
             _memoCreateMediaCameraButton.clicked -= ShowMemoCreateCamera;
-            _memoCreateMediaSourceOverlay.UnregisterCallback<ClickEvent>(OnClickMemoCreateMediaSourceOverlay);
-            _memoCreateMediaSourceSheet.UnregisterCallback<ClickEvent>(OnClickMemoCreateMediaSourceSheet);
+            PopupManager.UnregisterBottomSheet(_memoCreateMediaSourceOverlay);
             _memoCreateDateButton.clicked -= ShowMemoCreateCalendar;
             _memoCreateTimeButton.clicked -= ShowMemoCreateTimePicker;
             _memoCreateCalendarCloseButton.clicked -= HideMemoCreateCalendar;
@@ -260,6 +256,7 @@ namespace MemoAnchor.UI
             HideMapMemoCreatePage();
             if (editingItem == null)
             {
+                MapScanSession.ClearMemoPlacement();
                 RequestTabSwitch(3);
                 return;
             }
@@ -443,6 +440,7 @@ namespace MemoAnchor.UI
                 }
 
                 HideMapMemoCreatePage();
+                MapScanSession.ClearMemoPlacement();
                 RequestTabSwitch(3);
             }
             finally
@@ -617,41 +615,12 @@ namespace MemoAnchor.UI
                 return;
             }
 
-            _memoCreateMediaSourceTransitionToken++;
-            _memoCreateMediaSourceOverlay.RemoveFromClassList(HIDDEN_CLASS);
-            _memoCreateMediaSourceOverlay.RemoveFromClassList(DIALOG_OPEN_CLASS);
-            int token = _memoCreateMediaSourceTransitionToken;
-            _memoCreateMediaSourceOverlay.schedule.Execute(() =>
-            {
-                if (token == _memoCreateMediaSourceTransitionToken)
-                {
-                    _memoCreateMediaSourceOverlay.AddToClassList(DIALOG_OPEN_CLASS);
-                }
-            }).ExecuteLater(16);
+            PopupManager.ShowBottomSheet(_memoCreateMediaSourceOverlay);
         }
 
         private void HideMemoCreateMediaSourceDialog()
         {
-            _memoCreateMediaSourceTransitionToken++;
-            int token = _memoCreateMediaSourceTransitionToken;
-            _memoCreateMediaSourceOverlay.RemoveFromClassList(DIALOG_OPEN_CLASS);
-            _memoCreateMediaSourceOverlay.schedule.Execute(() =>
-            {
-                if (token == _memoCreateMediaSourceTransitionToken)
-                {
-                    _memoCreateMediaSourceOverlay.AddToClassList(HIDDEN_CLASS);
-                }
-            }).ExecuteLater(240);
-        }
-
-        private void OnClickMemoCreateMediaSourceOverlay(ClickEvent evt)
-        {
-            HideMemoCreateMediaSourceDialog();
-        }
-
-        private static void OnClickMemoCreateMediaSourceSheet(ClickEvent evt)
-        {
-            evt.StopPropagation();
+            PopupManager.HideBottomSheet(_memoCreateMediaSourceOverlay);
         }
 
         private void ShowMemoCreateGalleryPicker()

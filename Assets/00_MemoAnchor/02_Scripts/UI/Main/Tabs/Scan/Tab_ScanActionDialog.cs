@@ -12,7 +12,6 @@ namespace MemoAnchor.UI
         private VisualElement _scanActionDialogOverlay;
         private TemplateContainer _scanActionDialogTree;
         private Action _onScanActionCreate, _onScanActionJoin;
-        private int _scanActionDialogTransitionToken;
 
         public void ShowScanActionDialog(Action onCreate, Action onJoin)
         {
@@ -20,24 +19,12 @@ namespace MemoAnchor.UI
             _onScanActionCreate = onCreate;
             _onScanActionJoin = onJoin;
 
-            _scanActionDialogTransitionToken++;
-
             if (_scanActionDialogTree.parent == null)
             {
-                _scanActionDialogOverlay.RemoveFromClassList(DIALOG_OPEN_CLASS);
                 _root.Add(_scanActionDialogTree);
             }
 
-            int token = _scanActionDialogTransitionToken;
-            _scanActionDialogOverlay.schedule.Execute(() =>
-            {
-                if (token != _scanActionDialogTransitionToken)
-                {
-                    return;
-                }
-
-                _scanActionDialogOverlay.AddToClassList(DIALOG_OPEN_CLASS);
-            }).ExecuteLater(16);
+            PopupManager.ShowBottomSheet(_scanActionDialogOverlay);
         }
 
         public void HideScanActionDialog()
@@ -47,19 +34,7 @@ namespace MemoAnchor.UI
                 return;
             }
 
-            _scanActionDialogTransitionToken++;
-            int token = _scanActionDialogTransitionToken;
-
-            _scanActionDialogOverlay.RemoveFromClassList(DIALOG_OPEN_CLASS);
-            _scanActionDialogOverlay.schedule.Execute(() =>
-            {
-                if (token != _scanActionDialogTransitionToken)
-                {
-                    return;
-                }
-
-                _scanActionDialogTree.RemoveFromHierarchy();
-            }).ExecuteLater(240);
+            PopupManager.HideBottomSheet(_scanActionDialogOverlay);
         }
 
         public void ShowScanJoinDialog()
@@ -93,10 +68,10 @@ namespace MemoAnchor.UI
             _scanActionCreateButton = _scanActionDialogTree.Q<Button>("scan-action-create-button");
             _scanActionJoinButton = _scanActionDialogTree.Q<Button>("scan-action-join-button");
 
-            _scanActionDialogOverlay.AddToClassList(DIALOG_ANIM_READY_CLASS);
-
-            _scanActionDialogOverlay.RegisterCallback<ClickEvent>(_ => HideScanActionDialog());
-            dialogSheet.RegisterCallback<ClickEvent>(evt => evt.StopPropagation());
+            PopupManager.RegisterBottomSheet(
+                _scanActionDialogOverlay,
+                dialogSheet,
+                onHidden: () => _scanActionDialogTree.RemoveFromHierarchy());
             _scanActionCreateButton.clicked += () =>
             {
                 HideScanActionDialog();
@@ -107,6 +82,16 @@ namespace MemoAnchor.UI
                 HideScanActionDialog();
                 _onScanActionJoin?.Invoke();
             };
+        }
+
+        private void UnregisterScanActionDialog()
+        {
+            if (_scanActionDialogOverlay == null)
+            {
+                return;
+            }
+
+            PopupManager.UnregisterBottomSheet(_scanActionDialogOverlay);
         }
     }
 }

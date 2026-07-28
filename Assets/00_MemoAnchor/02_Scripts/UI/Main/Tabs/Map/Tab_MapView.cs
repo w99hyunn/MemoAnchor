@@ -28,10 +28,11 @@ namespace MemoAnchor.UI
         private readonly List<MemoItem> _readOnlyMemos = new();
         private ScanMapItem _readOnlyMap;
         private Button _mapListButton, _mapDetailButton, _mapReconstructionButton, _mapPreviewMenuButton, _mapMemoBackButton, _mapMemoSearchClearButton, _mapCreateTextMemoButton, _mapCreateChecklistMemoButton, _mapCreateMediaMemoButton, _mapCreateVoiceMemoButton;
-        private Button _mapParticipantsButton, _mapParticipantsInviteButton, _mapParticipantsAddButton;
+        private Button _mapParticipantsButton, _mapParticipantsInviteButton, _mapParticipantsAddButton, _mapMemoPlacementStartButton;
         private Button _mapFriendInviteBackButton, _mapFriendInviteSubmitButton, _mapFriendInviteLoadMoreButton;
         private VisualElement _mapPreview, _mapReconstructionSpinner, _mapMemoPage, _mapMemoListContainer, _mapMemoEmptyState, _mapListOverlay, _mapListSheet, _mapListContent, _mapEmptyState, _mapCreateMemoActions;
         private VisualElement _mapParticipantsOverlay, _mapParticipantsSheet, _mapParticipantsList, _mapParticipantsInviteCodeContent;
+        private VisualElement _mapMemoPlacementOverlay, _mapMemoPlacementSheet;
         private VisualElement _mapFriendInviteOverlay, _mapFriendInviteSheet, _mapFriendInviteList;
         private Image _mapReconstructionPreviewImage;
         private Label _mapCurrentSpaceLabel, _mapCurrentAddressLabel, _mapMemoSpaceLabel, _mapMemoAddressLabel, _mapScanTimeLabel, _mapParticipantsTitle, _mapParticipantsManagerSummary, _mapParticipantsRepairerSummary;
@@ -41,7 +42,7 @@ namespace MemoAnchor.UI
         private DateTimeOffset _mapParticipantsInviteExpiresAt;
         private string _mapParticipantsInviteCode = string.Empty;
         private string _selectedMapId;
-        private int _mapListTransitionToken, _mapParticipantsTransitionToken, _mapFriendInviteTransitionToken;
+        private int _mapFriendInviteTransitionToken;
         private int _mapFriendInviteVisibleCount;
         private bool _isMapListLoading;
         private string _preferredMapId = string.Empty;
@@ -70,6 +71,7 @@ namespace MemoAnchor.UI
             _mapFriendInviteBackButton = _root.Q<Button>("map-friend-invite-back-button");
             _mapFriendInviteSubmitButton = _root.Q<Button>("map-friend-invite-submit-button");
             _mapFriendInviteLoadMoreButton = _root.Q<Button>("map-friend-invite-load-more-button");
+            _mapMemoPlacementStartButton = _root.Q<Button>("map-memo-placement-start-button");
             _mapPreview = _root.Q<VisualElement>("map-preview");
             _mapReconstructionPreviewImage = _root.Q<Image>("map-reconstruction-preview");
             _mapReconstructionSpinner = _root.Q<VisualElement>("map-reconstruction-spinner");
@@ -99,26 +101,24 @@ namespace MemoAnchor.UI
             _mapFriendInviteOverlay = _root.Q<VisualElement>("map-friend-invite-overlay");
             _mapFriendInviteSheet = _root.Q<VisualElement>("map-friend-invite-sheet");
             _mapFriendInviteList = _root.Q<VisualElement>("map-friend-invite-list");
+            _mapMemoPlacementOverlay = _root.Q<VisualElement>("map-memo-placement-overlay");
+            _mapMemoPlacementSheet = _root.Q<VisualElement>("map-memo-placement-sheet");
             _mapReconstructionPreviewRenderer = gameObject.AddComponent<MapReconstructionPreviewRenderer>();
             _mapReconstructionPreviewRenderer.Initialize(_mapReconstructionPreviewImage);
 
             mainRoot.Add(_mapListOverlay);
-            _mapListOverlay.BringToFront();
-            _mapListOverlay.AddToClassList(DIALOG_ANIM_READY_CLASS);
-            _mapListOverlay.AddToClassList(HIDDEN_CLASS);
+            PopupManager.RegisterBottomSheet(_mapListOverlay, _mapListSheet, HideMapList);
             mainRoot.Add(_mapParticipantsOverlay);
-            _mapParticipantsOverlay.BringToFront();
-            _mapParticipantsOverlay.AddToClassList(DIALOG_ANIM_READY_CLASS);
-            _mapParticipantsOverlay.AddToClassList(HIDDEN_CLASS);
+            PopupManager.RegisterBottomSheet(_mapParticipantsOverlay, _mapParticipantsSheet, HideMapParticipants);
             mainRoot.Add(_mapFriendInviteOverlay);
-            _mapFriendInviteOverlay.BringToFront();
-            _mapFriendInviteOverlay.AddToClassList(DIALOG_ANIM_READY_CLASS);
-            _mapFriendInviteOverlay.AddToClassList(HIDDEN_CLASS);
+            PopupManager.RegisterBottomSheet(_mapFriendInviteOverlay, _mapFriendInviteSheet, HideMapFriendInvite);
+            mainRoot.Add(_mapMemoPlacementOverlay);
+            PopupManager.RegisterBottomSheet(_mapMemoPlacementOverlay, _mapMemoPlacementSheet, HideMapMemoPlacementPrompt);
             _mapListButton.clicked += ShowMapList;
             _mapDetailButton.clicked += ShowMapDetail;
             _mapReconstructionButton.clicked += OpenSelectedMapReconstruction;
             _mapPreviewMenuButton.clicked += ShowMapMemoPage;
-            _mapMemoAddButton.clicked += ToggleMapMemoCreateActions;
+            _mapMemoAddButton.clicked += ShowMapMemoPlacementPrompt;
             _mapMemoBackButton.clicked += HideMapMemoPage;
             _mapMemoSearchClearButton.clicked += ClearMapMemoSearch;
             _mapMemoSearchInput.RegisterValueChangedCallback(OnMapMemoSearchChanged);
@@ -132,12 +132,7 @@ namespace MemoAnchor.UI
             _mapFriendInviteBackButton.clicked += HideMapFriendInvite;
             _mapFriendInviteSubmitButton.clicked += OnClickMapFriendInviteSubmit;
             _mapFriendInviteLoadMoreButton.clicked += OnClickMapFriendInviteLoadMore;
-            _mapListOverlay.RegisterCallback<ClickEvent>(_ => HideMapList());
-            _mapListSheet.RegisterCallback<ClickEvent>(evt => evt.StopPropagation());
-            _mapParticipantsOverlay.RegisterCallback<ClickEvent>(_ => HideMapParticipants());
-            _mapParticipantsSheet.RegisterCallback<ClickEvent>(evt => evt.StopPropagation());
-            _mapFriendInviteOverlay.RegisterCallback<ClickEvent>(_ => HideMapFriendInvite());
-            _mapFriendInviteSheet.RegisterCallback<ClickEvent>(evt => evt.StopPropagation());
+            _mapMemoPlacementStartButton.clicked += StartMapMemoPlacement;
             _mapParticipantsInviteSchedule = _mapParticipantsInviteButton.schedule.Execute(UpdateMapParticipantsInviteTimer).Every(1000);
             _mapParticipantsInviteSchedule.Pause();
             ApplySelectedMap();
@@ -149,7 +144,7 @@ namespace MemoAnchor.UI
             _mapDetailButton.clicked -= ShowMapDetail;
             _mapReconstructionButton.clicked -= OpenSelectedMapReconstruction;
             _mapPreviewMenuButton.clicked -= ShowMapMemoPage;
-            _mapMemoAddButton.clicked -= ToggleMapMemoCreateActions;
+            _mapMemoAddButton.clicked -= ShowMapMemoPlacementPrompt;
             _mapMemoBackButton.clicked -= HideMapMemoPage;
             _mapMemoSearchClearButton.clicked -= ClearMapMemoSearch;
             _mapMemoSearchInput.UnregisterValueChangedCallback(OnMapMemoSearchChanged);
@@ -163,6 +158,11 @@ namespace MemoAnchor.UI
             _mapFriendInviteBackButton.clicked -= HideMapFriendInvite;
             _mapFriendInviteSubmitButton.clicked -= OnClickMapFriendInviteSubmit;
             _mapFriendInviteLoadMoreButton.clicked -= OnClickMapFriendInviteLoadMore;
+            _mapMemoPlacementStartButton.clicked -= StartMapMemoPlacement;
+            PopupManager.UnregisterBottomSheet(_mapListOverlay);
+            PopupManager.UnregisterBottomSheet(_mapParticipantsOverlay);
+            PopupManager.UnregisterBottomSheet(_mapFriendInviteOverlay);
+            PopupManager.UnregisterBottomSheet(_mapMemoPlacementOverlay);
             _mapParticipantsInviteSchedule.Pause();
             _mapReconstructionLoadToken++;
             HideMapReconstructionSpinner();
@@ -250,20 +250,7 @@ namespace MemoAnchor.UI
         private void ShowMapList()
         {
             RebuildMapList();
-            _mapListTransitionToken++;
-            _mapListOverlay.RemoveFromClassList(HIDDEN_CLASS);
-            _mapListOverlay.RemoveFromClassList(DIALOG_OPEN_CLASS);
-
-            int token = _mapListTransitionToken;
-            _mapListOverlay.schedule.Execute(() =>
-            {
-                if (token != _mapListTransitionToken)
-                {
-                    return;
-                }
-
-                _mapListOverlay.AddToClassList(DIALOG_OPEN_CLASS);
-            }).ExecuteLater(16);
+            PopupManager.ShowBottomSheet(_mapListOverlay);
         }
 
         private void ShowMapDetail()
@@ -366,7 +353,7 @@ namespace MemoAnchor.UI
             _ = RefreshMapMemoPageAsync();
         }
 
-        private void ToggleMapMemoCreateActions()
+        private void ShowMapMemoPlacementPrompt()
         {
             ScanMapItem map = GetSelectedMap();
             if (!IsMapManager(map))
@@ -374,7 +361,31 @@ namespace MemoAnchor.UI
                 return;
             }
 
-            SetVisible(_mapCreateMemoActions, _mapCreateMemoActions.ClassListContains(HIDDEN_CLASS));
+            if (!string.Equals(map.reconstructionState, "done", StringComparison.OrdinalIgnoreCase)
+                || string.IsNullOrWhiteSpace(map.reconstructionScanId))
+            {
+                PopupManager.ShowMessage("메모 부착 불가", "완료된 3D MAP이 있어야 공간에 메모를 부착할 수 있습니다.", "확인");
+                return;
+            }
+
+            PopupManager.ShowBottomSheet(_mapMemoPlacementOverlay);
+        }
+
+        private void HideMapMemoPlacementPrompt()
+        {
+            PopupManager.HideBottomSheet(_mapMemoPlacementOverlay);
+        }
+
+        private void StartMapMemoPlacement()
+        {
+            ScanMapItem map = GetSelectedMap();
+            if (!IsMapManager(map))
+            {
+                return;
+            }
+
+            HideMapMemoPlacementPrompt();
+            MapMemoPlacementRequested?.Invoke(map);
         }
 
         private async Awaitable RefreshMapMemoPageAsync()
@@ -433,19 +444,7 @@ namespace MemoAnchor.UI
 
         private void HideMapList()
         {
-            _mapListTransitionToken++;
-            int token = _mapListTransitionToken;
-
-            _mapListOverlay.RemoveFromClassList(DIALOG_OPEN_CLASS);
-            _mapListOverlay.schedule.Execute(() =>
-            {
-                if (token != _mapListTransitionToken)
-                {
-                    return;
-                }
-
-                _mapListOverlay.AddToClassList(HIDDEN_CLASS);
-            }).ExecuteLater(240);
+            PopupManager.HideBottomSheet(_mapListOverlay);
         }
 
         private void RebuildMapList()
@@ -635,6 +634,7 @@ namespace MemoAnchor.UI
                 _mapReconstructionPreviewRenderer.Show(reconstructionMesh, reconstructionMaterial);
                 HideMapReconstructionSpinner();
                 _displayedMapPreviewId = _preferredMapId;
+                RefreshMapMemoMarkers();
                 _mapReconstructionButton.SetEnabled(true);
                 SetVisible(_mapReconstructionButton, false);
             }
@@ -719,6 +719,7 @@ namespace MemoAnchor.UI
             _mapReconstructionPreviewRenderer.Show(mesh);
             HideMapReconstructionSpinner();
             _displayedMapPreviewId = map.id;
+            RefreshMapMemoMarkers();
             _mapReconstructionButton.SetEnabled(true);
             SetVisible(_mapReconstructionButton, false);
         }
@@ -733,6 +734,41 @@ namespace MemoAnchor.UI
         {
             LoadingSpinnerController.Stop(_mapReconstructionSpinner);
             SetVisible(_mapReconstructionSpinner, false);
+        }
+
+        private void RefreshMapMemoMarkers()
+        {
+            ScanMapItem map = GetSelectedMap();
+            if (map == null || map.id != _displayedMapPreviewId)
+            {
+                _mapReconstructionPreviewRenderer.SetMarkers(Array.Empty<Vector3>());
+                return;
+            }
+
+            _mapReconstructionPreviewRenderer.SetMarkers(GetSpatialMemoPositions(map));
+        }
+
+        public List<Vector3> GetSpatialMemoPositions(ScanMapItem map)
+        {
+            return GetSpatialMemosForMap(map)
+                .Select(item => item.SpatialPosition)
+                .ToList();
+        }
+
+        public List<MapScanSession.ExistingMemoMarker> GetSpatialMemoMarkers(ScanMapItem map)
+        {
+            return GetSpatialMemosForMap(map)
+                .Select(item => new MapScanSession.ExistingMemoMarker(
+                    item.SpatialPosition,
+                    string.Equals(item.WorkStatus, "completion-requested", StringComparison.OrdinalIgnoreCase)))
+                .ToList();
+        }
+
+        private IEnumerable<MemoDetailItem> GetSpatialMemosForMap(ScanMapItem map)
+        {
+            return _memoDetailItems.Where(item => item.HasSpatialAnchor
+                && string.Equals(item.MapId, map.id, StringComparison.OrdinalIgnoreCase)
+                && string.Equals(item.ReconstructionScanId, map.reconstructionScanId, StringComparison.OrdinalIgnoreCase));
         }
 
         private void RefreshMapParticipantsSummary(ScanMapItem map)
@@ -774,17 +810,7 @@ namespace MemoAnchor.UI
             {
                 _mapParticipantsInviteSchedule.Resume();
             }
-            _mapParticipantsTransitionToken++;
-            _mapParticipantsOverlay.RemoveFromClassList(HIDDEN_CLASS);
-            _mapParticipantsOverlay.RemoveFromClassList(DIALOG_OPEN_CLASS);
-            int token = _mapParticipantsTransitionToken;
-            _mapParticipantsOverlay.schedule.Execute(() =>
-            {
-                if (token == _mapParticipantsTransitionToken)
-                {
-                    _mapParticipantsOverlay.AddToClassList(DIALOG_OPEN_CLASS);
-                }
-            }).ExecuteLater(16);
+            PopupManager.ShowBottomSheet(_mapParticipantsOverlay);
         }
 
         private async Awaitable OpenReadOnlyMapAsync(string code)
@@ -892,17 +918,8 @@ namespace MemoAnchor.UI
 
         private void HideMapParticipants()
         {
-            _mapParticipantsTransitionToken++;
-            int token = _mapParticipantsTransitionToken;
-            _mapParticipantsOverlay.RemoveFromClassList(DIALOG_OPEN_CLASS);
             _mapParticipantsInviteSchedule.Pause();
-            _mapParticipantsOverlay.schedule.Execute(() =>
-            {
-                if (token == _mapParticipantsTransitionToken)
-                {
-                    _mapParticipantsOverlay.AddToClassList(HIDDEN_CLASS);
-                }
-            }).ExecuteLater(240);
+            PopupManager.HideBottomSheet(_mapParticipantsOverlay);
         }
 
         private void ShowMapFriendInvite()
@@ -914,17 +931,8 @@ namespace MemoAnchor.UI
         {
             _selectedMapFriendInvitePlayerIds.Clear();
             _mapFriendInviteSubmitButton.SetEnabled(false);
-            _mapFriendInviteTransitionToken++;
-            _mapFriendInviteOverlay.RemoveFromClassList(HIDDEN_CLASS);
-            _mapFriendInviteOverlay.RemoveFromClassList(DIALOG_OPEN_CLASS);
-            int token = _mapFriendInviteTransitionToken;
-            _mapFriendInviteOverlay.schedule.Execute(() =>
-            {
-                if (token == _mapFriendInviteTransitionToken)
-                {
-                    _mapFriendInviteOverlay.AddToClassList(DIALOG_OPEN_CLASS);
-                }
-            }).ExecuteLater(16);
+            int token = ++_mapFriendInviteTransitionToken;
+            PopupManager.ShowBottomSheet(_mapFriendInviteOverlay);
 
             if (!_friendsInitialized)
             {
@@ -948,15 +956,7 @@ namespace MemoAnchor.UI
         private void HideMapFriendInvite()
         {
             _mapFriendInviteTransitionToken++;
-            int token = _mapFriendInviteTransitionToken;
-            _mapFriendInviteOverlay.RemoveFromClassList(DIALOG_OPEN_CLASS);
-            _mapFriendInviteOverlay.schedule.Execute(() =>
-            {
-                if (token == _mapFriendInviteTransitionToken)
-                {
-                    _mapFriendInviteOverlay.AddToClassList(HIDDEN_CLASS);
-                }
-            }).ExecuteLater(240);
+            PopupManager.HideBottomSheet(_mapFriendInviteOverlay);
         }
 
         private void RebuildMapFriendInviteList()
@@ -1311,6 +1311,17 @@ namespace MemoAnchor.UI
 
             SetVisible(_mapCreateMemoActions, false);
             ShowMapMemoCreatePage(selectedMap, kind);
+        }
+
+        public void ShowMapMemoCreatePage(string mapId, string kind)
+        {
+            ScanMapItem map = _scanMaps.Find(item => string.Equals(item.id, mapId, StringComparison.OrdinalIgnoreCase));
+            if (!IsMapManager(map))
+            {
+                return;
+            }
+
+            ShowMapMemoCreatePage(map, kind);
         }
 
         private ScanMapItem GetSelectedMap()

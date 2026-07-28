@@ -269,7 +269,7 @@ namespace MemoAnchor.UI
 
         private static MemoCreateRequest BuildMemoRequest(ScanMapItem map, string kind, string title, string body, string urgency, string assigneePlayerId, string assigneeName, string dueText, List<MemoChecklistEntry> checklistItems, List<MemoVoiceEntry> voiceItems, List<string> imageUrls)
         {
-            return new MemoCreateRequest
+            var request = new MemoCreateRequest
             {
                 mapId = map.id,
                 locationName = map.spaceName,
@@ -284,6 +284,24 @@ namespace MemoAnchor.UI
                 voiceItems = voiceItems,
                 imageUrls = imageUrls
             };
+
+            if (MapScanSession.HasPendingMemoPlacement
+                && string.Equals(MapScanSession.MemoPlacementMapId, map.id, StringComparison.OrdinalIgnoreCase))
+            {
+                Vector3 position = MapScanSession.MemoPlacementPosition;
+                Quaternion rotation = MapScanSession.MemoPlacementRotation;
+                request.hasSpatialAnchor = true;
+                request.reconstructionScanId = MapScanSession.MemoPlacementScanId;
+                request.positionX = position.x;
+                request.positionY = position.y;
+                request.positionZ = position.z;
+                request.rotationX = rotation.x;
+                request.rotationY = rotation.y;
+                request.rotationZ = rotation.z;
+                request.rotationW = rotation.w;
+            }
+
+            return request;
         }
 
         private void ApplyMemoListResponse(MemoListResponse response)
@@ -295,6 +313,7 @@ namespace MemoAnchor.UI
             }
 
             RebuildMemoList();
+            RefreshMapMemoMarkers();
         }
 
         private static MemoDetailItem CreateMemoDetailItem(MemoItem memo)
@@ -315,7 +334,10 @@ namespace MemoAnchor.UI
                 DueText = GetFirstNonEmpty(memo.dueText, string.Empty),
                 Assignee = GetFirstNonEmpty(memo.assigneeName, string.Empty),
                 Author = GetFirstNonEmpty(memo.authorName, string.Empty),
-                DeletedAt = GetFirstNonEmpty(memo.deletedAt, string.Empty)
+                DeletedAt = GetFirstNonEmpty(memo.deletedAt, string.Empty),
+                HasSpatialAnchor = memo.hasSpatialAnchor,
+                ReconstructionScanId = memo.reconstructionScanId,
+                SpatialPosition = new Vector3(memo.positionX, memo.positionY, memo.positionZ)
             };
 
             foreach (MemoChecklistEntry checklistItem in memo.checklistItems)
@@ -1689,6 +1711,9 @@ namespace MemoAnchor.UI
             public string Assignee;
             public string Author;
             public string DeletedAt;
+            public bool HasSpatialAnchor;
+            public string ReconstructionScanId;
+            public Vector3 SpatialPosition;
             public List<MemoChecklistItem> ChecklistItems = new();
             public List<MemoVoiceEntry> VoiceItems = new();
             public List<string> ImageUrls = new();

@@ -122,6 +122,15 @@ public sealed record MemoInfo(
     string AssigneeName,
     string WorkStatus,
     string DueText,
+    bool HasSpatialAnchor,
+    string ReconstructionScanId,
+    double PositionX,
+    double PositionY,
+    double PositionZ,
+    double RotationX,
+    double RotationY,
+    double RotationZ,
+    double RotationW,
     DateTimeOffset CreatedAt,
     DateTimeOffset UpdatedAt,
     DateTimeOffset? DeletedAt,
@@ -193,6 +202,15 @@ public sealed class SaveMemoRequest
     public string AssigneePlayerId { get; set; } = string.Empty;
     public string AssigneeName { get; set; } = string.Empty;
     public string DueText { get; set; } = string.Empty;
+    public bool HasSpatialAnchor { get; set; }
+    public string ReconstructionScanId { get; set; } = string.Empty;
+    public double PositionX { get; set; }
+    public double PositionY { get; set; }
+    public double PositionZ { get; set; }
+    public double RotationX { get; set; }
+    public double RotationY { get; set; }
+    public double RotationZ { get; set; }
+    public double RotationW { get; set; } = 1d;
     public List<MemoChecklistEntry> ChecklistItems { get; set; } = [];
     public List<MemoVoiceEntry> VoiceItems { get; set; } = [];
     public List<string> ImageUrls { get; set; } = [];

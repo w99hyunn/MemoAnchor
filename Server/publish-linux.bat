@@ -10,6 +10,7 @@ if %ERRORLEVEL% neq 0 (
 set "RECONSTRUCTION_OUTPUT=%PUBLISH_OUTPUT%\Reconstruction"
 if not exist "%RECONSTRUCTION_OUTPUT%" mkdir "%RECONSTRUCTION_OUTPUT%"
 copy /Y "%~dp0..\tools\reconstruction_server\server.py" "%RECONSTRUCTION_OUTPUT%\server.py" >nul
+copy /Y "%~dp0..\tools\reconstruction_server\visual_localizer.py" "%RECONSTRUCTION_OUTPUT%\visual_localizer.py" >nul
 copy /Y "%~dp0..\tools\reconstruction_server\reconstruct_open3d.py" "%RECONSTRUCTION_OUTPUT%\reconstruct_open3d.py" >nul
 copy /Y "%~dp0..\tools\reconstruction_server\requirements.txt" "%RECONSTRUCTION_OUTPUT%\requirements.txt" >nul
 copy /Y "%~dp0..\tools\reconstruction\reconstruct_open3d_tsdf.py" "%RECONSTRUCTION_OUTPUT%\reconstruct_open3d_tsdf.py" >nul

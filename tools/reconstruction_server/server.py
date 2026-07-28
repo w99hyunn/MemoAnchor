@@ -17,6 +17,8 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import parse_qs, unquote, urlparse
 
+from visual_localizer import localize
+
 
 ROOT = Path(__file__).resolve().parent
 WORKSPACE_ROOT = ROOT.parent.parent
@@ -44,6 +46,7 @@ PRUNING_PROFILES = ("geometry", "clean_texture", "safe", "balanced", "aggressive
 RGBD_DEFAULT_DEPTH_TRANSFORM = "rotate_270"
 RGBD_DEFAULT_COLOR_TRANSFORM = "rotate_90"
 MAX_UPLOAD_BYTES = 5 * 1024 * 1024 * 1024
+MAX_LOCALIZATION_IMAGE_BYTES = 12 * 1024 * 1024
 MAX_ARCHIVE_MEMBERS = 50_000
 MAX_ARCHIVE_MEMBER_BYTES = 1024 * 1024 * 1024
 MAX_ARCHIVE_UNCOMPRESSED_BYTES = 20 * 1024 * 1024 * 1024
@@ -1249,6 +1252,50 @@ class Handler(BaseHTTPRequestHandler):
         parsed = urlparse(self.path)
         parts = [unquote(part) for part in parsed.path.strip("/").split("/") if part]
 
+        if len(parts) == 2 and parts[0] == "localize":
+            scan_id = safe_scan_id(parts[1])
+            length_header = self.headers.get("Content-Length")
+            if not length_header:
+                self.send_json(HTTPStatus.LENGTH_REQUIRED, {"error": "Content-Length required"})
+                return
+            try:
+                length = int(length_header)
+            except ValueError:
+                self.send_json(HTTPStatus.BAD_REQUEST, {"error": "invalid Content-Length"})
+                return
+            if length <= 0 or length > MAX_LOCALIZATION_IMAGE_BYTES:
+                self.send_json(HTTPStatus.REQUEST_ENTITY_TOO_LARGE, {"error": "camera image is too large"})
+                return
+
+            image_bytes = self.rfile.read(length)
+            if len(image_bytes) != length:
+                self.send_json(HTTPStatus.BAD_REQUEST, {"error": "incomplete camera image"})
+                return
+            try:
+                intrinsics = {
+                    "fx": float(self.headers["X-MemoAnchor-Fx"]),
+                    "fy": float(self.headers["X-MemoAnchor-Fy"]),
+                    "cx": float(self.headers["X-MemoAnchor-Cx"]),
+                    "cy": float(self.headers["X-MemoAnchor-Cy"]),
+                }
+            except (KeyError, TypeError, ValueError):
+                self.send_json(HTTPStatus.BAD_REQUEST, {"error": "camera intrinsics are required"})
+                return
+            try:
+                result = localize(SCAN_ROOT, RESULT_ROOT, scan_id, image_bytes, intrinsics)
+            except FileNotFoundError as exc:
+                self.send_json(HTTPStatus.NOT_FOUND, {"localized": False, "error": str(exc)})
+                return
+            except (RuntimeError, ValueError) as exc:
+                self.send_json(HTTPStatus.UNPROCESSABLE_ENTITY, {"localized": False, "error": str(exc)})
+                return
+            except Exception as exc:  # noqa: BLE001
+                self.send_json(HTTPStatus.INTERNAL_SERVER_ERROR, {"localized": False, "error": str(exc)})
+                return
+
+            self.send_json(HTTPStatus.OK, result)
+            return
+
         if len(parts) == 3 and parts[0] == "api" and parts[1] == "runs":
             scan_id = safe_scan_id(parts[2])
             scan_dir = SCAN_ROOT / scan_id
@@ -1417,6 +1464,7 @@ class Handler(BaseHTTPRequestHandler):
                 **self.server.runtime_state(),
                 "endpoints": [
                     "POST /upload",
+                    "POST /localize/<scanId>",
                     "GET /status/<scanId>",
                     "GET /result/<scanId>",
                     "DELETE /scan/<scanId>",

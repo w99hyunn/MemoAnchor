@@ -1327,6 +1327,34 @@
     background-color: rgb(16, 16, 20);
 }
 
+.map-memo-placement-overlay.scan-action-dialog-overlay {
+    background-color: rgba(0, 0, 0, 0.32);
+}
+
+.map-memo-placement-sheet.scan-action-dialog-sheet {
+    min-height: 500px;
+    height: auto;
+    padding-top: 34px;
+    padding-left: 46px;
+    padding-right: 46px;
+    padding-bottom: 46px;
+}
+
+.map-memo-placement-sheet .scan-action-dialog-handle {
+    margin-bottom: 58px;
+}
+
+.map-memo-placement-message {
+    color: rgb(53, 61, 77);
+    font-size: 50px;
+    -unity-text-align: middle-center;
+    white-space: normal;
+    margin-bottom: 54px;
+    padding-left: 18px;
+    padding-right: 18px;
+    -unity-font-definition: url("project://database/Assets/Plugins/UI%20Toolkit/Fonts/Pretendard-Medium.ttf?fileID=12800000&guid=45ed9c45b09f5f2498d91e1982ab7527&type=3#Pretendard-Medium");
+}
+
 .map-scan-time-label {
     position: absolute;
     right: 40px;
@@ -5157,4 +5185,258 @@
 
 .scan-completion-regenerate-icon.nav-icon {
     -unity-background-image-tint-color: rgb(255, 255, 255);
+}
+
+.memo-placement-template,
+.memo-placement-layer {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+}
+
+.memo-placement-frozen-camera {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+}
+
+.memo-placement-existing-markers {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+}
+
+.memo-placement-existing-marker {
+    position: absolute;
+    width: 64px;
+    height: 78px;
+    margin-left: -32px;
+    margin-top: -78px;
+    background-image: url("project://database/Assets/00_MemoAnchor/03_Media/Icon/map_memo_new.png?fileID=2800000&guid=60bcea1ad9f6cfe4a966b49aac4da9ee&type=3#map_memo_new");
+    -unity-background-scale-mode: scale-to-fit;
+}
+
+.memo-placement-existing-marker.is-completion-requested {
+    background-image: url("project://database/Assets/00_MemoAnchor/03_Media/Icon/map_memo_ok.png?fileID=2800000&guid=1518a36fcf001d444a8a7f8e0556fd44&type=3#map_memo_ok");
+}
+
+.memo-placement-existing-toggle {
+    position: absolute;
+    right: 50px;
+    top: 148px;
+    width: 200px;
+    height: 88px;
+    margin: 0;
+    padding: 0;
+    border-width: 0;
+    border-top-left-radius: 44px;
+    border-top-right-radius: 44px;
+    border-bottom-left-radius: 44px;
+    border-bottom-right-radius: 44px;
+    background-color: rgb(132, 132, 132);
+    transition-property: background-color;
+    transition-duration: 0.18s;
+    transition-timing-function: ease-out;
+}
+
+.memo-placement-existing-toggle:hover:enabled {
+    background-color: rgb(145, 145, 145);
+}
+
+.memo-placement-existing-toggle:active:enabled {
+    background-color: rgb(112, 112, 112);
+}
+
+.memo-placement-existing-toggle-thumb {
+    position: absolute;
+    left: 8px;
+    top: 8px;
+    width: 72px;
+    height: 72px;
+    border-top-left-radius: 36px;
+    border-top-right-radius: 36px;
+    border-bottom-left-radius: 36px;
+    border-bottom-right-radius: 36px;
+    background-color: rgb(255, 255, 255);
+    translate: 0 0;
+    transition-property: translate;
+    transition-duration: 0.18s;
+    transition-timing-function: ease-out;
+}
+
+.memo-placement-existing-toggle-label {
+    position: absolute;
+    right: 12px;
+    top: 0;
+    bottom: 0;
+    width: 100px;
+    color: rgb(0, 0, 0);
+    font-size: 38px;
+    -unity-text-align: middle-center;
+    -unity-font-definition: url("project://database/Assets/Plugins/UI%20Toolkit/Fonts/Pretendard-Medium.ttf?fileID=12800000&guid=45ed9c45b09f5f2498d91e1982ab7527&type=3#Pretendard-Medium");
+}
+
+.memo-placement-existing-toggle.is-on .memo-placement-existing-toggle-thumb {
+    translate: 112px 0;
+}
+
+.memo-placement-existing-toggle.is-on .memo-placement-existing-toggle-label {
+    left: 12px;
+    right: auto;
+    color: rgb(255, 255, 255);
+}
+
+.memo-placement-existing-toggle.is-on,
+.memo-placement-existing-toggle.is-on:hover:enabled,
+.memo-placement-existing-toggle.is-on:active:enabled {
+    background-color: rgb(0, 0, 0);
+}
+
+.memo-placement-pin {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 96px;
+    height: 117px;
+    margin-left: -48px;
+    margin-top: -96px;
+    -unity-background-scale-mode: scale-to-fit;
+}
+
+.memo-placement-guidance {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 250px;
+}
+
+.memo-placement-guidance-blur {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    background-color: rgba(32, 28, 30, 0.32);
+}
+
+.memo-placement-confirm-blur {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    border-top-left-radius: 138px;
+    border-top-right-radius: 138px;
+    border-bottom-right-radius: 138px;
+    border-bottom-left-radius: 138px;
+    background-color: rgba(32, 28, 30, 0.32);
+}
+
+.memo-placement-status-label {
+    position: absolute;
+    left: 50px;
+    right: 50px;
+    bottom: 28px;
+    height: 82px;
+    color: rgb(255, 255, 255);
+    -unity-text-align: middle-center;
+}
+
+.memo-placement-confirm-button {
+    position: absolute;
+    left: 50%;
+    top: -138px;
+    width: 276px;
+    height: 276px;
+    margin-left: -138px;
+    margin-right: 0;
+    margin-top: 0;
+    margin-bottom: 0;
+    padding-left: 0;
+    padding-right: 0;
+    padding-top: 0;
+    padding-bottom: 0;
+    border-top-left-radius: 138px;
+    border-top-right-radius: 138px;
+    border-bottom-left-radius: 138px;
+    border-bottom-right-radius: 138px;
+    border-left-width: 0;
+    border-right-width: 0;
+    border-top-width: 0;
+    border-bottom-width: 0;
+    background-color: rgba(0, 0, 0, 0);
+    align-items: center;
+    justify-content: center;
+}
+
+.memo-placement-confirm-button:hover:enabled,
+.memo-placement-confirm-button:active:enabled {
+    background-color: rgba(0, 0, 0, 0);
+}
+
+.memo-placement-confirm-inner {
+    position: absolute;
+    left: 31.5px;
+    right: 31.5px;
+    top: 31.5px;
+    bottom: 31.5px;
+    border-top-left-radius: 106.5px;
+    border-top-right-radius: 106.5px;
+    border-bottom-left-radius: 106.5px;
+    border-bottom-right-radius: 106.5px;
+    background-color: rgb(0, 0, 0);
+}
+
+.memo-placement-confirm-icon {
+    width: 65px;
+    height: 76.5px;
+    -unity-background-scale-mode: scale-to-fit;
+}
+
+.memo-placement-kind-bar {
+    position: absolute;
+    left: 48px;
+    right: 48px;
+    bottom: 320px;
+    height: 160px;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-around;
+    border-top-left-radius: 80px;
+    border-top-right-radius: 80px;
+    border-bottom-left-radius: 80px;
+    border-bottom-right-radius: 80px;
+    background-color: rgba(255, 255, 255, 0.92);
+    padding-left: 22px;
+    padding-right: 22px;
+}
+
+.memo-placement-kind-button {
+    width: 94px;
+    height: 94px;
+    border-top-left-radius: 47px;
+    border-top-right-radius: 47px;
+    border-bottom-left-radius: 47px;
+    border-bottom-right-radius: 47px;
+    background-color: rgba(255, 255, 255, 0);
+    align-items: center;
+    justify-content: center;
+}
+
+.memo-placement-kind-button:active:enabled {
+    background-color: rgba(161, 31, 63, 0.14);
+}
+
+.memo-placement-kind-icon {
+    width: 54px;
+    height: 54px;
+    -unity-background-scale-mode: scale-to-fit;
+    -unity-background-image-tint-color: rgb(28, 28, 28);
 }

@@ -16,6 +16,7 @@ namespace MemoAnchor.UI
 
         private BlurPass blurPass;
         private static int activeElementCount;
+        private static bool outputFrozen;
 
         public static Texture BlurTexture => BlurPass.OutputTexture;
         private static bool HasActiveElements => activeElementCount > 0;
@@ -30,6 +31,11 @@ namespace MemoAnchor.UI
             activeElementCount = Mathf.Max(0, activeElementCount - 1);
         }
 
+        internal static void SetOutputFrozen(bool frozen)
+        {
+            outputFrozen = frozen;
+        }
+
         public override void Create()
         {
             blurPass = new BlurPass
@@ -41,7 +47,7 @@ namespace MemoAnchor.UI
         public override void AddRenderPasses(ScriptableRenderer renderer, ref RenderingData renderingData)
         {
             Camera camera = renderingData.cameraData.camera;
-            if (!HasActiveElements || camera.cameraType != CameraType.Game ||
+            if (!HasActiveElements || outputFrozen || camera.cameraType != CameraType.Game ||
                 camera.targetTexture != null || blurMaterial == null)
             {
                 return;

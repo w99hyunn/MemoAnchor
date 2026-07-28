@@ -66,6 +66,18 @@
                 </ui:VisualElement>
             </ui:ScrollView>
         </ui:VisualElement>
+        <ui:VisualElement name="map-memo-placement-overlay" picking-mode="Ignore" class="scan-action-dialog-overlay map-memo-placement-overlay is-hidden">
+            <ui:VisualElement name="map-memo-placement-sheet" picking-mode="Position" class="scan-action-dialog-sheet map-memo-placement-sheet">
+                <ui:VisualElement picking-mode="Ignore" class="scan-action-dialog-handle"/>
+                <ui:Label text="메모를 부착할 장소로 이동해주세요." picking-mode="Ignore" class="map-memo-placement-message"/>
+                <ui:VisualElement class="common-confirm-popup-actions is-single-action">
+                    <ui:Button name="map-memo-placement-start-button" class="common-confirm-popup-button common-confirm-submit-button horizontal-row">
+                        <ui:Label text="메모 부착" picking-mode="Ignore" class="common-confirm-popup-button-label common-confirm-submit-label"/>
+                        <ui:VisualElement picking-mode="Ignore" class="common-icon-button-icon" style="margin-left: 24px; background-image: url(&quot;project://database/Assets/00_MemoAnchor/03_Media/Icon/right_arrow.png?fileID=2800000&amp;guid=cadbdb304307a2f4488fb68a287323c0&amp;type=3#right_arrow&quot;); -unity-background-image-tint-color: rgb(255, 255, 255);"/>
+                    </ui:Button>
+                </ui:VisualElement>
+            </ui:VisualElement>
+        </ui:VisualElement>
         <ui:VisualElement name="map-list-overlay" class="scan-action-dialog-overlay scan-address-dialog-overlay map-list-overlay is-hidden">
             <ui:VisualElement name="map-list-sheet" class="scan-action-dialog-sheet scan-address-dialog-sheet map-list-sheet">
                 <ui:VisualElement class="scan-action-dialog-handle scan-address-dialog-handle"/>

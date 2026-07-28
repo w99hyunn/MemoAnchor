@@ -125,7 +125,8 @@ public class ARKitMeshScanController : MonoBehaviour
     {
         Ready,
         Scanning,
-        Preview
+        Preview,
+        MemoPlacement
     }
 
     private float nextStatsRefreshTime;
@@ -203,6 +204,32 @@ public class ARKitMeshScanController : MonoBehaviour
     private Button scanHudSaveButton;
     private bool completionReviewVisible;
     private string scanHudStatusMessage = string.Empty;
+    private VisualElement memoPlacementLayer;
+    private Image memoPlacementFrozenCameraImage;
+    private VisualElement memoPlacementExistingMarkers;
+    private Button memoPlacementExistingToggleButton;
+    private Label memoPlacementExistingToggleLabel;
+    private VisualElement memoPlacementPin;
+    private VisualElement memoPlacementKindBar;
+    private Label memoPlacementStatusLabel;
+    private Button memoPlacementConfirmButton;
+    private Button memoPlacementTextButton;
+    private Button memoPlacementImageButton;
+    private Button memoPlacementVoiceButton;
+    private Button memoPlacementChecklistButton;
+    private GameObject memoPlacementRoot;
+    private MeshCollider memoPlacementCollider;
+    private bool memoPlacementSurfaceReady;
+    private bool memoPlacementLocalized;
+    private bool memoPlacementLocalizing;
+    private bool memoPlacementHasCandidate;
+    private bool memoPlacementPositionSelected;
+    private bool memoPlacementExistingMarkersVisible = true;
+    private Texture2D memoPlacementFrozenCameraTexture;
+    private readonly List<VisualElement> memoPlacementExistingMarkerElements = new();
+    private float nextMemoPlacementLocalizationTime;
+    private Vector3 memoPlacementCandidatePosition;
+    private Quaternion memoPlacementCandidateRotation = Quaternion.identity;
 
     private static bool IsAndroidDepthScan => Application.platform == RuntimePlatform.Android;
 
@@ -269,12 +296,19 @@ public class ARKitMeshScanController : MonoBehaviour
         scanHudBackButton.clicked += GoBack;
         scanHudRegenerateButton.clicked += ShowRegenerateConfirm;
         scanHudSaveButton.clicked += SaveCompletedScan;
+        memoPlacementConfirmButton.clicked += ConfirmMemoPlacementPosition;
+        memoPlacementExistingToggleButton.clicked += ToggleExistingMemoMarkers;
+        memoPlacementTextButton.clicked += CompleteTextMemoPlacement;
+        memoPlacementImageButton.clicked += CompleteImageMemoPlacement;
+        memoPlacementVoiceButton.clicked += CompleteVoiceMemoPlacement;
+        memoPlacementChecklistButton.clicked += CompleteChecklistMemoPlacement;
         scanHudCompletionMapImage.RegisterCallback<GeometryChangedEvent>(OnCompletionPreviewGeometryChanged);
     }
 
     private void OnDisable()
     {
         StopRgbdRecorder();
+        ReleaseMemoPlacementFrozenCamera();
         ARSession.stateChanged -= OnARSessionStateChanged;
 
         if (meshManager)
@@ -285,6 +319,12 @@ public class ARKitMeshScanController : MonoBehaviour
         scanHudBackButton.clicked -= GoBack;
         scanHudRegenerateButton.clicked -= ShowRegenerateConfirm;
         scanHudSaveButton.clicked -= SaveCompletedScan;
+        memoPlacementConfirmButton.clicked -= ConfirmMemoPlacementPosition;
+        memoPlacementExistingToggleButton.clicked -= ToggleExistingMemoMarkers;
+        memoPlacementTextButton.clicked -= CompleteTextMemoPlacement;
+        memoPlacementImageButton.clicked -= CompleteImageMemoPlacement;
+        memoPlacementVoiceButton.clicked -= CompleteVoiceMemoPlacement;
+        memoPlacementChecklistButton.clicked -= CompleteChecklistMemoPlacement;
         scanHudCompletionMapImage.UnregisterCallback<GeometryChangedEvent>(OnCompletionPreviewGeometryChanged);
     }
 
@@ -296,6 +336,7 @@ public class ARKitMeshScanController : MonoBehaviour
         ReleaseCompletionPreviewTexture();
         if (completionPreviewCamera)
             Destroy(completionPreviewCamera.gameObject);
+        DestroyMemoPlacementSurface();
     }
 
     private void Start()
@@ -317,7 +358,13 @@ public class ARKitMeshScanController : MonoBehaviour
         UpdateButtonStates();
         UpdateStats(force: true);
 
-        if (MapScanSession.IsViewingStoredResult)
+        if (MapScanSession.IsMemoPlacement)
+        {
+            scanMode = ScanMode.MemoPlacement;
+            UpdateScanHud();
+            _ = LoadStoredReconstructionAsync();
+        }
+        else if (MapScanSession.IsViewingStoredResult)
             _ = LoadStoredReconstructionAsync();
     }
 
@@ -336,6 +383,10 @@ public class ARKitMeshScanController : MonoBehaviour
             TryCaptureRgbdRecorderFrameIfNeeded();
             TryCaptureVisualKeyframe();
             UpdateLiveCoverageOverlayIfNeeded();
+        }
+        else if (scanMode == ScanMode.MemoPlacement)
+        {
+            UpdateMemoPlacement();
         }
     }
 
@@ -1138,10 +1189,18 @@ public class ARKitMeshScanController : MonoBehaviour
                 return;
             }
 
-            ShowServerReconstructionPreview(mesh, serverScanId, localPath);
-            SetExportStatus($"Server reconstruction loaded in app.\n{mesh.vertexCount:N0} vertices / {mesh.triangles.Length / 3:N0} triangles");
-            MapScanSession.SetCompletedReconstruction(mesh, previewMaterial);
-            reconstructionCompletedSuccessfully = true;
+            if (MapScanSession.IsMemoPlacement)
+            {
+                ShowMemoPlacementSurface(mesh);
+                memoPlacementStatusLabel.text = "스캔 공간을 찾는 중입니다. 주변을 천천히 비춰주세요.";
+            }
+            else
+            {
+                ShowServerReconstructionPreview(mesh, serverScanId, localPath);
+                SetExportStatus($"Server reconstruction loaded in app.\n{mesh.vertexCount:N0} vertices / {mesh.triangles.Length / 3:N0} triangles");
+                MapScanSession.SetCompletedReconstruction(mesh, previewMaterial);
+                reconstructionCompletedSuccessfully = true;
+            }
         }
     }
 
@@ -1289,6 +1348,19 @@ public class ARKitMeshScanController : MonoBehaviour
 
     private void GoBack()
     {
+        if (MapScanSession.IsMemoPlacement)
+        {
+            if (memoPlacementPositionSelected)
+            {
+                ResumeMemoPlacementPositionSelection();
+                return;
+            }
+
+            MapScanSession.ClearMemoPlacement();
+            CloseScanScene();
+            return;
+        }
+
         if (scanMode == ScanMode.Scanning)
         {
             MemoAnchor.UI.PopupManager.ShowConfirm(
@@ -1300,7 +1372,7 @@ public class ARKitMeshScanController : MonoBehaviour
             return;
         }
 
-        if (MapScanSession.HasActiveMap && !MapScanSession.IsViewingStoredResult)
+        if (MapScanSession.HasActiveMap && MapScanSession.Mode == MapScanSession.SessionMode.Scan)
         {
             CancelScanAndClose();
             return;
@@ -1321,7 +1393,7 @@ public class ARKitMeshScanController : MonoBehaviour
 
         try
         {
-            if (MapScanSession.HasActiveMap && !MapScanSession.IsViewingStoredResult)
+            if (MapScanSession.HasActiveMap && MapScanSession.Mode == MapScanSession.SessionMode.Scan)
                 await scanMapService.DeleteMapAsync(MapScanSession.MapId);
         }
         catch (Exception ex)
@@ -1502,6 +1574,19 @@ public class ARKitMeshScanController : MonoBehaviour
         scanHudCompletionMapImage = documentRoot.Q<Image>("scan-completion-map-image");
         scanHudRegenerateButton = documentRoot.Q<Button>("nav-scan");
         scanHudSaveButton = documentRoot.Q<Button>("scan-save-button");
+        memoPlacementLayer = documentRoot.Q<VisualElement>("memo-placement-layer");
+        memoPlacementFrozenCameraImage = documentRoot.Q<Image>("memo-placement-frozen-camera");
+        memoPlacementExistingMarkers = documentRoot.Q<VisualElement>("memo-placement-existing-markers");
+        memoPlacementExistingToggleButton = documentRoot.Q<Button>("memo-placement-existing-toggle");
+        memoPlacementExistingToggleLabel = documentRoot.Q<Label>("memo-placement-existing-toggle-label");
+        memoPlacementPin = documentRoot.Q<VisualElement>("memo-placement-pin");
+        memoPlacementKindBar = documentRoot.Q<VisualElement>("memo-placement-kind-bar");
+        memoPlacementStatusLabel = documentRoot.Q<Label>("memo-placement-status-label");
+        memoPlacementConfirmButton = documentRoot.Q<Button>("memo-placement-confirm-button");
+        memoPlacementTextButton = documentRoot.Q<Button>("memo-placement-text-button");
+        memoPlacementImageButton = documentRoot.Q<Button>("memo-placement-image-button");
+        memoPlacementVoiceButton = documentRoot.Q<Button>("memo-placement-voice-button");
+        memoPlacementChecklistButton = documentRoot.Q<Button>("memo-placement-checklist-button");
 
         UpdateScanHud();
     }
@@ -1610,6 +1695,7 @@ public class ARKitMeshScanController : MonoBehaviour
 
     private void UpdateScanHud()
     {
+        bool isMemoPlacement = scanMode == ScanMode.MemoPlacement;
         bool isReady = scanMode == ScanMode.Ready && !MapScanSession.IsViewingStoredResult;
         bool isScanning = scanMode == ScanMode.Scanning;
         bool showViewfinder = isReady || isScanning;
@@ -1630,11 +1716,12 @@ public class ARKitMeshScanController : MonoBehaviour
         scanHudScanLayer.EnableInClassList("is-hidden", !showViewfinder);
         scanHudProcessingBlur.EnableInClassList("is-hidden", !showProcessingBlur);
         scanHudProcessingTitleLabel.EnableInClassList("is-hidden", !showProcessingBlur);
-        scanHudProgressLabel.EnableInClassList("is-hidden", !showViewfinder);
+        scanHudProgressLabel.EnableInClassList("is-hidden", !showViewfinder || isMemoPlacement);
         scanHudStartButton.EnableInClassList("is-hidden", !isReady);
         scanHudStopButton.EnableInClassList("is-hidden", !isScanning);
         scanHudBackButton.EnableInClassList("is-hidden", showProcessingBlur || showCompletionReview);
-        scanHudStatusLabel.EnableInClassList("is-hidden", showCompletionReview);
+        scanHudStatusLabel.EnableInClassList("is-hidden", showCompletionReview || isMemoPlacement);
+        memoPlacementLayer.EnableInClassList("is-hidden", !isMemoPlacement);
         scanHudFrame.EnableInClassList("is-alert", showMovementGuidance);
         scanHudFrameGlow.EnableInClassList("is-hidden", !showMovementGuidance);
         SetCompletionReviewVisible(showCompletionReview);
@@ -2087,6 +2174,314 @@ public class ARKitMeshScanController : MonoBehaviour
         UpdateStats(force: true);
 
         Debug.Log($"[ARKitMeshScanController] Showing server reconstruction: {localPath}");
+    }
+
+    private void ShowMemoPlacementSurface(Mesh mesh)
+    {
+        DestroyMemoPlacementSurface();
+
+        memoPlacementRoot = new GameObject("Memo Placement Map Space");
+        var surface = new GameObject("Memo Placement Reconstruction Surface");
+        surface.transform.SetParent(memoPlacementRoot.transform, false);
+        surface.transform.localScale = new Vector3(1f, 1f, -1f);
+        surface.AddComponent<MeshFilter>().sharedMesh = mesh;
+        memoPlacementCollider = surface.AddComponent<MeshCollider>();
+        memoPlacementCollider.sharedMesh = mesh;
+        BuildExistingMemoMarkers();
+        SetExistingMemoMarkersVisible(true);
+
+        memoPlacementSurfaceReady = true;
+        memoPlacementLocalized = false;
+        memoPlacementLocalizing = false;
+        memoPlacementHasCandidate = false;
+        memoPlacementPositionSelected = false;
+        nextMemoPlacementLocalizationTime = 0f;
+        memoPlacementPin.AddToClassList("is-hidden");
+        memoPlacementConfirmButton.AddToClassList("is-hidden");
+        memoPlacementKindBar.AddToClassList("is-hidden");
+    }
+
+    private void DestroyMemoPlacementSurface()
+    {
+        ReleaseMemoPlacementFrozenCamera();
+        ClearExistingMemoMarkers();
+
+        if (memoPlacementRoot)
+            Destroy(memoPlacementRoot);
+
+        memoPlacementRoot = null;
+        memoPlacementCollider = null;
+        memoPlacementSurfaceReady = false;
+        memoPlacementLocalized = false;
+        memoPlacementHasCandidate = false;
+        memoPlacementPositionSelected = false;
+    }
+
+    private void UpdateMemoPlacement()
+    {
+        if (!memoPlacementSurfaceReady)
+        {
+            memoPlacementStatusLabel.text = "3D MAP을 불러오는 중입니다.";
+            return;
+        }
+
+        if (!memoPlacementLocalized)
+        {
+            if (!memoPlacementLocalizing && Time.unscaledTime >= nextMemoPlacementLocalizationTime)
+                _ = LocalizeMemoPlacementAsync();
+            return;
+        }
+
+        UpdateExistingMemoMarkers();
+        if (memoPlacementPositionSelected)
+            return;
+
+        Ray ray = arCamera.ViewportPointToRay(new Vector3(0.5f, 0.5f));
+        if (!memoPlacementCollider.Raycast(ray, out RaycastHit hit, 10f))
+        {
+            memoPlacementHasCandidate = false;
+            memoPlacementPin.AddToClassList("is-hidden");
+            memoPlacementConfirmButton.AddToClassList("is-hidden");
+            memoPlacementStatusLabel.text = "메모를 부착할 표면을 화면 가운데에 맞춰주세요.";
+            return;
+        }
+
+        memoPlacementHasCandidate = true;
+        memoPlacementCandidatePosition = memoPlacementRoot.transform.InverseTransformPoint(hit.point);
+        Vector3 localNormal = memoPlacementRoot.transform.InverseTransformDirection(hit.normal).normalized;
+        Vector3 up = Mathf.Abs(Vector3.Dot(localNormal, Vector3.up)) > 0.95f ? Vector3.forward : Vector3.up;
+        memoPlacementCandidateRotation = Quaternion.LookRotation(localNormal, up);
+        memoPlacementPin.RemoveFromClassList("is-hidden");
+        memoPlacementConfirmButton.RemoveFromClassList("is-hidden");
+        memoPlacementStatusLabel.text = "부착할 위치에 맞춘 뒤 버튼을 눌러주세요.";
+    }
+
+    private async Awaitable LocalizeMemoPlacementAsync()
+    {
+        memoPlacementLocalizing = true;
+        nextMemoPlacementLocalizationTime = Time.unscaledTime + 1.5f;
+        memoPlacementStatusLabel.text = "스캔 공간을 찾는 중입니다. 주변을 천천히 비춰주세요.";
+
+        if (!TryCreateCameraTexture(out CameraTextureFrame frame, false))
+        {
+            memoPlacementLocalizing = false;
+            return;
+        }
+
+        if (!frame.HasIntrinsics)
+        {
+            Destroy(frame.Texture);
+            memoPlacementLocalizing = false;
+            memoPlacementStatusLabel.text = "카메라 내부 파라미터를 기다리는 중입니다.";
+            return;
+        }
+
+        byte[] jpeg = frame.Texture.EncodeToJPG(78);
+        Destroy(frame.Texture);
+        string path = MapScanSession.BuildLocalizationPath(MapScanSession.ReconstructionScanId);
+        using var request = new UnityWebRequest(ServicesManager.BuildServerUrl(path), UnityWebRequest.kHttpVerbPOST)
+        {
+            uploadHandler = new UploadHandlerRaw(jpeg),
+            downloadHandler = new DownloadHandlerBuffer(),
+            timeout = 30
+        };
+        request.SetRequestHeader("Content-Type", "image/jpeg");
+        request.SetRequestHeader("X-MemoAnchor-Fx", frame.FocalLength.x.ToString("R", CultureInfo.InvariantCulture));
+        request.SetRequestHeader("X-MemoAnchor-Fy", frame.FocalLength.y.ToString("R", CultureInfo.InvariantCulture));
+        request.SetRequestHeader("X-MemoAnchor-Cx", frame.PrincipalPoint.x.ToString("R", CultureInfo.InvariantCulture));
+        request.SetRequestHeader("X-MemoAnchor-Cy", frame.PrincipalPoint.y.ToString("R", CultureInfo.InvariantCulture));
+        ServicesManager.Authorize(request);
+
+        await ServicesManager.SendRequestAsync(request);
+        memoPlacementLocalizing = false;
+        if (scanMode != ScanMode.MemoPlacement || !memoPlacementRoot)
+            return;
+
+        if (request.result != UnityWebRequest.Result.Success)
+        {
+            memoPlacementStatusLabel.text = request.responseCode == 422
+                ? "스캔 당시 위치와 비슷한 곳에서 주변을 천천히 비춰주세요."
+                : "공간을 찾지 못했습니다. 잠시 후 다시 시도합니다.";
+            return;
+        }
+
+        MemoPlacementLocalizationDto localization = JsonUtility.FromJson<MemoPlacementLocalizationDto>(request.downloadHandler.text);
+        if (localization == null || !localization.localized)
+        {
+            memoPlacementStatusLabel.text = string.IsNullOrWhiteSpace(localization?.message)
+                ? "스캔 당시 위치와 비슷한 곳에서 주변을 천천히 비춰주세요."
+                : localization.message;
+            return;
+        }
+
+        if (localization.cameraPosition == null || localization.cameraPosition.Length < 3
+            || localization.cameraRotation == null || localization.cameraRotation.Length < 4)
+        {
+            memoPlacementStatusLabel.text = "공간 위치 응답이 올바르지 않습니다.";
+            return;
+        }
+
+        Vector3 scanCameraPosition = new(
+            localization.cameraPosition[0],
+            localization.cameraPosition[1],
+            localization.cameraPosition[2]);
+        Quaternion scanCameraRotation = new(
+            localization.cameraRotation[0],
+            localization.cameraRotation[1],
+            localization.cameraRotation[2],
+            localization.cameraRotation[3]);
+        Matrix4x4 sessionFromCamera = Matrix4x4.TRS(arCamera.transform.position, arCamera.transform.rotation, Vector3.one);
+        Matrix4x4 scanFromCamera = Matrix4x4.TRS(scanCameraPosition, scanCameraRotation, Vector3.one);
+        Matrix4x4 sessionFromScan = sessionFromCamera * scanFromCamera.inverse;
+        Vector3 rootPosition = sessionFromScan.GetColumn(3);
+        Quaternion rootRotation = Quaternion.LookRotation(sessionFromScan.GetColumn(2), sessionFromScan.GetColumn(1));
+        memoPlacementRoot.transform.SetPositionAndRotation(rootPosition, rootRotation);
+        memoPlacementLocalized = true;
+        memoPlacementStatusLabel.text = "부착할 위치에 맞춘 뒤 버튼을 눌러주세요.";
+    }
+
+    private void ConfirmMemoPlacementPosition()
+    {
+        if (!memoPlacementHasCandidate || memoPlacementPositionSelected)
+            return;
+
+        memoPlacementPositionSelected = true;
+        _ = FreezeMemoPlacementCameraAsync();
+    }
+
+    private async Awaitable FreezeMemoPlacementCameraAsync()
+    {
+        memoPlacementLayer.style.visibility = Visibility.Hidden;
+        scanHudBackButton.style.visibility = Visibility.Hidden;
+        await Awaitable.EndOfFrameAsync();
+
+        UpdateExistingMemoMarkers();
+        MemoAnchor.UI.ScreenSpaceUIToolkitBlurRendererFeature.SetOutputFrozen(true);
+        memoPlacementFrozenCameraTexture = ScreenCapture.CaptureScreenshotAsTexture();
+        memoPlacementFrozenCameraImage.image = memoPlacementFrozenCameraTexture;
+        memoPlacementFrozenCameraImage.RemoveFromClassList("is-hidden");
+        memoPlacementLayer.style.visibility = Visibility.Visible;
+        scanHudBackButton.style.visibility = Visibility.Visible;
+        memoPlacementConfirmButton.AddToClassList("is-hidden");
+        memoPlacementKindBar.RemoveFromClassList("is-hidden");
+        memoPlacementStatusLabel.text = "작성할 메모의 유형을 고르십시오";
+    }
+
+    private void ReleaseMemoPlacementFrozenCamera()
+    {
+        MemoAnchor.UI.ScreenSpaceUIToolkitBlurRendererFeature.SetOutputFrozen(false);
+        memoPlacementFrozenCameraImage.image = null;
+        memoPlacementFrozenCameraImage.AddToClassList("is-hidden");
+        if (memoPlacementFrozenCameraTexture)
+            Destroy(memoPlacementFrozenCameraTexture);
+
+        memoPlacementFrozenCameraTexture = null;
+    }
+
+    private void ResumeMemoPlacementPositionSelection()
+    {
+        ReleaseMemoPlacementFrozenCamera();
+        memoPlacementPositionSelected = false;
+        memoPlacementHasCandidate = false;
+        memoPlacementKindBar.AddToClassList("is-hidden");
+        memoPlacementConfirmButton.AddToClassList("is-hidden");
+        memoPlacementPin.AddToClassList("is-hidden");
+        memoPlacementStatusLabel.text = "메모를 부착할 표면을 화면 가운데에 맞춰주세요.";
+    }
+
+    private void BuildExistingMemoMarkers()
+    {
+        ClearExistingMemoMarkers();
+        IReadOnlyList<MapScanSession.ExistingMemoMarker> markers = MapScanSession.ExistingMemoMarkers;
+        for (int i = 0; i < markers.Count; i++)
+        {
+            var marker = new VisualElement
+            {
+                pickingMode = PickingMode.Ignore
+            };
+            marker.AddToClassList("memo-placement-existing-marker");
+            marker.EnableInClassList("is-completion-requested", markers[i].IsCompletionRequested);
+            marker.AddToClassList("is-hidden");
+            memoPlacementExistingMarkers.Add(marker);
+            memoPlacementExistingMarkerElements.Add(marker);
+        }
+    }
+
+    private void ToggleExistingMemoMarkers()
+    {
+        SetExistingMemoMarkersVisible(!memoPlacementExistingMarkersVisible);
+    }
+
+    private void SetExistingMemoMarkersVisible(bool visible)
+    {
+        memoPlacementExistingMarkersVisible = visible;
+        memoPlacementExistingMarkers.EnableInClassList("is-hidden", !visible);
+        memoPlacementExistingToggleButton.EnableInClassList("is-on", visible);
+        memoPlacementExistingToggleLabel.text = visible ? "ON" : "OFF";
+        if (visible && memoPlacementLocalized && !memoPlacementPositionSelected)
+            UpdateExistingMemoMarkers();
+    }
+
+    private void UpdateExistingMemoMarkers()
+    {
+        IReadOnlyList<MapScanSession.ExistingMemoMarker> markers = MapScanSession.ExistingMemoMarkers;
+        float panelWidth = memoPlacementLayer.resolvedStyle.width;
+        float panelHeight = memoPlacementLayer.resolvedStyle.height;
+        for (int i = 0; i < memoPlacementExistingMarkerElements.Count; i++)
+        {
+            Vector3 worldPosition = memoPlacementRoot.transform.TransformPoint(markers[i].Position);
+            Vector3 screenPosition = arCamera.WorldToScreenPoint(worldPosition);
+            bool isVisible = screenPosition.z > 0f
+                && screenPosition.x >= 0f
+                && screenPosition.x <= Screen.width
+                && screenPosition.y >= 0f
+                && screenPosition.y <= Screen.height;
+            VisualElement marker = memoPlacementExistingMarkerElements[i];
+            marker.EnableInClassList("is-hidden", !isVisible);
+            if (!isVisible)
+                continue;
+
+            marker.style.left = screenPosition.x / Screen.width * panelWidth;
+            marker.style.top = (1f - screenPosition.y / Screen.height) * panelHeight;
+        }
+    }
+
+    private void ClearExistingMemoMarkers()
+    {
+        memoPlacementExistingMarkers.Clear();
+        memoPlacementExistingMarkerElements.Clear();
+    }
+
+    private void CompleteTextMemoPlacement()
+    {
+        CompleteMemoPlacement("text");
+    }
+
+    private void CompleteImageMemoPlacement()
+    {
+        CompleteMemoPlacement("image");
+    }
+
+    private void CompleteVoiceMemoPlacement()
+    {
+        CompleteMemoPlacement("voice");
+    }
+
+    private void CompleteChecklistMemoPlacement()
+    {
+        CompleteMemoPlacement("checklist");
+    }
+
+    private void CompleteMemoPlacement(string kind)
+    {
+        if (!memoPlacementPositionSelected)
+            return;
+
+        MapScanSession.CompleteMemoPlacement(
+            memoPlacementCandidatePosition,
+            memoPlacementCandidateRotation,
+            kind);
+        CloseScanScene();
     }
 
     public static bool TryCreateMeshFromPly(byte[] data, out Mesh mesh, out string error)
@@ -2622,7 +3017,7 @@ public class ARKitMeshScanController : MonoBehaviour
 
     }
 
-    private bool TryCreateCameraTexture(out CameraTextureFrame frame)
+    private bool TryCreateCameraTexture(out CameraTextureFrame frame, bool includeDepth = true)
     {
         frame = default;
 
@@ -2639,7 +3034,7 @@ public class ARKitMeshScanController : MonoBehaviour
             var rgbDepthDelta = 0d;
             var rgbConfidenceDelta = 0d;
 
-            if (captureDepthForReconstruction && arOcclusionManager)
+            if (includeDepth && captureDepthForReconstruction && arOcclusionManager)
             {
                 if (TryCaptureDepthImage(out depth))
                     rgbDepthDelta = Math.Abs(depth.Timestamp - cameraTimestamp);
@@ -4977,6 +5372,17 @@ public class ARKitMeshScanController : MonoBehaviour
         public string message;
         public string resultFile;
         public string updatedAt;
+    }
+
+    [Serializable]
+    private sealed class MemoPlacementLocalizationDto
+    {
+        public bool localized;
+        public float confidence;
+        public string message;
+        public int matchedFrameId;
+        public float[] cameraPosition;
+        public float[] cameraRotation;
     }
 
     private sealed class PlyHeader

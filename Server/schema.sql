@@ -82,7 +82,17 @@ CREATE TABLE IF NOT EXISTS memos (
     author_unity_player_id varchar(128) NOT NULL,
     assignee_unity_player_id varchar(128) NOT NULL DEFAULT '',
     assignee_name varchar(120) NOT NULL DEFAULT '',
+    work_status varchar(32) NOT NULL DEFAULT 'active',
     due_text varchar(80) NOT NULL DEFAULT '',
+    has_spatial_anchor boolean NOT NULL DEFAULT false,
+    reconstruction_scan_id varchar(256) NOT NULL DEFAULT '',
+    position_x double precision NOT NULL DEFAULT 0,
+    position_y double precision NOT NULL DEFAULT 0,
+    position_z double precision NOT NULL DEFAULT 0,
+    rotation_x double precision NOT NULL DEFAULT 0,
+    rotation_y double precision NOT NULL DEFAULT 0,
+    rotation_z double precision NOT NULL DEFAULT 0,
+    rotation_w double precision NOT NULL DEFAULT 1,
     checklist_items jsonb NOT NULL DEFAULT '[]'::jsonb,
     voice_items jsonb NOT NULL DEFAULT '[]'::jsonb,
     image_urls jsonb NOT NULL DEFAULT '[]'::jsonb,
@@ -92,7 +102,17 @@ CREATE TABLE IF NOT EXISTS memos (
 );
 
 ALTER TABLE memos
-ADD COLUMN IF NOT EXISTS deleted_at timestamptz NULL;
+ADD COLUMN IF NOT EXISTS deleted_at timestamptz NULL,
+ADD COLUMN IF NOT EXISTS work_status varchar(32) NOT NULL DEFAULT 'active',
+ADD COLUMN IF NOT EXISTS has_spatial_anchor boolean NOT NULL DEFAULT false,
+ADD COLUMN IF NOT EXISTS reconstruction_scan_id varchar(256) NOT NULL DEFAULT '',
+ADD COLUMN IF NOT EXISTS position_x double precision NOT NULL DEFAULT 0,
+ADD COLUMN IF NOT EXISTS position_y double precision NOT NULL DEFAULT 0,
+ADD COLUMN IF NOT EXISTS position_z double precision NOT NULL DEFAULT 0,
+ADD COLUMN IF NOT EXISTS rotation_x double precision NOT NULL DEFAULT 0,
+ADD COLUMN IF NOT EXISTS rotation_y double precision NOT NULL DEFAULT 0,
+ADD COLUMN IF NOT EXISTS rotation_z double precision NOT NULL DEFAULT 0,
+ADD COLUMN IF NOT EXISTS rotation_w double precision NOT NULL DEFAULT 1;
 
 CREATE INDEX IF NOT EXISTS ix_memos_map_id_created_at
 ON memos (map_id, created_at DESC);

@@ -40,6 +40,7 @@ namespace MemoAnchor.UI
             _view.ProfileButton.clicked += OnClickProfile;
             _view.ScanStartButton.clicked += OnClickScanStart;
             _view.TabSwitchRequested += ShowTab;
+            _view.MapMemoPlacementRequested += OnMapMemoPlacementRequested;
             _scanView.ScanStartReadinessChanged += UpdateScanStartAvailability;
             _view.TabViewport.RegisterCallback<GeometryChangedEvent>(OnViewportGeometryChanged);
             SceneManager.sceneUnloaded += OnSceneUnloaded;
@@ -62,6 +63,7 @@ namespace MemoAnchor.UI
             _view.ProfileButton.clicked -= OnClickProfile;
             _view.ScanStartButton.clicked -= OnClickScanStart;
             _view.TabSwitchRequested -= ShowTab;
+            _view.MapMemoPlacementRequested -= OnMapMemoPlacementRequested;
             _scanView.ScanStartReadinessChanged -= UpdateScanStartAvailability;
             _view.TabViewport.UnregisterCallback<GeometryChangedEvent>(OnViewportGeometryChanged);
             SceneManager.sceneUnloaded -= OnSceneUnloaded;
@@ -148,6 +150,16 @@ namespace MemoAnchor.UI
             await OpenScanSceneAsync();
         }
 
+        private void OnMapMemoPlacementRequested(ScanMapItem map)
+        {
+            MapScanSession.BeginMemoPlacement(
+                map.id,
+                map.reconstructionScanId,
+                map.reconstructionResultFile,
+                _view.GetSpatialMemoMarkers(map));
+            _ = OpenScanSceneAsync();
+        }
+
         private async Awaitable OpenScanSceneAsync()
         {
             if (_isOpeningScanScene || SceneManager.GetSceneByName(MapScanSession.SCAN_SCENE_NAME).isLoaded)
@@ -186,8 +198,10 @@ namespace MemoAnchor.UI
             _view.SetScanSceneActive(false);
 
             bool returnToMap = MapScanSession.ReturnToMapOnClose;
-            bool completedNewScan = returnToMap && !MapScanSession.IsViewingStoredResult;
+            bool completedNewScan = returnToMap && MapScanSession.Mode == MapScanSession.SessionMode.Scan;
+            bool memoPlacementCompleted = MapScanSession.IsMemoPlacement && MapScanSession.HasPendingMemoPlacement;
             string returnMapId = MapScanSession.HasActiveMap ? MapScanSession.MapId : string.Empty;
+            string memoKind = MapScanSession.MemoPlacementKind;
             if (!returnToMap)
             {
                 _isScanNavModeActive = true;
@@ -204,9 +218,13 @@ namespace MemoAnchor.UI
                     MapScanSession.CompletedReconstructionMesh,
                     MapScanSession.CompletedReconstructionMaterial);
                 ShowTab(3);
+                if (memoPlacementCompleted)
+                {
+                    _view.ShowMapMemoCreatePage(returnMapId, memoKind);
+                }
             }
 
-            MapScanSession.Clear();
+            MapScanSession.ClearSceneState();
             _ = _fadeTransition.FadeInAsync();
         }
 

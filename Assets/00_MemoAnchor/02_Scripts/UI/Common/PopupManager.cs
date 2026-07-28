@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UIElements;
 
@@ -7,7 +8,14 @@ namespace MemoAnchor.UI
     [RequireComponent(typeof(UIDocument))]
     public class PopupManager : MonoBehaviour
     {
+        private const string BOTTOM_SHEET_OPEN_CLASS = "is-open";
+        private const string BOTTOM_SHEET_ANIMATION_READY_CLASS = "is-anim-ready";
+        private const string BOTTOM_SHEET_HIDDEN_CLASS = "is-hidden";
+        private const int BOTTOM_SHEET_OPEN_DELAY_MS = 16;
+        private const int BOTTOM_SHEET_CLOSE_DURATION_MS = 240;
+
         private static PopupManager Instance { get; set; }
+        private static readonly Dictionary<VisualElement, BottomSheetState> BottomSheets = new();
 
         private VisualElement _root;
         private VisualElement _confirmRoot;
@@ -35,6 +43,106 @@ namespace MemoAnchor.UI
             TryGetComponent<UIDocument>(out var uiDocument);
             _root = uiDocument.rootVisualElement;
             InitializeConfirmPopup();
+        }
+
+        private void OnDestroy()
+        {
+            if (Instance != this)
+            {
+                return;
+            }
+
+            ClearBottomSheets();
+            Instance = null;
+        }
+
+        public static void RegisterBottomSheet(
+            VisualElement overlay,
+            VisualElement sheet,
+            Action onDismissRequested = null,
+            Action onHidden = null)
+        {
+            if (BottomSheets.ContainsKey(overlay))
+            {
+                return;
+            }
+
+            var state = new BottomSheetState(overlay, sheet, onDismissRequested, onHidden);
+            BottomSheets.Add(overlay, state);
+            overlay.RegisterCallback<ClickEvent>(state.OnOverlayClicked);
+            sheet.RegisterCallback<ClickEvent>(state.OnSheetClicked);
+            overlay.pickingMode = PickingMode.Ignore;
+            overlay.RemoveFromClassList(BOTTOM_SHEET_OPEN_CLASS);
+            overlay.AddToClassList(BOTTOM_SHEET_ANIMATION_READY_CLASS);
+            overlay.AddToClassList(BOTTOM_SHEET_HIDDEN_CLASS);
+        }
+
+        public static void UnregisterBottomSheet(VisualElement overlay)
+        {
+            if (!BottomSheets.Remove(overlay, out BottomSheetState state))
+            {
+                return;
+            }
+
+            state.TransitionVersion++;
+            state.Overlay.UnregisterCallback<ClickEvent>(state.OnOverlayClicked);
+            state.Sheet.UnregisterCallback<ClickEvent>(state.OnSheetClicked);
+            state.Overlay.pickingMode = PickingMode.Ignore;
+            state.Overlay.RemoveFromClassList(BOTTOM_SHEET_OPEN_CLASS);
+            state.Overlay.AddToClassList(BOTTOM_SHEET_HIDDEN_CLASS);
+        }
+
+        public static void ShowBottomSheet(VisualElement overlay)
+        {
+            BottomSheetState state = BottomSheets[overlay];
+            int version = ++state.TransitionVersion;
+            state.Overlay.pickingMode = PickingMode.Position;
+            state.Overlay.RemoveFromClassList(BOTTOM_SHEET_OPEN_CLASS);
+            state.Overlay.RemoveFromClassList(BOTTOM_SHEET_HIDDEN_CLASS);
+            state.Overlay.BringToFront();
+            state.Overlay.schedule.Execute(() =>
+            {
+                if (version == state.TransitionVersion)
+                {
+                    state.Overlay.AddToClassList(BOTTOM_SHEET_OPEN_CLASS);
+                }
+            }).ExecuteLater(BOTTOM_SHEET_OPEN_DELAY_MS);
+        }
+
+        public static void HideBottomSheet(VisualElement overlay)
+        {
+            BottomSheetState state = BottomSheets[overlay];
+            state.Overlay.pickingMode = PickingMode.Ignore;
+            if (state.Overlay.ClassListContains(BOTTOM_SHEET_HIDDEN_CLASS))
+            {
+                return;
+            }
+
+            int version = ++state.TransitionVersion;
+            state.Overlay.RemoveFromClassList(BOTTOM_SHEET_OPEN_CLASS);
+            state.Overlay.schedule.Execute(() =>
+            {
+                if (version != state.TransitionVersion)
+                {
+                    return;
+                }
+
+                state.Overlay.AddToClassList(BOTTOM_SHEET_HIDDEN_CLASS);
+                state.OnHidden?.Invoke();
+            }).ExecuteLater(BOTTOM_SHEET_CLOSE_DURATION_MS);
+        }
+
+        private static void ClearBottomSheets()
+        {
+            foreach (BottomSheetState state in BottomSheets.Values)
+            {
+                state.TransitionVersion++;
+                state.Overlay.UnregisterCallback<ClickEvent>(state.OnOverlayClicked);
+                state.Sheet.UnregisterCallback<ClickEvent>(state.OnSheetClicked);
+                state.Overlay.pickingMode = PickingMode.Ignore;
+            }
+
+            BottomSheets.Clear();
         }
 
         public static void ShowConfirm(string title, string message, string cancelText, string submitText, Action onSubmit)
@@ -228,6 +336,40 @@ namespace MemoAnchor.UI
             confirmSheet.RegisterCallback<ClickEvent>(evt => evt.StopPropagation());
             _confirmCancelButton.clicked += CancelConfirm;
             _confirmSubmitButton.clicked += SubmitConfirm;
+        }
+
+        private sealed class BottomSheetState
+        {
+            public readonly VisualElement Overlay;
+            public readonly VisualElement Sheet;
+            public readonly Action OnDismissRequested;
+            public readonly Action OnHidden;
+            public readonly EventCallback<ClickEvent> OnOverlayClicked;
+            public readonly EventCallback<ClickEvent> OnSheetClicked;
+            public int TransitionVersion;
+
+            public BottomSheetState(
+                VisualElement overlay,
+                VisualElement sheet,
+                Action onDismissRequested,
+                Action onHidden)
+            {
+                Overlay = overlay;
+                Sheet = sheet;
+                OnDismissRequested = onDismissRequested;
+                OnHidden = onHidden;
+                OnOverlayClicked = _ =>
+                {
+                    if (OnDismissRequested == null)
+                    {
+                        HideBottomSheet(Overlay);
+                        return;
+                    }
+
+                    OnDismissRequested.Invoke();
+                };
+                OnSheetClicked = evt => evt.StopPropagation();
+            }
         }
     }
 }
