@@ -10,6 +10,7 @@ namespace MemoAnchor.UI
 
         public NativeTextField()
         {
+            hideMobileInput = true;
             RegisterCallback<FocusInEvent>(OnFocusIn, TrickleDown.TrickleDown);
             RegisterCallback<FocusOutEvent>(OnFocusOut, TrickleDown.TrickleDown);
             RegisterCallback<DetachFromPanelEvent>(OnDetachFromPanel);

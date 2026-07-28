@@ -74,16 +74,34 @@ public sealed class PostgresMapMemoStore : IMapMemoStore
             [playerId] = ScanMapRoles.MANAGER
         };
 
-        string managerPlayerId = Normalize(request.ManagerPlayerId);
-        if (!string.IsNullOrWhiteSpace(managerPlayerId))
+        foreach (string requestedManagerPlayerId in request.ManagerPlayerIds)
         {
-            rolesByPlayerId[managerPlayerId] = ScanMapRoles.MANAGER;
+            string managerPlayerId = Normalize(requestedManagerPlayerId);
+            if (!string.IsNullOrWhiteSpace(managerPlayerId))
+            {
+                rolesByPlayerId[managerPlayerId] = ScanMapRoles.MANAGER;
+            }
         }
 
-        string repairerPlayerId = Normalize(request.RepairerPlayerId);
-        if (!string.IsNullOrWhiteSpace(repairerPlayerId) && !rolesByPlayerId.ContainsKey(repairerPlayerId))
+        string legacyManagerPlayerId = Normalize(request.ManagerPlayerId);
+        if (!string.IsNullOrWhiteSpace(legacyManagerPlayerId))
         {
-            rolesByPlayerId[repairerPlayerId] = ScanMapRoles.REPAIRER;
+            rolesByPlayerId[legacyManagerPlayerId] = ScanMapRoles.MANAGER;
+        }
+
+        foreach (string requestedRepairerPlayerId in request.RepairerPlayerIds)
+        {
+            string repairerPlayerId = Normalize(requestedRepairerPlayerId);
+            if (!string.IsNullOrWhiteSpace(repairerPlayerId) && !rolesByPlayerId.ContainsKey(repairerPlayerId))
+            {
+                rolesByPlayerId[repairerPlayerId] = ScanMapRoles.REPAIRER;
+            }
+        }
+
+        string legacyRepairerPlayerId = Normalize(request.RepairerPlayerId);
+        if (!string.IsNullOrWhiteSpace(legacyRepairerPlayerId) && !rolesByPlayerId.ContainsKey(legacyRepairerPlayerId))
+        {
+            rolesByPlayerId[legacyRepairerPlayerId] = ScanMapRoles.REPAIRER;
         }
 
         var map = new MapEntity

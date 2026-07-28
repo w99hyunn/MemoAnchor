@@ -406,6 +406,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 05edd1a01b1a477496823bb68f43a488, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::MemoAnchor.UI.Tab_ScanView
+  _friendItemAsset: {fileID: 9197481963319205126, guid: 7f6af4f2a6ea4e21be143f985e95f76c, type: 3}
 --- !u!114 &1996884582
 MonoBehaviour:
   m_ObjectHideFlags: 0

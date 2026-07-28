@@ -58,12 +58,19 @@
                 </ui:VisualElement>
             </ui:VisualElement>
         </ui:VisualElement>
-        <ui:VisualElement name="scan-friend-dialog-overlay" class="scan-action-dialog-overlay scan-address-dialog-overlay is-hidden">
-            <ui:VisualElement name="scan-friend-dialog-sheet" class="scan-action-dialog-sheet scan-address-dialog-sheet scan-friend-dialog-sheet">
+        <ui:VisualElement name="scan-friend-dialog-overlay" class="scan-action-dialog-overlay scan-address-dialog-overlay map-friend-invite-overlay is-hidden">
+            <ui:VisualElement name="scan-friend-dialog-sheet" class="scan-action-dialog-sheet scan-address-dialog-sheet map-friend-invite-sheet scan-friend-dialog-sheet">
                 <ui:VisualElement class="scan-action-dialog-handle scan-address-dialog-handle"/>
-                <ui:VisualElement class="full-width-list">
-                    <ui:VisualElement name="scan-friend-items-list" class="full-width-list"/>
+                <ui:VisualElement class="map-friend-invite-header">
+                    <ui:Button name="scan-friend-dialog-back-button" class="common-icon-button map-friend-invite-back-button">
+                        <ui:VisualElement picking-mode="Ignore" class="common-icon-button-icon map-friend-invite-back-icon"/>
+                    </ui:Button>
+                    <ui:Label name="scan-friend-dialog-title" text="친구목록" class="map-friend-invite-title"/>
                 </ui:VisualElement>
+                <ui:ScrollView mode="Vertical" horizontal-scroller-visibility="Hidden" vertical-scroller-visibility="Hidden" touch-scroll-type="Elastic" class="full-width-list page-scroll map-friend-invite-scroll">
+                    <ui:VisualElement name="scan-friend-items-list" class="full-width-list content-list"/>
+                </ui:ScrollView>
+                <ui:Button name="scan-friend-dialog-submit-button" text="선택하기" class="map-friend-invite-submit-button"/>
             </ui:VisualElement>
         </ui:VisualElement>
     </ui:VisualElement>

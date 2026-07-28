@@ -165,6 +165,8 @@ public sealed class SaveScanMapRequest
     public string Address { get; set; } = string.Empty;
     public string RoadAddress { get; set; } = string.Empty;
     public string SpaceName { get; set; } = string.Empty;
+    public List<string> RepairerPlayerIds { get; set; } = [];
+    public List<string> ManagerPlayerIds { get; set; } = [];
     public string RepairerPlayerId { get; set; } = string.Empty;
     public string ManagerPlayerId { get; set; } = string.Empty;
 }

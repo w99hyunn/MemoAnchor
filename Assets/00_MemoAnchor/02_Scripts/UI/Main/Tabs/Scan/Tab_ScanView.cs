@@ -9,6 +9,8 @@ namespace MemoAnchor.UI
     [RequireComponent(typeof(UIDocument))]
     public class Tab_ScanView : MonoBehaviour
     {
+        [SerializeField] private VisualTreeAsset _friendItemAsset;
+
         private Button _addressButton;
         private TextField _addressButtonText;
         private VisualElement _addressInputBox;
@@ -23,6 +25,13 @@ namespace MemoAnchor.UI
         private Button _addressAddButton;
         private VisualElement _friendDialogOverlay;
         private VisualElement _friendItemsList;
+        private Button _friendDialogBackButton;
+        private Button _friendDialogSubmitButton;
+        private Label _friendDialogTitle;
+        private readonly Dictionary<string, ScanFriendOption> _selectedRepairers = new(StringComparer.OrdinalIgnoreCase);
+        private readonly Dictionary<string, ScanFriendOption> _selectedManagers = new(StringComparer.OrdinalIgnoreCase);
+        private readonly Dictionary<string, ScanFriendOption> _pendingFriendSelections = new(StringComparer.OrdinalIgnoreCase);
+        private Action<IReadOnlyList<ScanFriendOption>> _submitFriendSelection;
 
         public Button AddressButton => _addressButton;
         public Button AddressAddButton => _addressAddButton;
@@ -32,8 +41,8 @@ namespace MemoAnchor.UI
         public string SelectedAddress { get; private set; }
         public ScanAddressItem SelectedAddressItem { get; private set; }
         public string SpaceName => _spaceNameField.value;
-        public ScanFriendOption SelectedRepairer { get; private set; }
-        public ScanFriendOption SelectedManager { get; private set; }
+        public IReadOnlyDictionary<string, ScanFriendOption> SelectedRepairers => _selectedRepairers;
+        public IReadOnlyDictionary<string, ScanFriendOption> SelectedManagers => _selectedManagers;
         public event Action ScanStartReadinessChanged;
 
         private void Awake()
@@ -68,6 +77,11 @@ namespace MemoAnchor.UI
             _friendDialogOverlay = root.Q<VisualElement>("scan-friend-dialog-overlay");
             VisualElement friendDialogSheet = root.Q<VisualElement>("scan-friend-dialog-sheet");
             _friendItemsList = root.Q<VisualElement>("scan-friend-items-list");
+            _friendDialogBackButton = root.Q<Button>("scan-friend-dialog-back-button");
+            _friendDialogSubmitButton = root.Q<Button>("scan-friend-dialog-submit-button");
+            _friendDialogTitle = root.Q<Label>("scan-friend-dialog-title");
+            _friendDialogBackButton.clicked += HideFriendDialog;
+            _friendDialogSubmitButton.clicked += SubmitFriendSelection;
 
             mainRoot.Add(_addressDialogOverlay);
             PopupManager.RegisterBottomSheet(_addressDialogOverlay, addressDialogSheet, HideAddressDialog);
@@ -76,8 +90,8 @@ namespace MemoAnchor.UI
             PopupManager.RegisterBottomSheet(_friendDialogOverlay, friendDialogSheet, HideFriendDialog);
 
             SetSelectedAddress(string.Empty);
-            SetSelectedRepairer(ScanFriendOption.Empty);
-            SetSelectedManager(ScanFriendOption.Empty);
+            SetSelectedRepairers(Array.Empty<ScanFriendOption>());
+            SetSelectedManagers(Array.Empty<ScanFriendOption>());
         }
 
         private void OnDisable()
@@ -113,48 +127,54 @@ namespace MemoAnchor.UI
             }
         }
 
-        public void RebuildFriendItems(IReadOnlyList<ScanFriendOption> friends, Action<ScanFriendOption> onSelectFriend)
+        public void RebuildFriendItems(
+            IReadOnlyList<ScanFriendOption> friends,
+            IReadOnlyDictionary<string, ScanFriendOption> selectedFriends,
+            Action<IReadOnlyList<ScanFriendOption>> onSelectFriends)
         {
             _friendItemsList.Clear();
+            _pendingFriendSelections.Clear();
+            foreach (KeyValuePair<string, ScanFriendOption> selectedFriend in selectedFriends)
+            {
+                _pendingFriendSelections[selectedFriend.Key] = selectedFriend.Value;
+            }
+            _submitFriendSelection = onSelectFriends;
 
             for (int i = 0; i < friends.Count; i++)
             {
                 ScanFriendOption friend = friends[i];
-                Button button = new()
+                TemplateContainer template = _friendItemAsset.Instantiate();
+                Button button = template.Q<Button>("map-friend-invite-item");
+                button.name = $"scan-friend-item-{i}";
+                template.Q<Label>("map-friend-invite-name").text = friend.DisplayName;
+                template.Q<Label>("map-friend-invite-company").text = friend.CompanyName;
+                bool isSelected = _pendingFriendSelections.ContainsKey(friend.Id);
+                if (isSelected)
                 {
-                    name = $"scan-friend-item-{i}"
-                };
-                button.AddToClassList("scan-address-list-item");
-                button.AddToClassList("scan-friend-list-item");
-
-                Label nameLabel = new(friend.DisplayName);
-                nameLabel.AddToClassList("scan-friend-name");
-                button.Add(nameLabel);
-
-                if (!string.IsNullOrWhiteSpace(friend.CompanyName))
-                {
-                    Label companyLabel = new(friend.CompanyName);
-                    companyLabel.AddToClassList("scan-friend-company");
-                    button.Add(companyLabel);
+                    _pendingFriendSelections[friend.Id] = friend;
                 }
-
-                button.clicked += () => onSelectFriend(friend);
-                _friendItemsList.Add(button);
+                button.EnableInClassList("is-selected", isSelected);
+                button.clicked += () => SelectFriendItem(friend, button);
+                _friendItemsList.Add(template);
             }
+
+            _friendDialogSubmitButton.SetEnabled(true);
         }
 
         public void RebuildFriendStatus(string message)
         {
             _friendItemsList.Clear();
+            _pendingFriendSelections.Clear();
+            _submitFriendSelection = null;
+            _friendDialogSubmitButton.SetEnabled(false);
 
-            VisualElement row = new();
-            row.AddToClassList("scan-friend-status-row");
-
-            Label label = new(message);
-            label.AddToClassList("scan-friend-company");
-            row.Add(label);
-
-            _friendItemsList.Add(row);
+            TemplateContainer template = _friendItemAsset.Instantiate();
+            Button item = template.Q<Button>("map-friend-invite-item");
+            template.Q<Label>("map-friend-invite-name").text = message;
+            template.Q<Label>("map-friend-invite-company").AddToClassList("is-hidden");
+            template.Q<VisualElement>("map-friend-invite-check").AddToClassList("is-hidden");
+            item.SetEnabled(false);
+            _friendItemsList.Add(template);
         }
 
         public void ShowAddressDialog()
@@ -167,14 +187,29 @@ namespace MemoAnchor.UI
             PopupManager.HideBottomSheet(_addressDialogOverlay);
         }
 
-        public void ShowFriendDialog()
+        public void ShowFriendDialog(string title)
         {
+            _friendDialogTitle.text = title;
             PopupManager.ShowBottomSheet(_friendDialogOverlay);
         }
 
         public void HideFriendDialog()
         {
             PopupManager.HideBottomSheet(_friendDialogOverlay);
+        }
+
+        private void SelectFriendItem(ScanFriendOption friend, Button selectedButton)
+        {
+            if (!_pendingFriendSelections.Remove(friend.Id))
+            {
+                _pendingFriendSelections[friend.Id] = friend;
+            }
+            selectedButton.EnableInClassList("is-selected", _pendingFriendSelections.ContainsKey(friend.Id));
+        }
+
+        private void SubmitFriendSelection()
+        {
+            _submitFriendSelection(new List<ScanFriendOption>(_pendingFriendSelections.Values));
         }
 
         public void SetSelectedAddress(string address)
@@ -195,26 +230,47 @@ namespace MemoAnchor.UI
             ScanStartReadinessChanged?.Invoke();
         }
 
-        public void SetSelectedRepairer(ScanFriendOption friend)
+        public void SetSelectedRepairers(IReadOnlyList<ScanFriendOption> friends)
         {
-            SelectedRepairer = friend;
-            _repairerButtonText.SetValueWithoutNotify(friend.DisplayName);
+            ReplaceFriendSelections(_selectedRepairers, friends);
+            _repairerButtonText.SetValueWithoutNotify(BuildFriendSelectionText(_selectedRepairers));
         }
 
-        public void SetSelectedManager(ScanFriendOption friend)
+        public void SetSelectedManagers(IReadOnlyList<ScanFriendOption> friends)
         {
-            SelectedManager = friend;
-            _managerButtonText.SetValueWithoutNotify(friend.DisplayName);
+            ReplaceFriendSelections(_selectedManagers, friends);
+            _managerButtonText.SetValueWithoutNotify(BuildFriendSelectionText(_selectedManagers));
         }
 
         public void ResetScanForm()
         {
             SetSelectedAddress(string.Empty);
             _spaceNameField.SetValueWithoutNotify(string.Empty);
-            SetSelectedRepairer(ScanFriendOption.Empty);
-            SetSelectedManager(ScanFriendOption.Empty);
+            SetSelectedRepairers(Array.Empty<ScanFriendOption>());
+            SetSelectedManagers(Array.Empty<ScanFriendOption>());
             ClearSpaceNameError();
             ScanStartReadinessChanged?.Invoke();
+        }
+
+        private static void ReplaceFriendSelections(
+            Dictionary<string, ScanFriendOption> target,
+            IReadOnlyList<ScanFriendOption> friends)
+        {
+            target.Clear();
+            for (int i = 0; i < friends.Count; i++)
+            {
+                target[friends[i].Id] = friends[i];
+            }
+        }
+
+        private static string BuildFriendSelectionText(Dictionary<string, ScanFriendOption> friends)
+        {
+            var displayNames = new List<string>(friends.Count);
+            foreach (ScanFriendOption friend in friends.Values)
+            {
+                displayNames.Add(friend.DisplayName);
+            }
+            return string.Join(", ", displayNames);
         }
 
         public bool IsScanStartReady()

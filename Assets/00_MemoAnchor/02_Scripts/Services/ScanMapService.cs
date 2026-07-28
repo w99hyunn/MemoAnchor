@@ -107,8 +107,8 @@ namespace MemoAnchor
         public string address;
         public string roadAddress;
         public string spaceName;
-        public string repairerPlayerId;
-        public string managerPlayerId;
+        public List<string> repairerPlayerIds = new();
+        public List<string> managerPlayerIds = new();
     }
 
     public readonly struct ScanMapCreateResult

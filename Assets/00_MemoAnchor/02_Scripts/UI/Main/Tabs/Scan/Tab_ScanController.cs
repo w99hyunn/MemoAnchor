@@ -15,6 +15,7 @@ namespace MemoAnchor.UI
         private Tab_ScanView _view;
         private KakaoPostcodeWebView _postcodeWebView;
         private readonly ScanAddressService _scanAddressService = new();
+        private readonly ScanMapService _scanMapService = new();
         private FriendSelectionTarget _friendSelectionTarget;
         private int _friendSelectionRequestToken;
 
@@ -69,15 +70,15 @@ namespace MemoAnchor.UI
             _ = OpenFriendSelectionAsync(FriendSelectionTarget.Manager);
         }
 
-        private void SelectFriend(ScanFriendOption friend)
+        private void SelectFriends(IReadOnlyList<ScanFriendOption> friends)
         {
             if (_friendSelectionTarget == FriendSelectionTarget.Repairer)
             {
-                _view.SetSelectedRepairer(friend);
+                _view.SetSelectedRepairers(friends);
             }
             else
             {
-                _view.SetSelectedManager(friend);
+                _view.SetSelectedManagers(friends);
             }
 
             _view.HideFriendDialog();
@@ -146,8 +147,8 @@ namespace MemoAnchor.UI
                 address = _view.SelectedAddress,
                 roadAddress = address?.roadAddress ?? _view.SelectedAddress,
                 spaceName = _view.SpaceName,
-                repairerPlayerId = _view.SelectedRepairer.Id,
-                managerPlayerId = _view.SelectedManager.Id
+                repairerPlayerIds = new List<string>(_view.SelectedRepairers.Keys),
+                managerPlayerIds = new List<string>(_view.SelectedManagers.Keys)
             };
         }
 
@@ -158,7 +159,7 @@ namespace MemoAnchor.UI
             int token = _friendSelectionRequestToken;
 
             _view.RebuildFriendStatus("친구 정보를 불러오는 중입니다.");
-            _view.ShowFriendDialog();
+            _view.ShowFriendDialog(target == FriendSelectionTarget.Repairer ? "수리자 선택" : "관리자 선택");
 
             try
             {
@@ -182,16 +183,27 @@ namespace MemoAnchor.UI
                     return;
                 }
 
-                List<ScanFriendOption> friends = new();
-                foreach (Relationship relationship in FriendsService.Instance.Friends)
+                var relationships = new List<Relationship>(FriendsService.Instance.Friends);
+                Dictionary<string, MapFriendProfileItem> profiles = await LoadFriendProfilesAsync(relationships, token);
+                if (token != _friendSelectionRequestToken)
                 {
-                    friends.Add(new ScanFriendOption(
-                        relationship.Member.Id,
-                        GetMemberDisplayName(relationship.Member),
-                        string.Empty));
+                    return;
                 }
 
-                _view.RebuildFriendItems(friends, SelectFriend);
+                List<ScanFriendOption> friends = new(relationships.Count);
+                foreach (Relationship relationship in relationships)
+                {
+                    profiles.TryGetValue(relationship.Member.Id, out MapFriendProfileItem profile);
+                    friends.Add(new ScanFriendOption(
+                        relationship.Member.Id,
+                        string.IsNullOrWhiteSpace(profile?.name) ? GetMemberDisplayName(relationship.Member) : profile.name,
+                        profile?.companyName ?? string.Empty));
+                }
+
+                IReadOnlyDictionary<string, ScanFriendOption> selectedFriends = target == FriendSelectionTarget.Repairer
+                    ? _view.SelectedRepairers
+                    : _view.SelectedManagers;
+                _view.RebuildFriendItems(friends, selectedFriends, SelectFriends);
             }
             catch (Exception exception) when (IsFriendsRecoverableException(exception))
             {
@@ -203,6 +215,39 @@ namespace MemoAnchor.UI
 
                 _view.RebuildFriendStatus("친구 정보를 불러오지 못했습니다.");
             }
+        }
+
+        private async Awaitable<Dictionary<string, MapFriendProfileItem>> LoadFriendProfilesAsync(
+            IReadOnlyList<Relationship> relationships,
+            int token)
+        {
+            var profiles = new Dictionary<string, MapFriendProfileItem>(StringComparer.OrdinalIgnoreCase);
+            for (int startIndex = 0; startIndex < relationships.Count; startIndex += 20)
+            {
+                int count = Mathf.Min(20, relationships.Count - startIndex);
+                var playerIds = new List<string>(count);
+                for (int i = 0; i < count; i++)
+                {
+                    playerIds.Add(relationships[startIndex + i].Member.Id);
+                }
+
+                MapFriendProfilesResponse response = await _scanMapService.LoadFriendProfilesAsync(playerIds);
+                if (token != _friendSelectionRequestToken)
+                {
+                    return profiles;
+                }
+                if (response == null)
+                {
+                    continue;
+                }
+
+                for (int i = 0; i < response.profiles.Count; i++)
+                {
+                    MapFriendProfileItem profile = response.profiles[i];
+                    profiles[profile.playerId] = profile;
+                }
+            }
+            return profiles;
         }
 
         private static string GetMemberDisplayName(Member member)
