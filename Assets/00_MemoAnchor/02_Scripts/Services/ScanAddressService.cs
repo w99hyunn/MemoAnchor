@@ -53,12 +53,21 @@ namespace MemoAnchor
         private const string SCAN_ADDRESSES_API_PATH = "/api/scan/addresses";
 
         private ScanAddressListResponse _lastResponse = new();
+        private string _cachedPlayerId = string.Empty;
         private bool _isLoading;
         private bool _isSaving;
 
         public async Awaitable<ScanAddressListResponse> LoadAddressesAsync()
         {
-            if (_isLoading || !AuthenticationService.Instance.IsSignedIn)
+            if (!AuthenticationService.Instance.IsSignedIn)
+            {
+                ResetCache();
+                return _lastResponse;
+            }
+
+            string playerId = AuthenticationService.Instance.PlayerId;
+            ChangeCacheOwner(playerId);
+            if (_isLoading)
             {
                 return _lastResponse;
             }
@@ -76,6 +85,12 @@ namespace MemoAnchor
                     return _lastResponse;
                 }
 
+                if (!IsCurrentPlayer(playerId))
+                {
+                    SynchronizeCacheOwner();
+                    return _lastResponse;
+                }
+
                 _lastResponse = JsonUtility.FromJson<ScanAddressListResponse>(request.downloadHandler.text);
                 return _lastResponse;
             }
@@ -87,7 +102,15 @@ namespace MemoAnchor
 
         public async Awaitable<ScanAddressSaveResult> SaveAddressAsync(ScanAddressSaveRequest payload)
         {
-            if (_isSaving || !AuthenticationService.Instance.IsSignedIn)
+            if (!AuthenticationService.Instance.IsSignedIn)
+            {
+                ResetCache();
+                return new ScanAddressSaveResult(false, _lastResponse);
+            }
+
+            string playerId = AuthenticationService.Instance.PlayerId;
+            ChangeCacheOwner(playerId);
+            if (_isSaving)
             {
                 return new ScanAddressSaveResult(false, _lastResponse);
             }
@@ -106,6 +129,12 @@ namespace MemoAnchor
                     return new ScanAddressSaveResult(false, _lastResponse);
                 }
 
+                if (!IsCurrentPlayer(playerId))
+                {
+                    SynchronizeCacheOwner();
+                    return new ScanAddressSaveResult(false, _lastResponse);
+                }
+
                 _lastResponse = JsonUtility.FromJson<ScanAddressListResponse>(request.downloadHandler.text);
                 return new ScanAddressSaveResult(true, _lastResponse);
             }
@@ -113,6 +142,40 @@ namespace MemoAnchor
             {
                 _isSaving = false;
             }
+        }
+
+        private void SynchronizeCacheOwner()
+        {
+            if (!AuthenticationService.Instance.IsSignedIn)
+            {
+                ResetCache();
+                return;
+            }
+
+            ChangeCacheOwner(AuthenticationService.Instance.PlayerId);
+        }
+
+        private void ChangeCacheOwner(string playerId)
+        {
+            if (string.Equals(_cachedPlayerId, playerId, StringComparison.Ordinal))
+            {
+                return;
+            }
+
+            _cachedPlayerId = playerId;
+            _lastResponse = new ScanAddressListResponse();
+        }
+
+        private static bool IsCurrentPlayer(string playerId)
+        {
+            return AuthenticationService.Instance.IsSignedIn
+                && string.Equals(AuthenticationService.Instance.PlayerId, playerId, StringComparison.Ordinal);
+        }
+
+        private void ResetCache()
+        {
+            _cachedPlayerId = string.Empty;
+            _lastResponse = new ScanAddressListResponse();
         }
     }
 }

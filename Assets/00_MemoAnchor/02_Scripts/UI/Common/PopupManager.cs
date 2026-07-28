@@ -9,16 +9,14 @@ namespace MemoAnchor.UI
     {
         private static PopupManager Instance { get; set; }
 
-        [SerializeField] private VisualTreeAsset _confirmPopupAsset;
-
         private VisualElement _root;
+        private VisualElement _confirmRoot;
         private VisualElement _confirmOverlay;
         private VisualElement _confirmActions;
         private VisualElement _confirmInputBox;
         private TextField _confirmInput;
         private Button _confirmCancelButton, _confirmSubmitButton;
         private Label _confirmTitleLabel, _confirmMessageLabel, _confirmCancelLabel, _confirmSubmitLabel, _confirmStatusLabel;
-        private TemplateContainer _confirmTree;
         private Action _onConfirmSubmit;
         private Action _onConfirmCancel;
         private Action<string> _onInputSubmit;
@@ -36,6 +34,7 @@ namespace MemoAnchor.UI
             Instance = this;
             TryGetComponent<UIDocument>(out var uiDocument);
             _root = uiDocument.rootVisualElement;
+            InitializeConfirmPopup();
         }
 
         public static void ShowConfirm(string title, string message, string cancelText, string submitText, Action onSubmit)
@@ -81,7 +80,6 @@ namespace MemoAnchor.UI
 
         private void ShowConfirmInternal(string title, string message, string cancelText, string submitText, bool showCancelButton, Action onSubmit)
         {
-            EnsureConfirmPopup();
             _confirmTitleLabel.text = title;
             _confirmMessageLabel.text = message;
             _confirmCancelLabel.text = cancelText;
@@ -97,19 +95,14 @@ namespace MemoAnchor.UI
             _confirmCancelButton.style.display = showCancelButton ? DisplayStyle.Flex : DisplayStyle.None;
             SetConfirmButtonsEnabledInternal(true);
 
-            if (_confirmTree.parent == null)
-            {
-                _root.Add(_confirmTree);
-            }
-
             _confirmPresentationVersion++;
-            _confirmTree.BringToFront();
+            _confirmRoot.style.display = DisplayStyle.Flex;
+            _confirmRoot.BringToFront();
             PopupPresentation.ScheduleOpen(_confirmOverlay);
         }
 
         private void ShowTextInputInternal(string title, string message, string value, string placeholder, string cancelText, string submitText, Action<string> onSubmit)
         {
-            EnsureConfirmPopup();
             _confirmTitleLabel.text = title;
             _confirmMessageLabel.text = message;
             _confirmCancelLabel.text = cancelText;
@@ -127,34 +120,36 @@ namespace MemoAnchor.UI
             _confirmCancelButton.style.display = DisplayStyle.Flex;
             SetConfirmButtonsEnabledInternal(true);
 
-            if (_confirmTree.parent == null)
-            {
-                _root.Add(_confirmTree);
-            }
-
             _confirmPresentationVersion++;
-            _confirmTree.BringToFront();
+            _confirmRoot.style.display = DisplayStyle.Flex;
+            _confirmRoot.BringToFront();
             PopupPresentation.ScheduleOpen(_confirmOverlay);
             _confirmInput.Focus();
         }
 
         private void HideConfirmInternal()
         {
+            _ = HideConfirmAsync();
+        }
+
+        private async Awaitable HideConfirmAsync()
+        {
             _onConfirmSubmit = null;
             _onConfirmCancel = null;
             _onInputSubmit = null;
             _confirmUsesInput = false;
 
-            if (_confirmTree?.parent == null)
+            if (_confirmRoot.style.display.value == DisplayStyle.None)
             {
                 return;
             }
 
+            SetConfirmButtonsEnabledInternal(false);
             int closeVersion = ++_confirmPresentationVersion;
-            PopupPresentation.ScheduleClose(
+            await PopupPresentation.CloseAsync(
                 _confirmOverlay,
                 () => _confirmPresentationVersion == closeVersion,
-                () => _confirmTree.RemoveFromHierarchy());
+                () => _confirmRoot.style.display = DisplayStyle.None);
         }
 
         private void SubmitConfirm()
@@ -165,15 +160,25 @@ namespace MemoAnchor.UI
                 return;
             }
 
+            _ = SubmitConfirmAsync();
+        }
+
+        private async Awaitable SubmitConfirmAsync()
+        {
             Action onSubmit = _onConfirmSubmit;
-            HideConfirmInternal();
+            await HideConfirmAsync();
             onSubmit?.Invoke();
         }
 
         private void CancelConfirm()
         {
+            _ = CancelConfirmAsync();
+        }
+
+        private async Awaitable CancelConfirmAsync()
+        {
             Action onCancel = _onConfirmCancel;
-            HideConfirmInternal();
+            await HideConfirmAsync();
             onCancel?.Invoke();
         }
 
@@ -187,8 +192,13 @@ namespace MemoAnchor.UI
                 return;
             }
 
+            _ = SubmitTextInputAsync(value);
+        }
+
+        private async Awaitable SubmitTextInputAsync(string value)
+        {
             Action<string> onSubmit = _onInputSubmit;
-            HideConfirmInternal();
+            await HideConfirmAsync();
             onSubmit?.Invoke(value);
         }
 
@@ -198,32 +208,21 @@ namespace MemoAnchor.UI
             _confirmSubmitButton.SetEnabled(enabled);
         }
 
-        private void EnsureConfirmPopup()
+        private void InitializeConfirmPopup()
         {
-            if (_confirmTree != null)
-            {
-                return;
-            }
-
-            _confirmTree = _confirmPopupAsset.Instantiate();
-            _confirmTree.style.position = Position.Absolute;
-            _confirmTree.style.left = 0;
-            _confirmTree.style.right = 0;
-            _confirmTree.style.top = 0;
-            _confirmTree.style.bottom = 0;
-
-            _confirmOverlay = _confirmTree.Q<VisualElement>("common-confirm-popup-overlay");
-            VisualElement confirmSheet = _confirmTree.Q<VisualElement>("common-confirm-popup-sheet");
-            _confirmTitleLabel = _confirmTree.Q<Label>("common-confirm-popup-title");
-            _confirmMessageLabel = _confirmTree.Q<Label>("common-confirm-popup-message");
-            _confirmInputBox = _confirmTree.Q<VisualElement>("common-confirm-input-box");
-            _confirmInput = _confirmTree.Q<TextField>("common-confirm-input");
-            _confirmStatusLabel = _confirmTree.Q<Label>("common-confirm-status-label");
-            _confirmActions = _confirmTree.Q<VisualElement>(className: "common-confirm-popup-actions");
-            _confirmCancelLabel = _confirmTree.Q<Label>("common-confirm-cancel-label");
-            _confirmSubmitLabel = _confirmTree.Q<Label>("common-confirm-submit-label");
-            _confirmCancelButton = _confirmTree.Q<Button>("common-confirm-cancel-button");
-            _confirmSubmitButton = _confirmTree.Q<Button>("common-confirm-submit-button");
+            _confirmRoot = _root.Q<VisualElement>("common-confirm-popup-root");
+            _confirmOverlay = _confirmRoot.Q<VisualElement>("common-confirm-popup-overlay");
+            VisualElement confirmSheet = _confirmRoot.Q<VisualElement>("common-confirm-popup-sheet");
+            _confirmTitleLabel = _confirmRoot.Q<Label>("common-confirm-popup-title");
+            _confirmMessageLabel = _confirmRoot.Q<Label>("common-confirm-popup-message");
+            _confirmInputBox = _confirmRoot.Q<VisualElement>("common-confirm-input-box");
+            _confirmInput = _confirmRoot.Q<TextField>("common-confirm-input");
+            _confirmStatusLabel = _confirmRoot.Q<Label>("common-confirm-status-label");
+            _confirmActions = _confirmRoot.Q<VisualElement>(className: "common-confirm-popup-actions");
+            _confirmCancelLabel = _confirmRoot.Q<Label>("common-confirm-cancel-label");
+            _confirmSubmitLabel = _confirmRoot.Q<Label>("common-confirm-submit-label");
+            _confirmCancelButton = _confirmRoot.Q<Button>("common-confirm-cancel-button");
+            _confirmSubmitButton = _confirmRoot.Q<Button>("common-confirm-submit-button");
 
             _confirmOverlay.RegisterCallback<ClickEvent>(_ => HideConfirmInternal());
             confirmSheet.RegisterCallback<ClickEvent>(evt => evt.StopPropagation());

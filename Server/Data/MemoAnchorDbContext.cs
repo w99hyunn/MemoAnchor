@@ -11,6 +11,7 @@ public sealed class MemoAnchorDbContext : DbContext
 
     public DbSet<AppUserEntity> Users => Set<AppUserEntity>();
     public DbSet<AddressEntity> Addresses => Set<AddressEntity>();
+    public DbSet<UserAddressEntity> UserAddresses => Set<UserAddressEntity>();
     public DbSet<MapEntity> Maps => Set<MapEntity>();
     public DbSet<MapMemberEntity> MapMembers => Set<MapMemberEntity>();
     public DbSet<MemoEntity> Memos => Set<MemoEntity>();
@@ -44,6 +45,20 @@ public sealed class MemoAnchorDbContext : DbContext
             entity.Property(item => item.BuildingName).HasColumnName("building_name").HasMaxLength(240).IsRequired();
             entity.Property(item => item.Bname).HasColumnName("bname").HasMaxLength(120).IsRequired();
             entity.Property(item => item.CreatedAt).HasColumnName("created_at");
+        });
+
+        modelBuilder.Entity<UserAddressEntity>(entity =>
+        {
+            entity.ToTable("user_addresses");
+            entity.HasKey(item => new { item.UnityPlayerId, item.AddressId });
+            entity.HasIndex(item => item.AddressId);
+            entity.Property(item => item.UnityPlayerId).HasColumnName("unity_player_id").HasMaxLength(128).IsRequired();
+            entity.Property(item => item.AddressId).HasColumnName("address_id");
+            entity.Property(item => item.CreatedAt).HasColumnName("created_at");
+            entity.HasOne(item => item.Address)
+                .WithMany(item => item.UserAddresses)
+                .HasForeignKey(item => item.AddressId)
+                .OnDelete(DeleteBehavior.Cascade);
         });
 
         modelBuilder.Entity<MapEntity>(entity =>
@@ -138,7 +153,16 @@ public sealed class AddressEntity
     public string BuildingName { get; set; } = string.Empty;
     public string Bname { get; set; } = string.Empty;
     public DateTimeOffset CreatedAt { get; set; }
+    public List<UserAddressEntity> UserAddresses { get; set; } = [];
     public List<MapEntity> Maps { get; set; } = [];
+}
+
+public sealed class UserAddressEntity
+{
+    public string UnityPlayerId { get; set; } = string.Empty;
+    public Guid AddressId { get; set; }
+    public AddressEntity Address { get; set; } = null!;
+    public DateTimeOffset CreatedAt { get; set; }
 }
 
 public sealed class MapEntity

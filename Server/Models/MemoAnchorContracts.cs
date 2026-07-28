@@ -10,6 +10,7 @@ public interface IMapMemoStore
     Task<IReadOnlyList<ScanAddressInfo>> AddAddressAsync(string playerId, SaveScanAddressRequest request, CancellationToken cancellationToken);
     Task<IReadOnlyList<ScanMapInfo>> LoadMapsAsync(string playerId, CancellationToken cancellationToken);
     Task<ScanMapCreateInfo> AddMapAsync(string playerId, SaveScanMapRequest request, CancellationToken cancellationToken);
+    Task<IReadOnlyList<ScanMapInfo>> ConfirmMapAsync(string playerId, string mapId, CancellationToken cancellationToken);
     Task<bool> CanAccessMapAsync(string playerId, string mapId, CancellationToken cancellationToken);
     Task<bool> CanManageMapAsync(string playerId, string mapId, CancellationToken cancellationToken);
     Task<MapReconstructionInfo?> LoadMapReconstructionAsync(string playerId, string mapId, CancellationToken cancellationToken);

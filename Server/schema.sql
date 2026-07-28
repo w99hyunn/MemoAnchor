@@ -22,6 +22,16 @@ CREATE TABLE IF NOT EXISTS addresses (
 CREATE UNIQUE INDEX IF NOT EXISTS ix_addresses_identity
 ON addresses (zonecode, address, road_address, jibun_address);
 
+CREATE TABLE IF NOT EXISTS user_addresses (
+    unity_player_id varchar(128) NOT NULL,
+    address_id uuid NOT NULL REFERENCES addresses (id) ON DELETE CASCADE,
+    created_at timestamptz NOT NULL,
+    PRIMARY KEY (unity_player_id, address_id)
+);
+
+CREATE INDEX IF NOT EXISTS ix_user_addresses_address_id
+ON user_addresses (address_id);
+
 CREATE TABLE IF NOT EXISTS maps (
     id uuid PRIMARY KEY,
     address_id uuid NOT NULL REFERENCES addresses (id) ON DELETE RESTRICT,

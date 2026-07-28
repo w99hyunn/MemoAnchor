@@ -3,21 +3,24 @@ using Unity.XR.CoreUtils;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
-using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
 using UnityEngine.InputSystem.XR;
 using UnityEngine.Rendering;
 using UnityEngine.SceneManagement;
-using UnityEngine.UI;
 using UnityEngine.XR.ARFoundation;
 using UnityEngine.XR.ARSubsystems;
+using PanelSettings = UnityEngine.UIElements.PanelSettings;
+using UIDocument = UnityEngine.UIElements.UIDocument;
+using VisualTreeAsset = UnityEngine.UIElements.VisualTreeAsset;
 
 public static class ARKitMeshScanSceneBuilder
 {
-    private const string SCENE_PATH = "Assets/Scenes/ARKitMeshScanScene.unity";
+    private const string SCENE_PATH = "Assets/00_MemoAnchor/01_Scenes/ARKitMeshScanScene.unity";
     private const string MATERIAL_PATH = "Assets/ARKitMeshing/Materials/ARKitMeshScanMaterial.mat";
     private const string MARKER_MATERIAL_PATH = "Assets/ARKitMeshing/Materials/ARKitMeshHitMarkerMaterial.mat";
     private const string MESH_PREFAB_PATH = "Assets/ARKitMeshing/Prefabs/ARKitMeshBlock.prefab";
+    private const string PANEL_SETTINGS_PATH = "Assets/Plugins/UI Toolkit/PanelSettings.asset";
+    private const string SCAN_HUD_UXML_PATH = "Assets/Plugins/UI Toolkit/UXML/ARKitMeshScan.uxml";
 
     [MenuItem("MemoAnchor/ARKit Meshing/Rebuild ARKit Mesh Scan Scene")]
     public static void RebuildARKitMeshScanScene()
@@ -41,9 +44,12 @@ public static class ARKitMeshScanSceneBuilder
         var meshManager = CreateMeshManager(xrOrigin.transform, meshPrefab);
         var planeManager = CreatePlaneManager(xrOrigin.transform);
         var hitMarker = CreateHitMarker(markerMaterial);
-        var ui = CreateHud();
 
         var controllerGo = new GameObject("ARKitMeshScanController");
+        var scanHudDocument = controllerGo.AddComponent<UIDocument>();
+        scanHudDocument.panelSettings = AssetDatabase.LoadAssetAtPath<PanelSettings>(PANEL_SETTINGS_PATH);
+        scanHudDocument.visualTreeAsset = AssetDatabase.LoadAssetAtPath<VisualTreeAsset>(SCAN_HUD_UXML_PATH);
+        scanHudDocument.sortingOrder = 20;
         var controller = controllerGo.AddComponent<ARKitMeshScanController>();
         SetObject(controller, "arSession", arSession);
         SetObject(controller, "meshManager", meshManager);
@@ -52,21 +58,14 @@ public static class ARKitMeshScanSceneBuilder
         SetObject(controller, "arCameraManager", arCameraManager);
         SetObject(controller, "arOcclusionManager", arOcclusionManager);
         SetObject(controller, "meshMaterial", meshMaterial);
-        SetObject(controller, "sessionStateText", ui.SessionText);
-        SetObject(controller, "meshStatsText", ui.StatsText);
-        SetObject(controller, "exportStatusText", ui.ExportText);
-        SetObject(controller, "resetButton", ui.ResetButton);
-        SetObject(controller, "exportButton", ui.ExportButton);
-        SetObject(controller, "backButton", ui.BackButton);
+        SetObject(controller, "scanHudDocument", scanHudDocument);
         SetString(controller, "fallbackSceneName", "Main");
 
         var probeGo = new GameObject("ARKitMeshRaycastProbe");
         var probe = probeGo.AddComponent<ARKitMeshRaycastProbe>();
         SetObject(probe, "arCamera", arCamera);
         SetObject(probe, "hitMarker", hitMarker.transform);
-        SetObject(probe, "hitStatusText", ui.HitText);
 
-        CreateEventSystem();
         AddSceneToBuildSettings(SCENE_PATH);
 
         EditorSceneManager.SaveScene(scene, SCENE_PATH);
@@ -271,129 +270,6 @@ public static class ARKitMeshScanSceneBuilder
         return marker;
     }
 
-    private static HudRefs CreateHud()
-    {
-        var canvasGo = new GameObject("Scan HUD");
-        var canvas = canvasGo.AddComponent<Canvas>();
-        canvas.renderMode = RenderMode.ScreenSpaceOverlay;
-        var canvasScaler = canvasGo.AddComponent<CanvasScaler>();
-        canvasScaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
-        canvasScaler.referenceResolution = new Vector2(1170f, 2532f);
-        canvasScaler.matchWidthOrHeight = 0.5f;
-        canvasGo.AddComponent<GraphicRaycaster>();
-
-        var panel = CreatePanel("Top Status Panel", canvasGo.transform, new Color(0f, 0f, 0f, 0.46f));
-        SetRect(panel.rectTransform, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(0f, 1f), new Vector2(0f, -24f), new Vector2(-0f, 260f));
-
-        var title = CreateText("Title", panel.transform, "ARKit Mesh Scan", 36, FontStyle.Bold, TextAnchor.UpperLeft);
-        SetRect(title.rectTransform, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(0f, 1f), new Vector2(32f, -24f), new Vector2(-32f, 52f));
-
-        var sessionText = CreateText("Session State", panel.transform, "AR Session: checking", 25, FontStyle.Normal, TextAnchor.UpperLeft);
-        SetRect(sessionText.rectTransform, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(0f, 1f), new Vector2(32f, -80f), new Vector2(-32f, 36f));
-
-        var statsText = CreateText("Mesh Stats", panel.transform, "Meshes: 0", 25, FontStyle.Normal, TextAnchor.UpperLeft);
-        SetRect(statsText.rectTransform, new Vector2(0f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, 1f), new Vector2(32f, -124f), new Vector2(-16f, 126f));
-
-        var hitText = CreateText("Hit Status", panel.transform, "Center hit: none", 25, FontStyle.Normal, TextAnchor.UpperRight);
-        SetRect(hitText.rectTransform, new Vector2(0.5f, 1f), new Vector2(1f, 1f), new Vector2(1f, 1f), new Vector2(16f, -124f), new Vector2(-32f, 40f));
-
-        var exportText = CreateText("Export Status", panel.transform, "Export path: app persistent data", 22, FontStyle.Normal, TextAnchor.UpperRight);
-        SetRect(exportText.rectTransform, new Vector2(0.5f, 1f), new Vector2(1f, 1f), new Vector2(1f, 1f), new Vector2(16f, -170f), new Vector2(-32f, 74f));
-
-        CreateCrosshair(canvasGo.transform);
-
-        var buttonBar = new GameObject("Bottom Button Bar", typeof(RectTransform), typeof(HorizontalLayoutGroup));
-        buttonBar.transform.SetParent(canvasGo.transform, false);
-        buttonBar.TryGetComponent<HorizontalLayoutGroup>(out var layout);
-        layout.spacing = 18f;
-        layout.padding = new RectOffset(28, 28, 20, 44);
-        layout.childControlWidth = true;
-        layout.childControlHeight = true;
-        layout.childForceExpandWidth = true;
-        layout.childForceExpandHeight = true;
-        buttonBar.TryGetComponent<RectTransform>(out var buttonBarRect);
-        SetRect(buttonBarRect, new Vector2(0f, 0f), new Vector2(1f, 0f), new Vector2(0.5f, 0f), Vector2.zero, new Vector2(0f, 148f));
-
-        var resetButton = CreateButton("Scan Button", buttonBar.transform, "Scan");
-        var exportButton = CreateButton("Stop Button", buttonBar.transform, "Stop");
-        var backButton = CreateButton("Back Button", buttonBar.transform, "Back");
-
-        return new HudRefs
-        {
-            SessionText = sessionText,
-            StatsText = statsText,
-            HitText = hitText,
-            ExportText = exportText,
-            ResetButton = resetButton,
-            ExportButton = exportButton,
-            BackButton = backButton
-        };
-    }
-
-    private static Image CreatePanel(string name, Transform parent, Color color)
-    {
-        var go = new GameObject(name, typeof(RectTransform), typeof(Image));
-        go.transform.SetParent(parent, false);
-        go.TryGetComponent<Image>(out var image);
-        image.color = color;
-        return image;
-    }
-
-    private static Text CreateText(string name, Transform parent, string value, int fontSize, FontStyle style, TextAnchor alignment)
-    {
-        var go = new GameObject(name, typeof(RectTransform), typeof(Text));
-        go.transform.SetParent(parent, false);
-        go.TryGetComponent<Text>(out var text);
-        text.text = value;
-        text.font = GetDefaultFont();
-        text.fontSize = fontSize;
-        text.fontStyle = style;
-        text.alignment = alignment;
-        text.color = Color.white;
-        text.horizontalOverflow = HorizontalWrapMode.Wrap;
-        text.verticalOverflow = VerticalWrapMode.Truncate;
-        return text;
-    }
-
-    private static Button CreateButton(string name, Transform parent, string label)
-    {
-        var go = new GameObject(name, typeof(RectTransform), typeof(Image), typeof(Button), typeof(LayoutElement));
-        go.transform.SetParent(parent, false);
-        go.TryGetComponent<Image>(out var image);
-        image.color = new Color(0.08f, 0.1f, 0.12f, 0.92f);
-        go.TryGetComponent<LayoutElement>(out var layoutElement);
-        layoutElement.preferredHeight = 84f;
-
-        go.TryGetComponent<Button>(out var button);
-        var colors = button.colors;
-        colors.normalColor = new Color(0.08f, 0.1f, 0.12f, 0.92f);
-        colors.highlightedColor = new Color(0.16f, 0.2f, 0.24f, 0.96f);
-        colors.pressedColor = new Color(0.02f, 0.55f, 0.7f, 1f);
-        button.colors = colors;
-
-        var text = CreateText("Label", go.transform, label, 27, FontStyle.Bold, TextAnchor.MiddleCenter);
-        SetRect(text.rectTransform, Vector2.zero, Vector2.one, new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero);
-        return button;
-    }
-
-    private static void CreateCrosshair(Transform parent)
-    {
-        var horizontal = CreatePanel("Crosshair Horizontal", parent, new Color(1f, 1f, 1f, 0.8f));
-        SetRect(horizontal.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(46f, 3f));
-
-        var vertical = CreatePanel("Crosshair Vertical", parent, new Color(1f, 1f, 1f, 0.8f));
-        SetRect(vertical.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(3f, 46f));
-    }
-
-    private static void SetRect(RectTransform rect, Vector2 anchorMin, Vector2 anchorMax, Vector2 pivot, Vector2 anchoredPosition, Vector2 sizeDelta)
-    {
-        rect.anchorMin = anchorMin;
-        rect.anchorMax = anchorMax;
-        rect.pivot = pivot;
-        rect.anchoredPosition = anchoredPosition;
-        rect.sizeDelta = sizeDelta;
-    }
-
     private static void CreateDirectionalLight()
     {
         var lightGo = new GameObject("Directional Light");
@@ -401,13 +277,6 @@ public static class ARKitMeshScanSceneBuilder
         var light = lightGo.AddComponent<Light>();
         light.type = LightType.Directional;
         light.intensity = 0.6f;
-    }
-
-    private static void CreateEventSystem()
-    {
-        var eventSystemGo = new GameObject("EventSystem");
-        eventSystemGo.AddComponent<EventSystem>();
-        eventSystemGo.AddComponent<StandaloneInputModule>();
     }
 
     private static void AddSceneToBuildSettings(string scenePath)
@@ -428,12 +297,6 @@ public static class ARKitMeshScanSceneBuilder
         return component;
     }
 
-    private static Font GetDefaultFont()
-    {
-        return Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf") ??
-               Resources.GetBuiltinResource<Font>("Arial.ttf");
-    }
-
     private static void SetObject(Object target, string propertyName, Object value)
     {
         var serializedObject = new SerializedObject(target);
@@ -448,14 +311,4 @@ public static class ARKitMeshScanSceneBuilder
         serializedObject.ApplyModifiedPropertiesWithoutUndo();
     }
 
-    private struct HudRefs
-    {
-        public Text SessionText;
-        public Text StatsText;
-        public Text HitText;
-        public Text ExportText;
-        public Button ResetButton;
-        public Button ExportButton;
-        public Button BackButton;
-    }
 }

@@ -59,6 +59,12 @@ namespace MemoAnchor
             CompletedReconstructionMaterial = material;
         }
 
+        public static void ClearCompletedReconstruction()
+        {
+            CompletedReconstructionMesh = null;
+            CompletedReconstructionMaterial = null;
+        }
+
         public static string BuildUploadPath()
         {
             return $"/api/scan/maps/{Escape(MapId)}/reconstruction/upload";

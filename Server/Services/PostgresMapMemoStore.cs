@@ -21,16 +21,21 @@ public sealed class PostgresMapMemoStore : IMapMemoStore
 
     public async Task<IReadOnlyList<ScanAddressInfo>> LoadAddressesAsync(string playerId, CancellationToken cancellationToken)
     {
-        return await db.Addresses
+        List<UserAddressEntity> userAddresses = await db.UserAddresses
             .AsNoTracking()
+            .Include(item => item.Address)
+            .Where(item => item.UnityPlayerId == playerId)
             .OrderByDescending(item => item.CreatedAt)
-            .Select(item => ToScanAddressInfo(item))
             .ToListAsync(cancellationToken);
+
+        return userAddresses
+            .Select(item => ToScanAddressInfo(item.Address, item.CreatedAt))
+            .ToList();
     }
 
     public async Task<IReadOnlyList<ScanAddressInfo>> AddAddressAsync(string playerId, SaveScanAddressRequest request, CancellationToken cancellationToken)
     {
-        await EnsureAddressAsync(request, cancellationToken);
+        await EnsureUserAddressAsync(playerId, request, cancellationToken);
         return await LoadAddressesAsync(playerId, cancellationToken);
     }
 
@@ -40,7 +45,8 @@ public sealed class PostgresMapMemoStore : IMapMemoStore
             .AsNoTracking()
             .Include(item => item.Address)
             .Include(item => item.Members)
-            .Where(item => item.Members.Any(member => member.UnityPlayerId == playerId))
+            .Where(item => item.ScanCreatedAt != null
+                && item.Members.Any(member => member.UnityPlayerId == playerId))
             .OrderByDescending(item => item.CreatedAt)
             .ToListAsync(cancellationToken);
 
@@ -61,7 +67,7 @@ public sealed class PostgresMapMemoStore : IMapMemoStore
             throw new ArgumentException("SpaceName is required.", nameof(request));
         }
 
-        AddressEntity address = await EnsureAddressAsync(request, cancellationToken);
+        AddressEntity address = await ResolveAddressAsync(playerId, request, cancellationToken);
         DateTimeOffset now = DateTimeOffset.UtcNow;
         Dictionary<string, string> rolesByPlayerId = new(StringComparer.OrdinalIgnoreCase)
         {
@@ -96,6 +102,30 @@ public sealed class PostgresMapMemoStore : IMapMemoStore
         await db.SaveChangesAsync(cancellationToken);
         IReadOnlyList<ScanMapInfo> maps = await LoadMapsAsync(playerId, cancellationToken);
         return new ScanMapCreateInfo(map.Id.ToString("N"), maps);
+    }
+
+    public async Task<IReadOnlyList<ScanMapInfo>> ConfirmMapAsync(string playerId, string mapId, CancellationToken cancellationToken)
+    {
+        Guid id = ParseGuid(mapId, nameof(mapId));
+        MapEntity map = await db.Maps
+            .Include(item => item.Members)
+            .FirstOrDefaultAsync(item => item.Id == id, cancellationToken)
+            ?? throw new InvalidOperationException("Map not found.");
+        bool canConfirm = map.Members.Any(member => member.UnityPlayerId == playerId
+            && member.Role == ScanMapRoles.MANAGER);
+        if (!canConfirm)
+        {
+            throw new UnauthorizedAccessException("Only a map manager can save the map.");
+        }
+        if (!string.Equals(map.ReconstructionState, "done", StringComparison.OrdinalIgnoreCase)
+            || string.IsNullOrWhiteSpace(map.ReconstructionResultFile))
+        {
+            throw new InvalidOperationException("Map reconstruction is not complete.");
+        }
+
+        map.ScanCreatedAt = map.ReconstructionUpdatedAt ?? DateTimeOffset.UtcNow;
+        await db.SaveChangesAsync(cancellationToken);
+        return await LoadMapsAsync(playerId, cancellationToken);
     }
 
     public async Task<bool> CanAccessMapAsync(string playerId, string mapId, CancellationToken cancellationToken)
@@ -182,10 +212,6 @@ public sealed class PostgresMapMemoStore : IMapMemoStore
         map.ReconstructionMessage = LimitText(message, 1000);
         map.ReconstructionResultFile = LimitText(resultFile, 500);
         map.ReconstructionUpdatedAt = updatedAt;
-        if (normalizedState == "done")
-        {
-            map.ScanCreatedAt = updatedAt;
-        }
 
         await db.SaveChangesAsync(cancellationToken);
     }
@@ -706,22 +732,44 @@ public sealed class PostgresMapMemoStore : IMapMemoStore
         return memos.Select(memo => ToMemoInfo(memo, usersByPlayerId)).ToList();
     }
 
-    private async Task<AddressEntity> EnsureAddressAsync(SaveScanMapRequest request, CancellationToken cancellationToken)
+    private async Task<AddressEntity> ResolveAddressAsync(string playerId, SaveScanMapRequest request, CancellationToken cancellationToken)
     {
-        if (Guid.TryParse(request.AddressId, out Guid addressId))
+        if (!string.IsNullOrWhiteSpace(request.AddressId))
         {
-            AddressEntity? address = await db.Addresses.FirstOrDefaultAsync(item => item.Id == addressId, cancellationToken);
-            if (address != null)
-            {
-                return address;
-            }
+            Guid addressId = ParseGuid(request.AddressId, nameof(request.AddressId));
+            UserAddressEntity? userAddress = await db.UserAddresses
+                .Include(item => item.Address)
+                .FirstOrDefaultAsync(item => item.UnityPlayerId == playerId && item.AddressId == addressId, cancellationToken);
+            return userAddress?.Address
+                ?? throw new UnauthorizedAccessException("Address does not belong to the current user.");
         }
 
-        return await EnsureAddressAsync(new SaveScanAddressRequest
+        return await EnsureUserAddressAsync(playerId, new SaveScanAddressRequest
         {
             Address = request.Address,
             RoadAddress = request.RoadAddress
         }, cancellationToken);
+    }
+
+    private async Task<AddressEntity> EnsureUserAddressAsync(string playerId, SaveScanAddressRequest request, CancellationToken cancellationToken)
+    {
+        AddressEntity address = await EnsureAddressAsync(request, cancellationToken);
+        bool alreadySaved = await db.UserAddresses.AnyAsync(item =>
+            item.UnityPlayerId == playerId && item.AddressId == address.Id,
+            cancellationToken);
+        if (alreadySaved)
+        {
+            return address;
+        }
+
+        db.UserAddresses.Add(new UserAddressEntity
+        {
+            UnityPlayerId = playerId,
+            AddressId = address.Id,
+            CreatedAt = DateTimeOffset.UtcNow
+        });
+        await db.SaveChangesAsync(cancellationToken);
+        return address;
     }
 
     private async Task<AddressEntity> EnsureAddressAsync(SaveScanAddressRequest request, CancellationToken cancellationToken)
@@ -765,7 +813,7 @@ public sealed class PostgresMapMemoStore : IMapMemoStore
         return address;
     }
 
-    private static ScanAddressInfo ToScanAddressInfo(AddressEntity address)
+    private static ScanAddressInfo ToScanAddressInfo(AddressEntity address, DateTimeOffset savedAt)
     {
         return new ScanAddressInfo(
             address.Id.ToString("N"),
@@ -775,7 +823,7 @@ public sealed class PostgresMapMemoStore : IMapMemoStore
             address.JibunAddress,
             address.BuildingName,
             address.Bname,
-            address.CreatedAt);
+            savedAt);
     }
 
     private static ScanMapInfo ToScanMapInfo(MapEntity map, string currentPlayerId, IReadOnlyDictionary<string, AppUserEntity> usersByPlayerId)

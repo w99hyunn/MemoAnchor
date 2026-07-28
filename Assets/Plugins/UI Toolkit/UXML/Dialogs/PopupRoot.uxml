@@ -1,3 +1,5 @@
 <ui:UXML xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" noNamespaceSchemaLocation="../../../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
+    <ui:Template name="CommonConfirmPopup" src="project://database/Assets/Plugins/UI%20Toolkit/UXML/Dialogs/CommonConfirmPopup.uxml?fileID=9197481963319205126&amp;guid=aff36bb18b7643078b74018c07fd400f&amp;type=3#CommonConfirmPopup"/>
     <Style src="project://database/Assets/Plugins/UI%20Toolkit/UnityThemes/style.uss?fileID=7433441132597879392&amp;guid=c3edbd9c191f92b49aa6a3ce9ffd69d5&amp;type=3#style"/>
+    <ui:Instance template="CommonConfirmPopup" name="common-confirm-popup-root" picking-mode="Ignore" style="position: absolute; left: 0; right: 0; top: 0; bottom: 0; display: none;"/>
 </ui:UXML>

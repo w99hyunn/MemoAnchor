@@ -21,7 +21,9 @@
             <ui:Image name="map-reconstruction-preview" picking-mode="Position" scale-mode="StretchToFill" class="map-reconstruction-preview is-hidden"/>
             <ui:VisualElement name="map-reconstruction-spinner" picking-mode="Ignore" class="loading-spinner map-reconstruction-spinner is-hidden"/>
             <ui:Button name="map-reconstruction-button" text="스캔 결과 없음" class="map-reconstruction-button is-hidden"/>
-            <ui:Button name="map-preview-menu-button" text="☰" class="map-preview-menu-button common-icon-button"/>
+            <ui:Button name="map-preview-menu-button" class="map-preview-menu-button common-icon-button">
+                <ui:VisualElement picking-mode="Ignore" class="common-icon-button-icon map-preview-menu-icon" style="background-image: url(&quot;project://database/Assets/00_MemoAnchor/03_Media/Icon/memo_list.png?fileID=2800000&amp;guid=71b687c27d6ed9e459d50d724752da37&amp;type=3#memo_list&quot;);"/>
+            </ui:Button>
             <ui:VisualElement name="map-create-memo-actions" class="map-create-memo-actions is-hidden">
                 <ui:Button name="map-create-text-memo-button" text="타이핑 메모 생성" class="map-create-memo-button"/>
                 <ui:Button name="map-create-checklist-memo-button" text="체크리스트 메모 생성" class="map-create-memo-button"/>

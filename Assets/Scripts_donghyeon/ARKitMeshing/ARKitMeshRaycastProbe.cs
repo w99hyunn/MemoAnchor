@@ -1,11 +1,9 @@
 using UnityEngine;
-using UnityEngine.UI;
 
 public class ARKitMeshRaycastProbe : MonoBehaviour
 {
     [SerializeField] private Camera arCamera;
     [SerializeField] private Transform hitMarker;
-    [SerializeField] private Text hitStatusText;
     [SerializeField] private float maxDistance = 8f;
     [SerializeField] private LayerMask hitLayers = ~0;
 
@@ -30,17 +28,11 @@ public class ARKitMeshRaycastProbe : MonoBehaviour
                 hitMarker.position = hit.point;
                 hitMarker.rotation = Quaternion.LookRotation(hit.normal);
             }
-
-            if (hitStatusText)
-                hitStatusText.text = $"Center hit: {hit.distance:F2}m";
         }
         else
         {
             if (hitMarker)
                 hitMarker.gameObject.SetActive(false);
-
-            if (hitStatusText)
-                hitStatusText.text = "Center hit: none";
         }
     }
 }

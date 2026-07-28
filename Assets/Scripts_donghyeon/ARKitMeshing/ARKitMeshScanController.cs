@@ -11,10 +11,11 @@ using UnityEngine.EventSystems;
 using UnityEngine.Networking;
 using UnityEngine.Rendering;
 using UnityEngine.SceneManagement;
-using UnityEngine.UI;
+using UnityEngine.UIElements;
 using UnityEngine.XR.ARFoundation;
 using UnityEngine.XR.ARSubsystems;
 
+[RequireComponent(typeof(UIDocument))]
 public class ARKitMeshScanController : MonoBehaviour
 {
     private const int RECONSTRUCTION_REQUEST_TIMEOUT_SECONDS = 900;
@@ -30,12 +31,7 @@ public class ARKitMeshScanController : MonoBehaviour
     [SerializeField] private Material meshMaterial;
 
     [Header("UI")]
-    [SerializeField] private Text sessionStateText;
-    [SerializeField] private Text meshStatsText;
-    [SerializeField] private Text exportStatusText;
-    [SerializeField] private Button resetButton;
-    [SerializeField] private Button exportButton;
-    [SerializeField] private Button backButton;
+    [SerializeField] private UIDocument scanHudDocument;
 
     [Header("Scene")]
     [SerializeField] private string fallbackSceneName = "Main";
@@ -143,6 +139,8 @@ public class ARKitMeshScanController : MonoBehaviour
     private GameObject previewRoot;
     private GameObject liveCoverageRoot;
     private Camera previewCamera;
+    private Camera completionPreviewCamera;
+    private RenderTexture completionPreviewTexture;
     private ARCameraBackground arCameraBackground;
     private Bounds previewBounds;
     private Vector3 previewCenter;
@@ -164,6 +162,7 @@ public class ARKitMeshScanController : MonoBehaviour
     private bool reconstructionPackageRunning;
     private bool reconstructionCompletedSuccessfully;
     private bool mapConfirmationRunning;
+    private bool mapSaveRunning;
     private readonly ScanMapService scanMapService = new();
     private static Mesh surfacePointMesh;
     private static Mesh thumbnailQuadMesh;
@@ -188,6 +187,22 @@ public class ARKitMeshScanController : MonoBehaviour
     private int nextRgbdRecorderFrameId;
     private string lastRgbdRecorderDatasetPath = string.Empty;
     private bool depthOnlyPreview;
+    private VisualElement scanHudScanLayer;
+    private VisualElement scanHudProcessingBlur;
+    private VisualElement scanHudFrame;
+    private VisualElement scanHudFrameGlow;
+    private Label scanHudProgressLabel;
+    private Label scanHudProcessingTitleLabel;
+    private Label scanHudStatusLabel;
+    private Button scanHudStartButton;
+    private Button scanHudStopButton;
+    private Button scanHudBackButton;
+    private VisualElement scanHudCompletionLayer;
+    private Image scanHudCompletionMapImage;
+    private Button scanHudRegenerateButton;
+    private Button scanHudSaveButton;
+    private bool completionReviewVisible;
+    private string scanHudStatusMessage = string.Empty;
 
     private static bool IsAndroidDepthScan => Application.platform == RuntimePlatform.Android;
 
@@ -238,6 +253,8 @@ public class ARKitMeshScanController : MonoBehaviour
 
         if (arCamera)
             arCamera.TryGetComponent<ARCameraBackground>(out arCameraBackground);
+
+        ConfigureScanHud();
     }
 
     private void OnEnable()
@@ -247,14 +264,12 @@ public class ARKitMeshScanController : MonoBehaviour
         if (meshManager)
             meshManager.meshesChanged += OnMeshesChanged;
 
-        if (resetButton)
-            resetButton.onClick.AddListener(StartScan);
-
-        if (exportButton)
-            exportButton.onClick.AddListener(StopScanAndShowMap);
-
-        if (backButton)
-            backButton.onClick.AddListener(GoBack);
+        scanHudStartButton.clicked += StartScan;
+        scanHudStopButton.clicked += StopScanAndShowMap;
+        scanHudBackButton.clicked += GoBack;
+        scanHudRegenerateButton.clicked += ShowRegenerateConfirm;
+        scanHudSaveButton.clicked += SaveCompletedScan;
+        scanHudCompletionMapImage.RegisterCallback<GeometryChangedEvent>(OnCompletionPreviewGeometryChanged);
     }
 
     private void OnDisable()
@@ -265,14 +280,12 @@ public class ARKitMeshScanController : MonoBehaviour
         if (meshManager)
             meshManager.meshesChanged -= OnMeshesChanged;
 
-        if (resetButton)
-            resetButton.onClick.RemoveListener(StartScan);
-
-        if (exportButton)
-            exportButton.onClick.RemoveListener(StopScanAndShowMap);
-
-        if (backButton)
-            backButton.onClick.RemoveListener(GoBack);
+        scanHudStartButton.clicked -= StartScan;
+        scanHudStopButton.clicked -= StopScanAndShowMap;
+        scanHudBackButton.clicked -= GoBack;
+        scanHudRegenerateButton.clicked -= ShowRegenerateConfirm;
+        scanHudSaveButton.clicked -= SaveCompletedScan;
+        scanHudCompletionMapImage.UnregisterCallback<GeometryChangedEvent>(OnCompletionPreviewGeometryChanged);
     }
 
     private void OnDestroy()
@@ -280,16 +293,23 @@ public class ARKitMeshScanController : MonoBehaviour
         StopRgbdRecorder();
         DestroyLiveCoverageOverlay();
         ClearKeyframes();
+        ReleaseCompletionPreviewTexture();
+        if (completionPreviewCamera)
+            Destroy(completionPreviewCamera.gameObject);
     }
 
     private void Start()
     {
-        SetButtonLabel(resetButton, "Scan");
-        SetButtonLabel(exportButton, "Stop");
         SetExportStatus(IsAndroidDepthScan
             ? "Ready. Tap Scan to start ARCore Depth mapping."
             : "Ready. Tap Scan to start ARKit mesh mapping.");
-        SetScanningEnabled(false);
+        SetScanCaptureEnabled(false);
+        if (arSession)
+            arSession.enabled = true;
+        if (arCamera)
+            arCamera.enabled = true;
+        if (arCameraBackground)
+            arCameraBackground.enabled = true;
         SetLiveMeshesVisible(false);
         EnsurePreviewCamera();
         ApplyMaterialToExistingMeshes();
@@ -299,8 +319,6 @@ public class ARKitMeshScanController : MonoBehaviour
 
         if (MapScanSession.IsViewingStoredResult)
             _ = LoadStoredReconstructionAsync();
-        else if (MapScanSession.HasScanTarget)
-            StartScan();
     }
 
     private void Update()
@@ -366,6 +384,7 @@ public class ARKitMeshScanController : MonoBehaviour
         if (MapScanSession.IsViewingStoredResult || reconstructionPackageRunning)
             return;
 
+        SetCompletionReviewVisible(false);
         scanMode = ScanMode.Scanning;
         meshesAdded = 0;
         meshesUpdated = 0;
@@ -383,6 +402,8 @@ public class ARKitMeshScanController : MonoBehaviour
         geminiEnhancementRunning = false;
         reconstructionPackageRunning = false;
         reconstructionCompletedSuccessfully = false;
+        mapSaveRunning = false;
+        scanHudSaveButton.text = "저장하기";
         latestScanQuality = null;
         latestCoverageSummary = null;
         skippedFastMotionFrames = 0;
@@ -399,7 +420,6 @@ public class ARKitMeshScanController : MonoBehaviour
         if (meshManager)
         {
             meshManager.gameObject.SetActive(true);
-            meshManager.enabled = !IsAndroidDepthScan;
             if (!IsAndroidDepthScan)
                 meshManager.DestroyAllMeshes();
         }
@@ -408,20 +428,9 @@ public class ARKitMeshScanController : MonoBehaviour
         {
             planeManager.gameObject.SetActive(true);
             planeManager.requestedDetectionMode = PlaneDetectionMode.Horizontal | PlaneDetectionMode.Vertical;
-            planeManager.enabled = true;
         }
 
-        if (arSession)
-        {
-            arSession.enabled = true;
-            arSession.Reset();
-        }
-
-        if (arCamera)
-            arCamera.enabled = true;
-
-        if (arCameraBackground)
-            arCameraBackground.enabled = true;
+        SetScanCaptureEnabled(true);
 
         if (previewCamera)
             previewCamera.enabled = false;
@@ -484,11 +493,11 @@ public class ARKitMeshScanController : MonoBehaviour
         }
 
         scanMode = ScanMode.Preview;
-        SetScanningEnabled(false);
+        SetScanCaptureEnabled(false);
         StopRgbdRecorder();
         SetLiveMeshesVisible(false);
         DestroyLiveCoverageOverlay();
-        ShowPreviewCamera(bounds.Value);
+        ShowPreviewCamera(bounds.Value, false);
 
         BuildVisualKeyframePreview(bounds.Value);
 
@@ -511,6 +520,78 @@ public class ARKitMeshScanController : MonoBehaviour
     public void ResetScan()
     {
         StartScan();
+    }
+
+    private void ShowRegenerateConfirm()
+    {
+        if (!reconstructionCompletedSuccessfully || reconstructionPackageRunning || mapSaveRunning)
+            return;
+
+        MemoAnchor.UI.PopupManager.ShowConfirm(
+            "맵 재생성",
+            "현재 생성된 맵 결과는 저장되지 않습니다.\n다시 스캔하시겠습니까?",
+            "취소",
+            "재생성",
+            RegenerateCompletedScan);
+    }
+
+    private void RegenerateCompletedScan()
+    {
+        if (!reconstructionCompletedSuccessfully || reconstructionPackageRunning || mapSaveRunning)
+            return;
+
+        Mesh completedMesh = MapScanSession.CompletedReconstructionMesh;
+        Material completedMaterial = MapScanSession.CompletedReconstructionMaterial;
+        MapScanSession.ClearCompletedReconstruction();
+        DestroyPreview();
+
+        if (previewMaterial == completedMaterial)
+            previewMaterial = null;
+        if (completedMesh)
+            Destroy(completedMesh);
+        if (completedMaterial)
+            Destroy(completedMaterial);
+
+        StartScan();
+    }
+
+    private void SaveCompletedScan()
+    {
+        if (!reconstructionCompletedSuccessfully
+            || reconstructionPackageRunning
+            || mapSaveRunning
+            || !MapScanSession.HasActiveMap)
+            return;
+
+        _ = SaveCompletedScanAsync();
+    }
+
+    private async Awaitable SaveCompletedScanAsync()
+    {
+        mapSaveRunning = true;
+        scanHudSaveButton.text = "저장 중...";
+        UpdateButtonStates();
+
+        ScanMapListResponse response = null;
+        try
+        {
+            response = await scanMapService.ConfirmMapAsync(MapScanSession.MapId);
+        }
+        catch (Exception ex)
+        {
+            Debug.LogException(ex);
+        }
+
+        if (response == null)
+        {
+            mapSaveRunning = false;
+            scanHudSaveButton.text = "저장 실패 · 다시 시도";
+            UpdateButtonStates();
+            return;
+        }
+
+        MapScanSession.RequestReturnToMap();
+        CloseScanScene();
     }
 
     public void ExportCurrentMeshToObj()
@@ -563,11 +644,11 @@ public class ARKitMeshScanController : MonoBehaviour
 
             if (MapScanSession.HasPendingMap)
             {
-                SetExportStatus("Scan complete. Saving map...");
+                SetExportStatus("Scan complete. Preparing reconstruction...");
                 ScanMapCreateResult result = await scanMapService.CreateMapAsync(MapScanSession.PendingMapRequest);
                 if (!result.IsSuccess)
                 {
-                    SetExportStatus("Scan completed, but the map could not be saved. Return and try again.");
+                    SetExportStatus("Scan completed, but map preparation failed. Return and try again.");
                     return;
                 }
 
@@ -578,7 +659,7 @@ public class ARKitMeshScanController : MonoBehaviour
 
             if (!packageReconstructionScanOnStop)
             {
-                SetExportStatus("Scan complete. Map saved.");
+                SetExportStatus("Scan complete. Map preview is ready.");
                 reconstructionCompletedSuccessfully = MapScanSession.HasActiveMap;
                 return;
             }
@@ -603,11 +684,6 @@ public class ARKitMeshScanController : MonoBehaviour
             mapConfirmationRunning = false;
             reconstructionPackageRunning = false;
             UpdateButtonStates();
-            if (MapScanSession.HasActiveMap && reconstructionCompletedSuccessfully)
-            {
-                MapScanSession.RequestReturnToMap();
-                CloseScanScene();
-            }
         }
     }
 
@@ -1125,7 +1201,49 @@ public class ARKitMeshScanController : MonoBehaviour
 
     private void GoBack()
     {
+        if (scanMode == ScanMode.Scanning)
+        {
+            MemoAnchor.UI.PopupManager.ShowConfirm(
+                "스캔 취소",
+                "현재까지 스캔한 내용은 저장되지 않습니다.\n스캔을 취소할까요?",
+                "계속 스캔",
+                "스캔 취소",
+                CancelScanAndClose);
+            return;
+        }
+
+        if (MapScanSession.HasActiveMap && !MapScanSession.IsViewingStoredResult)
+        {
+            CancelScanAndClose();
+            return;
+        }
+
         CloseScanScene();
+    }
+
+    private void CancelScanAndClose()
+    {
+        _ = CancelScanAndCloseAsync();
+    }
+
+    private async Awaitable CancelScanAndCloseAsync()
+    {
+        SetScanCaptureEnabled(false);
+        StopRgbdRecorder();
+
+        try
+        {
+            if (MapScanSession.HasActiveMap && !MapScanSession.IsViewingStoredResult)
+                await scanMapService.DeleteMapAsync(MapScanSession.MapId);
+        }
+        catch (Exception ex)
+        {
+            Debug.LogException(ex);
+        }
+        finally
+        {
+            CloseScanScene();
+        }
     }
 
     private void CloseScanScene()
@@ -1216,18 +1334,14 @@ public class ARKitMeshScanController : MonoBehaviour
 
     private void UpdateSessionState(ARSessionState state)
     {
-        if (sessionStateText)
-            sessionStateText.text = $"Mode: {scanMode}\nAR Session: {state}";
+        UpdateScanHud();
     }
 
     private void UpdateStats(bool force)
     {
-        if (!meshStatsText)
-            return;
-
-        var meshCount = 0;
-        var vertexCount = 0;
-        var triangleCount = 0;
+        int meshCount = 0;
+        int vertexCount = 0;
+        int triangleCount = 0;
 
         if (scanMode == ScanMode.Preview)
         {
@@ -1253,95 +1367,198 @@ public class ARKitMeshScanController : MonoBehaviour
         else if (scanMode == ScanMode.Ready)
             latestScanQuality = null;
 
-        var qualityText = string.Empty;
-        if (showScanQualityGuidance && latestScanQuality != null)
-        {
-            var finishGuidance = scanMode == ScanMode.Preview
-                ? "Completed - tap Back"
-                : !requireMinimumQualityToStop || latestScanQuality.score >= minimumStopQualityScore
-                    ? "Ready - tap Stop to finish"
-                    : $"Not ready - need {minimumStopQualityScore - latestScanQuality.score:0}% more";
-            qualityText =
-                $"\nQuality: {latestScanQuality.score:0}% ({latestScanQuality.grade})\n" +
-                $"Finish: {finishGuidance}\n" +
-                $"Depth: {latestScanQuality.depthFrameCount} frames / {latestScanQuality.averageDepthConfidence:P0}\n" +
-                $"Sync: avg {latestScanQuality.averageRgbdTimestampDeltaMs:0}ms / max {latestScanQuality.maxRgbdTimestampDeltaMs:0}ms\n" +
-                $"Skipped: fast {latestScanQuality.skippedFastMotionFrames} / sync {latestScanQuality.skippedUnsyncedDepthFrames} / depth {latestScanQuality.skippedLowConfidenceFrames}\n" +
-                $"Guide: {latestScanQuality.primaryGuidance}";
-        }
-
-        var coverageText = string.Empty;
-        if (latestCoverageSummary != null && latestCoverageSummary.totalCells > 0)
-        {
-            coverageText =
-                $"\nCoverage: weak {latestCoverageSummary.weakCells} / fair {latestCoverageSummary.fairCells} / good {latestCoverageSummary.goodCells}";
-        }
-
-        var geometryText =
-            $"Meshes: {meshCount}\n" +
-            $"Vertices: {vertexCount:N0}\n" +
-            $"Triangles: {triangleCount:N0}\n" +
-            $"Keyframes: {keyframes.Count}\n" +
-            $"Changed: +{meshesAdded} / ~{meshesUpdated} / -{meshesRemoved}";
-
-        if (IsAndroidDepthScan && scanMode == ScanMode.Scanning)
-        {
-            var diagnostics = rgbdRecorder?.SnapshotDiagnostics();
-            var capturedFrames = diagnostics?.captured_frames ?? 0;
-            var savedFrames = diagnostics?.saved_frames ?? 0;
-            var depthWidth = diagnostics?.last_depth_width ?? 0;
-            var depthHeight = diagnostics?.last_depth_height ?? 0;
-            var qualityScore = latestScanQuality?.score ?? 0f;
-            var depthSampleCount = (long)capturedFrames * depthWidth * depthHeight;
-            geometryText =
-                "Provider: ARCore Depth\n" +
-                $"Depth Frames: captured {capturedFrames} / saved {savedFrames}\n" +
-                $"Depth Samples: {depthSampleCount:N0} ({depthWidth}x{depthHeight})\n" +
-                $"Quality: {qualityScore:0}% / {minimumStopQualityScore:0}%\n" +
-                $"Depth Keyframes: {keyframes.Count} / {recommendedMinKeyframes}";
-            qualityText = string.Empty;
-            coverageText = string.Empty;
-        }
-
-        var recorderText = IsAndroidDepthScan && scanMode == ScanMode.Scanning
-            ? string.Empty
-            : BuildRecorderStatsText();
-
-        meshStatsText.text =
-            $"Mode: {scanMode}\n" +
-            geometryText +
-            qualityText +
-            coverageText +
-            recorderText;
-
         UpdateScanningStatus();
-    }
-
-    private string BuildRecorderStatsText()
-    {
-        if (rgbdRecorder == null)
-        {
-            return string.IsNullOrWhiteSpace(lastRgbdRecorderDatasetPath)
-                ? "\nRGB-D Recorder: stopped"
-                : $"\nRGB-D Recorder: stopped\nDataset: {lastRgbdRecorderDatasetPath}";
-        }
-
-        var diagnostics = rgbdRecorder.SnapshotDiagnostics();
-        return
-            $"\nRGB-D Recorder: {diagnostics.recorder_state}" +
-            $"\nFrames: captured {diagnostics.captured_frames} / saved {diagnostics.saved_frames} / dropped {diagnostics.dropped_frames}" +
-            $"\nFailures: rgb {diagnostics.rgb_acquisition_failures} / depth {diagnostics.depth_acquisition_failures} / conf {diagnostics.confidence_acquisition_failures} / intr {diagnostics.intrinsics_failures}" +
-            $"\nSync: {diagnostics.last_timestamp_difference_ms:0.0}ms, queue {diagnostics.pending_write_queue}" +
-            $"\nRGB: {diagnostics.last_rgb_width}x{diagnostics.last_rgb_height}, Depth: {diagnostics.last_depth_width}x{diagnostics.last_depth_height}" +
-            $"\nTracking: {diagnostics.tracking_state}" +
-            (string.IsNullOrWhiteSpace(diagnostics.last_error) ? string.Empty : $"\nRecorder error: {diagnostics.last_error}") +
-            $"\nDataset: {diagnostics.dataset_path}";
     }
 
     private void SetExportStatus(string message)
     {
-        if (exportStatusText)
-            exportStatusText.text = message;
+        scanHudStatusMessage = message;
+        UpdateScanHud();
+    }
+
+    private void ConfigureScanHud()
+    {
+        VisualElement documentRoot = scanHudDocument.rootVisualElement;
+        scanHudScanLayer = documentRoot.Q<VisualElement>("scan-viewfinder-layer");
+        scanHudProcessingBlur = documentRoot.Q<VisualElement>("scan-processing-blur");
+        scanHudFrame = documentRoot.Q<VisualElement>("scan-frame");
+        scanHudFrameGlow = documentRoot.Q<VisualElement>("scan-frame-glow");
+        scanHudProgressLabel = documentRoot.Q<Label>("scan-progress-label");
+        scanHudProcessingTitleLabel = documentRoot.Q<Label>("scan-processing-title-label");
+        scanHudStatusLabel = documentRoot.Q<Label>("scan-status-label");
+        scanHudStartButton = documentRoot.Q<Button>("scan-start-button");
+        scanHudStopButton = documentRoot.Q<Button>("scan-stop-button");
+        scanHudBackButton = documentRoot.Q<Button>("scan-back-button");
+        scanHudCompletionLayer = documentRoot.Q<VisualElement>("scan-completion-layer");
+        scanHudCompletionMapImage = documentRoot.Q<Image>("scan-completion-map-image");
+        scanHudRegenerateButton = documentRoot.Q<Button>("nav-scan");
+        scanHudSaveButton = documentRoot.Q<Button>("scan-save-button");
+
+        UpdateScanHud();
+    }
+
+    private void SetCompletionReviewVisible(bool visible)
+    {
+        if (completionReviewVisible == visible)
+            return;
+
+        completionReviewVisible = visible;
+        scanHudCompletionLayer.EnableInClassList("is-hidden", !visible);
+        if (visible)
+        {
+            scanHudCompletionMapImage.schedule.Execute(EnsureCompletionPreviewTexture);
+            return;
+        }
+
+        ReleaseCompletionPreviewTexture();
+    }
+
+    private void OnCompletionPreviewGeometryChanged(GeometryChangedEvent evt)
+    {
+        if (completionReviewVisible)
+            EnsureCompletionPreviewTexture(evt.newRect);
+    }
+
+    private void EnsureCompletionPreviewTexture()
+    {
+        EnsureCompletionPreviewTexture(scanHudCompletionMapImage.contentRect);
+    }
+
+    private void EnsureCompletionPreviewTexture(Rect rect)
+    {
+        if (rect.width <= 1f || rect.height <= 1f)
+            return;
+
+        EnsureCompletionPreviewCamera();
+        float renderScale = Mathf.Min(1f, 2048f / Mathf.Max(rect.width, rect.height));
+        int width = Mathf.Max(1, Mathf.RoundToInt(rect.width * renderScale));
+        int height = Mathf.Max(1, Mathf.RoundToInt(rect.height * renderScale));
+        if (completionPreviewTexture
+            && completionPreviewTexture.width == width
+            && completionPreviewTexture.height == height)
+        {
+            completionPreviewCamera.enabled = true;
+            return;
+        }
+
+        ReleaseCompletionPreviewTexture();
+        completionPreviewTexture = new RenderTexture(width, height, 24, RenderTextureFormat.ARGB32)
+        {
+            name = "Scan Completion Preview",
+            antiAliasing = 4
+        };
+        completionPreviewTexture.Create();
+        completionPreviewCamera.targetTexture = completionPreviewTexture;
+        completionPreviewCamera.enabled = true;
+        scanHudCompletionMapImage.image = completionPreviewTexture;
+        SyncCompletionPreviewCamera();
+    }
+
+    private void EnsureCompletionPreviewCamera()
+    {
+        if (completionPreviewCamera)
+            return;
+
+        var cameraObject = new GameObject("Scan Completion Preview Camera");
+        cameraObject.transform.SetParent(transform, false);
+        completionPreviewCamera = cameraObject.AddComponent<Camera>();
+        completionPreviewCamera.CopyFrom(previewCamera);
+        completionPreviewCamera.clearFlags = CameraClearFlags.SolidColor;
+        completionPreviewCamera.backgroundColor = Color.clear;
+        completionPreviewCamera.allowHDR = false;
+        completionPreviewCamera.enabled = false;
+    }
+
+    private void SyncCompletionPreviewCamera()
+    {
+        if (!completionPreviewCamera || !previewCamera)
+            return;
+
+        completionPreviewCamera.fieldOfView = previewCamera.fieldOfView;
+        completionPreviewCamera.nearClipPlane = previewCamera.nearClipPlane;
+        completionPreviewCamera.farClipPlane = previewCamera.farClipPlane;
+        completionPreviewCamera.transform.SetPositionAndRotation(
+            previewCamera.transform.position,
+            previewCamera.transform.rotation);
+    }
+
+    private void ReleaseCompletionPreviewTexture()
+    {
+        if (!completionPreviewTexture)
+            return;
+
+        if (completionPreviewCamera)
+        {
+            completionPreviewCamera.targetTexture = null;
+            completionPreviewCamera.enabled = false;
+        }
+
+        scanHudCompletionMapImage.image = null;
+        completionPreviewTexture.Release();
+        Destroy(completionPreviewTexture);
+        completionPreviewTexture = null;
+    }
+
+    private void UpdateScanHud()
+    {
+        bool isReady = scanMode == ScanMode.Ready && !MapScanSession.IsViewingStoredResult;
+        bool isScanning = scanMode == ScanMode.Scanning;
+        bool showViewfinder = isReady || isScanning;
+        bool showCompletionReview = scanMode == ScanMode.Preview
+            && reconstructionCompletedSuccessfully
+            && !reconstructionPackageRunning
+            && !MapScanSession.IsViewingStoredResult;
+        bool showProcessingBlur = scanMode == ScanMode.Preview
+            && reconstructionPackageRunning
+            && !MapScanSession.IsViewingStoredResult;
+        bool qualityReady = latestScanQuality != null &&
+            (!requireMinimumQualityToStop || latestScanQuality.score >= minimumStopQualityScore);
+        bool showMovementGuidance = isScanning &&
+            Time.time - scanStartTime >= 3f &&
+            !qualityReady &&
+            Time.unscaledTime >= stopGuidanceHoldUntil;
+
+        scanHudScanLayer.EnableInClassList("is-hidden", !showViewfinder);
+        scanHudProcessingBlur.EnableInClassList("is-hidden", !showProcessingBlur);
+        scanHudProcessingTitleLabel.EnableInClassList("is-hidden", !showProcessingBlur);
+        scanHudProgressLabel.EnableInClassList("is-hidden", !showViewfinder);
+        scanHudStartButton.EnableInClassList("is-hidden", !isReady);
+        scanHudStopButton.EnableInClassList("is-hidden", !isScanning);
+        scanHudBackButton.EnableInClassList("is-hidden", showProcessingBlur || showCompletionReview);
+        scanHudStatusLabel.EnableInClassList("is-hidden", showCompletionReview);
+        scanHudFrame.EnableInClassList("is-alert", showMovementGuidance);
+        scanHudFrameGlow.EnableInClassList("is-hidden", !showMovementGuidance);
+        SetCompletionReviewVisible(showCompletionReview);
+
+        int progress = isScanning && latestScanQuality != null
+            ? Mathf.RoundToInt(Mathf.Clamp(latestScanQuality.score, 0f, 100f))
+            : 0;
+        int completionQuality = Mathf.RoundToInt(Mathf.Clamp(minimumStopQualityScore, 0f, 100f));
+        scanHudProgressLabel.text = $"{progress}% / 완료 가능 {completionQuality}%";
+
+        scanHudStatusLabel.EnableInClassList("is-ready", isReady);
+        scanHudStatusLabel.EnableInClassList("is-scanning", isScanning);
+        scanHudStatusLabel.EnableInClassList("is-result", !showViewfinder);
+        scanHudStatusLabel.EnableInClassList("is-processing", showProcessingBlur);
+        if (isReady)
+        {
+            scanHudStatusLabel.text = "스캔을 시작하려면 버튼을 누르십시오.";
+            return;
+        }
+
+        if (isScanning)
+        {
+            if (Time.unscaledTime < stopGuidanceHoldUntil && !string.IsNullOrWhiteSpace(scanHudStatusMessage))
+                scanHudStatusLabel.text = scanHudStatusMessage;
+            else if (qualityReady)
+                scanHudStatusLabel.text = "스캔 완료가 가능합니다.";
+            else
+                scanHudStatusLabel.text = showMovementGuidance ? "움직여 주십시오." : "스캔 중입니다.";
+
+            return;
+        }
+
+        scanHudStatusLabel.text = scanHudStatusMessage;
     }
 
     private void UpdateScanningStatus()
@@ -1353,12 +1570,7 @@ public class ARKitMeshScanController : MonoBehaviour
             return;
         }
 
-        var ready = !requireMinimumQualityToStop || latestScanQuality.score >= minimumStopQualityScore;
-        var message = ready
-            ? "스캔 완료 가능\nStop을 눌러 완료하세요."
-            : $"스캔 중\n왼쪽 품질이 {minimumStopQualityScore:0}%가 될 때까지\n천천히 벽과 바닥을 비춰주세요.";
-        if (exportStatusText && exportStatusText.text != message)
-            exportStatusText.text = message;
+        UpdateScanHud();
     }
 
     private Bounds? BuildPreviewFromLiveMeshes()
@@ -1746,7 +1958,7 @@ public class ARKitMeshScanController : MonoBehaviour
         previewCenter = mesh.bounds.center;
 
         scanMode = ScanMode.Preview;
-        ShowPreviewCamera(mesh.bounds);
+        ShowPreviewCamera(mesh.bounds, MapScanSession.IsViewingStoredResult);
         BuildVisualKeyframePreview(mesh.bounds);
         UpdateButtonStates();
         UpdateStats(force: true);
@@ -3382,17 +3594,19 @@ public class ARKitMeshScanController : MonoBehaviour
         return material;
     }
 
-    private void ShowPreviewCamera(Bounds bounds)
+    private void ShowPreviewCamera(Bounds bounds, bool showOnScreen = true)
     {
         EnsurePreviewCamera();
         previewBounds = bounds;
         previewCenter = bounds.center;
 
-        if (arCamera)
-            arCamera.enabled = false;
-
-        if (arCameraBackground)
-            arCameraBackground.enabled = false;
+        if (showOnScreen)
+        {
+            if (arCamera)
+                arCamera.enabled = false;
+            if (arCameraBackground)
+                arCameraBackground.enabled = false;
+        }
 
         if (previewCamera)
         {
@@ -3404,7 +3618,7 @@ public class ARKitMeshScanController : MonoBehaviour
             previewPitch = 28f;
             previewCamera.nearClipPlane = 0.01f;
             previewCamera.farClipPlane = Mathf.Max(30f, previewMaxDistance * 3f);
-            previewCamera.enabled = true;
+            previewCamera.enabled = showOnScreen;
             UpdatePreviewCameraTransform();
         }
     }
@@ -3797,6 +4011,7 @@ public class ARKitMeshScanController : MonoBehaviour
         var rotation = Quaternion.Euler(previewPitch, previewYaw, 0f);
         previewCamera.transform.position = previewCenter + rotation * new Vector3(0f, 0f, -previewDistance);
         previewCamera.transform.rotation = Quaternion.LookRotation(previewCenter - previewCamera.transform.position, Vector3.up);
+        SyncCompletionPreviewCamera();
     }
 
     private static bool IsPointerOverUi()
@@ -3809,16 +4024,13 @@ public class ARKitMeshScanController : MonoBehaviour
         return EventSystem.current && EventSystem.current.IsPointerOverGameObject(touch.fingerId);
     }
 
-    private void SetScanningEnabled(bool enabled)
+    private void SetScanCaptureEnabled(bool enabled)
     {
         if (meshManager)
             meshManager.enabled = enabled && !IsAndroidDepthScan;
 
         if (planeManager)
             planeManager.enabled = enabled;
-
-        if (arSession)
-            arSession.enabled = enabled;
     }
 
     private void SetLiveMeshesVisible(bool visible)
@@ -4779,27 +4991,21 @@ public class ARKitMeshScanController : MonoBehaviour
 
     private void UpdateButtonStates()
     {
-        if (resetButton)
-            resetButton.interactable = !MapScanSession.IsViewingStoredResult
-                && !reconstructionPackageRunning
-                && scanMode != ScanMode.Scanning;
+        scanHudStartButton.SetEnabled(!MapScanSession.IsViewingStoredResult
+            && !reconstructionPackageRunning
+            && scanMode != ScanMode.Scanning);
+        scanHudStopButton.SetEnabled(!MapScanSession.IsViewingStoredResult
+            && !reconstructionPackageRunning
+            && scanMode == ScanMode.Scanning);
+        scanHudBackButton.SetEnabled(!mapConfirmationRunning && !reconstructionPackageRunning);
+        bool canReviewCompletion = scanMode == ScanMode.Preview
+            && reconstructionCompletedSuccessfully
+            && !reconstructionPackageRunning
+            && !mapSaveRunning
+            && !MapScanSession.IsViewingStoredResult;
+        scanHudRegenerateButton.SetEnabled(canReviewCompletion);
+        scanHudSaveButton.SetEnabled(canReviewCompletion);
 
-        if (exportButton)
-            exportButton.interactable = !MapScanSession.IsViewingStoredResult
-                && !reconstructionPackageRunning
-                && scanMode == ScanMode.Scanning;
-
-        if (backButton)
-            backButton.interactable = !mapConfirmationRunning && !reconstructionPackageRunning;
-    }
-
-    private void SetButtonLabel(Button button, string label)
-    {
-        if (!button)
-            return;
-
-        var labelText = button.GetComponentInChildren<Text>();
-        if (labelText)
-            labelText.text = label;
+        UpdateScanHud();
     }
 }

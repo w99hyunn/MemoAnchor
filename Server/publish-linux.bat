@@ -1,12 +1,12 @@
 @echo off
 cd /d "%~dp0"
+set "PUBLISH_OUTPUT=%~dp0Build\Linux"
 echo [publish-linux] Building Linux self-contained (runtime included)...
-dotnet publish -p:PublishProfile=Linux-SelfContained
+dotnet publish -p:PublishProfile=Linux-SelfContained --output "%PUBLISH_OUTPUT%"
 if %ERRORLEVEL% neq 0 (
     echo [publish-linux] Build failed.
     exit /b 1
 )
-set "PUBLISH_OUTPUT=%~dp0bin\Release\net8.0\linux-x64\self-contained\publish"
 set "RECONSTRUCTION_OUTPUT=%PUBLISH_OUTPUT%\Reconstruction"
 if not exist "%RECONSTRUCTION_OUTPUT%" mkdir "%RECONSTRUCTION_OUTPUT%"
 copy /Y "%~dp0..\tools\reconstruction_server\server.py" "%RECONSTRUCTION_OUTPUT%\server.py" >nul
@@ -17,7 +17,7 @@ copy /Y "%~dp0..\tools\reconstruction\reconstruction_common.py" "%RECONSTRUCTION
 copy /Y "%~dp0..\tools\reconstruction\inspect_rgbd_frame.py" "%RECONSTRUCTION_OUTPUT%\inspect_rgbd_frame.py" >nul
 echo.
 echo [publish-linux] ASP.NET Core and Reconstruction package ready.
-echo [publish-linux] Output: bin\Release\net8.0\linux-x64\self-contained\publish\
+echo [publish-linux] Output: Build\Linux\
 
 pause
 exit /b 0

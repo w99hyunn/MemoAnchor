@@ -61,8 +61,19 @@ public sealed class ScanMapsController : ControllerBase
             return BadRequest(new { message = "SpaceName is required." });
         }
 
-        ScanMapCreateInfo result = await mapMemoStore.AddMapAsync(playerId, request, cancellationToken);
-        return Ok(new ScanMapCreateResponse(result.CreatedMapId, result.Maps));
+        try
+        {
+            ScanMapCreateInfo result = await mapMemoStore.AddMapAsync(playerId, request, cancellationToken);
+            return Ok(new ScanMapCreateResponse(result.CreatedMapId, result.Maps));
+        }
+        catch (UnauthorizedAccessException exception)
+        {
+            return StatusCode(StatusCodes.Status403Forbidden, new { message = exception.Message });
+        }
+        catch (ArgumentException exception)
+        {
+            return BadRequest(new { message = exception.Message });
+        }
     }
 
     [HttpPost("{mapId}/invite")]
@@ -151,6 +162,34 @@ public sealed class ScanMapsController : ControllerBase
     {
         return await HandleMemberMutation(mapId, memberPlayerId,
             (playerId, id, targetId) => mapMemoStore.PromoteMapMemberAsync(playerId, id, targetId, cancellationToken));
+    }
+
+    [HttpPost("{mapId}/confirm")]
+    public async Task<IActionResult> ConfirmMap(string mapId, CancellationToken cancellationToken)
+    {
+        string? playerId = GetUnityPlayerId();
+        if (string.IsNullOrWhiteSpace(playerId))
+        {
+            return Unauthorized();
+        }
+
+        try
+        {
+            IReadOnlyList<ScanMapInfo> maps = await mapMemoStore.ConfirmMapAsync(playerId, mapId, cancellationToken);
+            return Ok(new ScanMapListResponse(maps));
+        }
+        catch (UnauthorizedAccessException exception)
+        {
+            return StatusCode(StatusCodes.Status403Forbidden, new { message = exception.Message });
+        }
+        catch (InvalidOperationException exception)
+        {
+            return BadRequest(new { message = exception.Message });
+        }
+        catch (ArgumentException exception)
+        {
+            return BadRequest(new { message = exception.Message });
+        }
     }
 
     [HttpDelete("{mapId}/members/{memberPlayerId}")]

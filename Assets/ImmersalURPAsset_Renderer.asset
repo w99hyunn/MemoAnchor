@@ -39,7 +39,8 @@ MonoBehaviour:
     probeVolumeBlendStatesCS: {fileID: 0}
   m_RendererFeatures:
   - {fileID: -6306797109214245143}
-  m_RendererFeatureMap: e90ed3aa71c179a8
+  - {fileID: 2468135791357924680}
+  m_RendererFeatureMap: e90ed3aa71c179a8481551ed6c944022
   m_UseNativeRenderPass: 0
   xrSystemData: {fileID: 11400000, guid: 60e1133243b97e347b653163a8c01b64, type: 2}
   postProcessData: {fileID: 11400000, guid: 41439944d30ece34e96484bdb6645b55, type: 2}
@@ -68,3 +69,21 @@ MonoBehaviour:
   m_DepthTextureFormat: 0
   m_AccurateGbufferNormals: 0
   m_IntermediateTextureMode: 1
+--- !u!114 &2468135791357924680
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b4866b0fb9f6416cbc4fa75bfa7869a3, type: 3}
+  m_Name: ScreenSpaceUIToolkitBlurRendererFeature
+  m_EditorClassIdentifier:
+  m_Active: 1
+  blurMaterial: {fileID: 2100000, guid: f664da14b44a480f989e7f3017c7136a, type: 2}
+  passEvent: 500
+  downsample: 2
+  iterations: 2
+  blurRadius: 2.5

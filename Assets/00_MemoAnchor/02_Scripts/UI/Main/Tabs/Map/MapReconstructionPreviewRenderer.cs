@@ -15,11 +15,17 @@ namespace MemoAnchor.UI
         private Mesh _mesh;
         private Material _material;
         private Vector3 _previousPointerPosition;
+        private Vector2 _firstPointerPosition;
+        private Vector2 _secondPointerPosition;
         private float _yaw = -35f;
         private float _pitch = 28f;
         private float _distance;
         private float _minimumDistance;
         private float _maximumDistance;
+        private float _pinchStartDistance;
+        private float _pinchStartCameraDistance;
+        private int _firstPointerId = -1;
+        private int _secondPointerId = -1;
         private bool _isDragging;
         private bool _isViewActive;
 
@@ -153,7 +159,7 @@ namespace MemoAnchor.UI
             float verticalFov = _previewCamera.fieldOfView * Mathf.Deg2Rad;
             float horizontalFov = 2f * Mathf.Atan(Mathf.Tan(verticalFov * 0.5f) * aspect);
             float fitFov = Mathf.Min(verticalFov, horizontalFov);
-            return radius / Mathf.Tan(fitFov * 0.5f) * 1.15f;
+            return radius / Mathf.Tan(fitFov * 0.5f);
         }
 
         private void OnPointerDown(PointerDownEvent evt)
@@ -163,15 +169,54 @@ namespace MemoAnchor.UI
                 return;
             }
 
-            _isDragging = true;
-            _previousPointerPosition = evt.position;
-            _target.CapturePointer(evt.pointerId);
+            if (_firstPointerId < 0)
+            {
+                _target.CapturePointer(evt.pointerId);
+                _firstPointerId = evt.pointerId;
+                _firstPointerPosition = evt.position;
+                _previousPointerPosition = evt.position;
+                _isDragging = true;
+            }
+            else if (_secondPointerId < 0 && evt.pointerId != _firstPointerId)
+            {
+                _target.CapturePointer(evt.pointerId);
+                _secondPointerId = evt.pointerId;
+                _secondPointerPosition = evt.position;
+                _pinchStartDistance = Vector2.Distance(_firstPointerPosition, _secondPointerPosition);
+                _pinchStartCameraDistance = _distance;
+                _isDragging = false;
+            }
             evt.StopPropagation();
         }
 
         private void OnPointerMove(PointerMoveEvent evt)
         {
-            if (!_isDragging || !_target.HasPointerCapture(evt.pointerId))
+            if (evt.pointerId == _firstPointerId)
+            {
+                _firstPointerPosition = evt.position;
+            }
+            else if (evt.pointerId == _secondPointerId)
+            {
+                _secondPointerPosition = evt.position;
+            }
+            else
+            {
+                return;
+            }
+
+            if (_secondPointerId >= 0 && _pinchStartDistance > 0f)
+            {
+                float pinchDistance = Vector2.Distance(_firstPointerPosition, _secondPointerPosition);
+                _distance = Mathf.Clamp(
+                    _pinchStartCameraDistance * _pinchStartDistance / Mathf.Max(pinchDistance, 1f),
+                    _minimumDistance,
+                    _maximumDistance);
+                UpdateCameraTransform();
+                evt.StopPropagation();
+                return;
+            }
+
+            if (!_isDragging || evt.pointerId != _firstPointerId || !_target.HasPointerCapture(evt.pointerId))
             {
                 return;
             }
@@ -186,21 +231,36 @@ namespace MemoAnchor.UI
 
         private void OnPointerUp(PointerUpEvent evt)
         {
-            EndPointerDrag(evt.pointerId);
+            RemovePointer(evt.pointerId);
         }
 
         private void OnPointerCancel(PointerCancelEvent evt)
         {
-            EndPointerDrag(evt.pointerId);
+            RemovePointer(evt.pointerId);
         }
 
-        private void EndPointerDrag(int pointerId)
+        private void RemovePointer(int pointerId)
         {
             if (_target.HasPointerCapture(pointerId))
             {
                 _target.ReleasePointer(pointerId);
             }
-            _isDragging = false;
+
+            if (pointerId == _firstPointerId)
+            {
+                _firstPointerId = _secondPointerId;
+                _firstPointerPosition = _secondPointerPosition;
+                _secondPointerId = -1;
+            }
+            else if (pointerId == _secondPointerId)
+            {
+                _secondPointerId = -1;
+            }
+
+            _pinchStartDistance = 0f;
+            _pinchStartCameraDistance = _distance;
+            _isDragging = _firstPointerId >= 0;
+            _previousPointerPosition = _firstPointerPosition;
         }
 
         private void OnWheel(WheelEvent evt)
@@ -229,6 +289,8 @@ namespace MemoAnchor.UI
 
         private void ClearMesh()
         {
+            ResetPointerInput();
+
             if (_previewRoot)
             {
                 Destroy(_previewRoot);
@@ -245,6 +307,24 @@ namespace MemoAnchor.UI
             _previewRoot = null;
             _material = null;
             _mesh = null;
+        }
+
+        private void ResetPointerInput()
+        {
+            if (_firstPointerId >= 0 && _target.HasPointerCapture(_firstPointerId))
+            {
+                _target.ReleasePointer(_firstPointerId);
+            }
+            if (_secondPointerId >= 0 && _target.HasPointerCapture(_secondPointerId))
+            {
+                _target.ReleasePointer(_secondPointerId);
+            }
+
+            _firstPointerId = -1;
+            _secondPointerId = -1;
+            _pinchStartDistance = 0f;
+            _pinchStartCameraDistance = 0f;
+            _isDragging = false;
         }
 
         private void ReleaseRenderTexture()

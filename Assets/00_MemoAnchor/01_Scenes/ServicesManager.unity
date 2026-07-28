@@ -196,7 +196,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 42ed1c8040464ce2a4ae0e0427117d9c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::MemoAnchor.UI.PopupManager
-  _confirmPopupAsset: {fileID: 9197481963319205126, guid: aff36bb18b7643078b74018c07fd400f, type: 3}
 --- !u!114 &700000102
 MonoBehaviour:
   m_ObjectHideFlags: 0

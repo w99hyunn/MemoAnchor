@@ -1291,9 +1291,12 @@
     right: 40px;
     width: 70px;
     height: 70px;
-    font-size: 44px;
-    color: rgb(66, 66, 66);
-    -unity-text-align: middle-center;
+}
+
+.map-preview-menu-icon.common-icon-button-icon {
+    width: 44px;
+    height: 44px;
+    -unity-background-image-tint-color: rgb(66, 66, 66);
 }
 
 .map-create-memo-actions {
@@ -1543,14 +1546,13 @@
 #nav-scan {
     transition-duration: 0.22s;
     transition-timing-function: ease-out;
-    transition-property: width, height, border-radius, background-color, margin-left;
+    transition-property: width, height, border-radius, margin-left;
 }
 
 .bottom-nav.is-scan-mode #nav-scan {
     width: 132px;
     height: 132px;
     border-radius: 66px;
-    background-color: rgb(24, 24, 28);
     margin-left: 0;
     margin-right: 0;
     justify-content: center;
@@ -4906,4 +4908,239 @@
 
 .is-hidden {
     display: none;
+}
+
+.scan-hud-root {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+}
+
+.scan-viewfinder-layer {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+}
+
+.scan-outside-blur {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+}
+
+.scan-frame,
+.scan-frame-glow {
+    position: absolute;
+    left: 50px;
+    right: 50px;
+    top: 300px;
+    bottom: 440px;
+    background-color: rgba(0, 0, 0, 0);
+    border-top-left-radius: 28px;
+    border-top-right-radius: 28px;
+    border-bottom-right-radius: 28px;
+    border-bottom-left-radius: 28px;
+}
+
+.scan-frame {
+    border-left-width: 4px;
+    border-right-width: 4px;
+    border-top-width: 4px;
+    border-bottom-width: 4px;
+    border-left-color: rgb(255, 255, 255);
+    border-right-color: rgb(255, 255, 255);
+    border-top-color: rgb(255, 255, 255);
+    border-bottom-color: rgb(255, 255, 255);
+}
+
+.scan-frame.is-alert {
+    border-left-width: 7px;
+    border-right-width: 7px;
+    border-top-width: 7px;
+    border-bottom-width: 7px;
+    border-left-color: var(--brand-pink);
+    border-right-color: var(--brand-pink);
+    border-top-color: var(--brand-pink);
+    border-bottom-color: var(--brand-pink);
+}
+
+.scan-frame-glow {
+    left: 42px;
+    right: 42px;
+    top: 292px;
+    bottom: 432px;
+    border-left-width: 18px;
+    border-right-width: 18px;
+    border-top-width: 18px;
+    border-bottom-width: 18px;
+    border-left-color: rgba(161, 31, 63, 0.32);
+    border-right-color: rgba(161, 31, 63, 0.32);
+    border-top-color: rgba(161, 31, 63, 0.32);
+    border-bottom-color: rgba(161, 31, 63, 0.32);
+}
+
+.scan-hud-chrome.page-overlay {
+    background-color: rgba(0, 0, 0, 0);
+}
+
+.scan-progress-label {
+    width: 340px;
+    height: 64px;
+    border-top-left-radius: 22px;
+    border-top-right-radius: 22px;
+    border-bottom-right-radius: 22px;
+    border-bottom-left-radius: 22px;
+    background-color: rgba(250, 250, 250, 0.82);
+    color: rgb(28, 28, 28);
+    font-size: 28px;
+    -unity-text-align: middle-center;
+}
+
+.scan-hud-back-icon.common-icon-button-icon {
+    -unity-background-image-tint-color: rgb(255, 255, 255);
+}
+
+.scan-hud-action-button {
+    position: absolute;
+    left: 50%;
+    bottom: 110px;
+    width: 164px;
+    height: 164px;
+    margin-left: -82px;
+    border-top-left-radius: 82px;
+    border-top-right-radius: 82px;
+    border-bottom-right-radius: 82px;
+    border-bottom-left-radius: 82px;
+    background-color: var(--brand-pink);
+    align-items: center;
+    justify-content: center;
+}
+
+.scan-hud-action-button:hover:enabled {
+    background-color: var(--brand-pink-hover);
+}
+
+.scan-hud-action-button:active:enabled {
+    background-color: var(--brand-pink-active);
+}
+
+.scan-hud-start-button,
+.scan-hud-start-button:hover:enabled,
+.scan-hud-start-button:active:enabled,
+.scan-hud-stop-button,
+.scan-hud-stop-button:hover:enabled,
+.scan-hud-stop-button:active:enabled {
+    background-color: rgba(0, 0, 0, 0);
+}
+
+.scan-hud-stop-button {
+    bottom: 210px;
+}
+
+.scan-button-blur-ring {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    border-top-left-radius: 82px;
+    border-top-right-radius: 82px;
+    border-bottom-right-radius: 82px;
+    border-bottom-left-radius: 82px;
+    background-color: rgba(112, 68, 78, 0.35);
+}
+
+.scan-start-button-inner {
+    position: absolute;
+    left: 12px;
+    right: 12px;
+    top: 12px;
+    bottom: 12px;
+    border-top-left-radius: 70px;
+    border-top-right-radius: 70px;
+    border-bottom-right-radius: 70px;
+    border-bottom-left-radius: 70px;
+    background-color: var(--brand-pink-active);
+}
+
+.scan-action-icon {
+    position: absolute;
+    -unity-background-image-tint-color: rgb(255, 255, 255);
+}
+
+.scan-start-icon {
+    width: 54px;
+    height: 54px;
+}
+
+.scan-stop-icon {
+    width: 64px;
+    height: 64px;
+}
+
+.scan-hud-status {
+    position: absolute;
+    left: 50px;
+    right: 50px;
+    bottom: 28px;
+    height: 60px;
+    color: rgb(255, 255, 255);
+    -unity-text-align: middle-center;
+    -unity-text-outline-width: 1px;
+    -unity-text-outline-color: rgba(0, 0, 0, 0.72);
+}
+
+.scan-hud-status.is-ready {
+    bottom: 310px;
+}
+
+.scan-hud-status.is-scanning {
+    height: 120px;
+}
+
+.scan-hud-status.is-result {
+    bottom: 60px;
+}
+
+.scan-hud-status.is-processing {
+    bottom: 120px;
+}
+
+.scan-processing-title {
+    bottom: 230px;
+}
+
+.scan-completion-layer {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+}
+
+.scan-completion-background-blur {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    background-color: rgba(24, 20, 22, 0.42);
+}
+
+.scan-completion-map-image {
+    position: absolute;
+    left: 70px;
+    right: 70px;
+    top: 210px;
+    bottom: 340px;
+}
+
+.scan-completion-regenerate-icon.nav-icon {
+    -unity-background-image-tint-color: rgb(255, 255, 255);
 }
