@@ -3,8 +3,9 @@
     <ui:VisualElement name="tab-home" class="tab-page tab-page-layout">
         <ui:VisualElement class="home-header tab-fixed-header" style="align-items: center;">
             <ui:Label name="home-greeting-label" text="관리자님, 안녕하세요!" class="home-greeting"/>
-            <ui:Button text="" name="alert" class="header-icon-button common-icon-button">
+            <ui:Button text="" name="alert" class="header-icon-button common-icon-button large-header-icon-button">
                 <ui:VisualElement class="common-icon-button-icon" style="background-image: url(&quot;project://database/Assets/00_MemoAnchor/03_Media/Icon/alert.png?fileID=2800000&amp;guid=a8ce16252c0ae1d46840a9dfaf22b609&amp;type=3#alert&quot;);"/>
+                <ui:VisualElement name="home-alert-indicator" picking-mode="Ignore" class="home-alert-indicator is-hidden"/>
             </ui:Button>
         </ui:VisualElement>
         <ui:ScrollView name="home-content-scroll" mode="Vertical" horizontal-scroller-visibility="Hidden" vertical-scroller-visibility="Hidden" touch-scroll-type="Elastic" class="tab-content-scroll">

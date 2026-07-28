@@ -232,6 +232,7 @@ namespace MemoAnchor.UI
 
         private void ShowTab(int tabIndex)
         {
+            _view.BlurFocusedElement();
             _view.HideProfileAccountSettings();
             int nextTabIndex = Mathf.Clamp(tabIndex, 0, 4);
             bool enteringMapTab = _currentTabIndex != nextTabIndex && nextTabIndex == 3;

@@ -149,6 +149,11 @@ namespace MemoAnchor.UI
             element.EnableInClassList(HIDDEN_CLASS, !visible);
         }
 
+        public void BlurFocusedElement()
+        {
+            PopupPresentation.BlurFocusedElement(_root);
+        }
+
         private void SetMemoDetailNavMode(bool enabled, bool showActions = true)
         {
             _bottomNavWrapper.EnableInClassList("is-memo-detail-mode", enabled);

@@ -1,4 +1,4 @@
-<ui:UXML xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" noNamespaceSchemaLocation="../../../../../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
+<ui:UXML xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" xmlns:ma="MemoAnchor.UI" noNamespaceSchemaLocation="../../../../../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
     <ui:Template name="MemoListItem" src="project://database/Assets/Plugins/UI%20Toolkit/UXML/DynamicItems/MemoListItem.uxml?fileID=9197481963319205126&amp;guid=fd34d1f1c1b6ecd4287e00e18419777e&amp;type=3#MemoListItem"/>
     <Style src="project://database/Assets/Plugins/UI%20Toolkit/UnityThemes/style.uss?fileID=7433441132597879392&amp;guid=c3edbd9c191f92b49aa6a3ce9ffd69d5&amp;type=3#style"/>
     <ui:VisualElement name="tab-menu" class="tab-page tab-page-layout memo-tab-mode-page">
@@ -20,9 +20,9 @@
         </ui:VisualElement>
         <ui:VisualElement class="memo-section" style="flex-grow: 0; padding-top: 25px; padding-bottom: 25px; background-color: rgba(30, 30, 34, 0); margin-bottom: 30px;">
             <ui:VisualElement class="memo-section-content" style="flex-grow: 0; padding-right: 50px; padding-left: 50px;">
-                <ui:TextField name="memo-search-input" label="" placeholder-text="메모 검색" class="memo-search-input" style="align-items: center; -unity-font-definition: url(&quot;project://database/Assets/Plugins/UI%20Toolkit/Fonts/Pretendard-Light.ttf?fileID=12800000&amp;guid=8c634880071f83d4da7be3c9ff6f0be8&amp;type=3#Pretendard-Light&quot;);">
+                <ma:NativeTextField name="memo-search-input" label="" placeholder-text="메모 검색" class="memo-search-input" style="align-items: center; -unity-font-definition: url(&quot;project://database/Assets/Plugins/UI%20Toolkit/Fonts/Pretendard-Light.ttf?fileID=12800000&amp;guid=8c634880071f83d4da7be3c9ff6f0be8&amp;type=3#Pretendard-Light&quot;);">
                     <ui:VisualElement style="flex-grow: 1; position: absolute; width: 50px; height: 50px; background-image: url(&quot;project://database/Assets/00_MemoAnchor/03_Media/Icon/search.png?fileID=2800000&amp;guid=273a16649170cad4087f1c15c86ae7ea&amp;type=3#search&quot;); margin-left: 50px; -unity-background-image-tint-color: rgb(28, 28, 28);"/>
-                </ui:TextField>
+                </ma:NativeTextField>
                 <ui:Button name="memo-search-clear-button" text="" class="memo-search-clear-button common-icon-button is-hidden">
                     <ui:VisualElement class="common-icon-button-icon memo-search-clear-icon"/>
                 </ui:Button>
@@ -112,7 +112,7 @@
                         <ui:VisualElement class="common-icon-button-icon" style="background-image: url(&quot;project://database/Assets/00_MemoAnchor/03_Media/Icon/chevron_forward.png?fileID=2800000&amp;guid=3ca432206e7cabb45abd1dfc722e509d&amp;type=3#chevron_forward&quot;);"/>
                     </ui:Button>
                     <ui:VisualElement class="scan-input-box memo-search-input-box">
-                        <ui:TextField name="memo-search-page-input" label="" placeholder-text="메모 검색" class="scan-input-field"/>
+                        <ma:NativeTextField name="memo-search-page-input" label="" placeholder-text="메모 검색" class="scan-input-field"/>
                         <ui:Button name="memo-search-page-clear-button" text="" class="memo-search-page-clear-button common-icon-button is-hidden">
                             <ui:VisualElement class="common-icon-button-icon memo-search-clear-icon"/>
                         </ui:Button>
@@ -196,27 +196,30 @@
                 </ui:VisualElement>
                 <ui:VisualElement class="memo-filter-divider"/>
                 <ui:VisualElement class="memo-create-section">
-                    <ui:Label name="memo-create-content-title" text="타이핑" class="memo-filter-section-title"/>
+                    <ui:VisualElement class="memo-create-content-title-row">
+                        <ui:Label name="memo-create-content-title" text="타이핑" class="memo-filter-section-title"/>
+                        <ui:Label name="memo-create-content-limit" text="(최대 3개)" class="memo-filter-section-title memo-create-content-limit is-hidden"/>
+                    </ui:VisualElement>
                     <ui:VisualElement name="memo-create-title-content" class="scan-input-box memo-create-title-box">
-                        <ui:TextField name="memo-create-title-input" label="" placeholder-text="제목을 입력해주세요." class="scan-input-field"/>
+                        <ma:NativeTextField name="memo-create-title-input" label="" placeholder-text="제목을 입력해주세요." class="scan-input-field"/>
                         <ui:VisualElement picking-mode="Ignore" class="signup-input-border"/>
                     </ui:VisualElement>
                     <ui:VisualElement name="memo-create-text-content" class="scan-input-box memo-create-body-box">
-                        <ui:TextField name="memo-create-body-input" label="" multiline="true" placeholder-text="내용을 입력해주세요." class="scan-input-field memo-create-body-input"/>
+                        <ma:NativeTextField name="memo-create-body-input" label="" multiline="true" placeholder-text="내용을 입력해주세요." class="scan-input-field memo-create-body-input"/>
                         <ui:VisualElement picking-mode="Ignore" class="signup-input-border"/>
                     </ui:VisualElement>
                     <ui:VisualElement name="memo-create-checklist-content" class="memo-create-checklist-content is-hidden">
                         <ui:VisualElement name="memo-create-checklist-list" class="content-list"/>
                         <ui:Button name="memo-create-checklist-add-button" text="" class="memo-create-checklist-add-button">
                             <ui:Label text="체크리스트 추가하기" class="memo-create-checklist-add-label"/>
-                            <ui:Label text="+" class="scan-address-add-icon"/>
+                            <ui:VisualElement picking-mode="Ignore" class="scan-address-add-icon memo-create-add-image"/>
                         </ui:Button>
                     </ui:VisualElement>
                     <ui:VisualElement name="memo-create-voice-content" class="memo-create-checklist-content is-hidden">
                         <ui:VisualElement name="memo-create-voice-list" class="content-list"/>
                         <ui:Button name="memo-create-voice-add-button" text="" class="memo-create-checklist-add-button">
                             <ui:Label text="음성녹음 추가하기" class="memo-create-checklist-add-label"/>
-                            <ui:Label text="+" class="scan-address-add-icon"/>
+                            <ui:VisualElement picking-mode="Ignore" class="scan-address-add-icon memo-create-add-image"/>
                         </ui:Button>
                     </ui:VisualElement>
                 </ui:VisualElement>

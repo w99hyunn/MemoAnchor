@@ -161,6 +161,11 @@ namespace MemoAnchor
 
         private static void SetVisible(VisualElement element, bool visible)
         {
+            if (!visible)
+            {
+                PopupPresentation.BlurFocusedElement(element);
+            }
+
             element.EnableInClassList(HIDDEN_CLASS, !visible);
         }
 

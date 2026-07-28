@@ -15,7 +15,7 @@ namespace MemoAnchor.UI
 
         private Button _alertButton, _alertBackButton, _homeModeToggle, _memoModeToggle, _memoViewAllButton;
         private VisualElement _homeModeBack, _menuTab, _memoFilterPage;
-        private VisualElement _alertDialogPage, _alertScroll, _alertList, _alertEmptyState;
+        private VisualElement _alertIndicator, _alertDialogPage, _alertScroll, _alertList, _alertEmptyState;
         private Label _homeGreetingLabel, _homeModeTitle;
 
         public Button AlertButton => _alertButton;
@@ -31,6 +31,7 @@ namespace MemoAnchor.UI
             VisualElement root = uiDocument.rootVisualElement;
 
             _alertButton = root.Q<Button>("alert");
+            _alertIndicator = root.Q<VisualElement>("home-alert-indicator");
             _alertBackButton = root.Q<Button>("alert-back-button");
             _homeModeToggle = root.Q<Button>("home-mode-toggle");
             _memoModeToggle = root.Q<Button>("memo-mode-toggle");
@@ -78,6 +79,11 @@ namespace MemoAnchor.UI
         public void ClearAlertItems()
         {
             _alertList.Clear();
+        }
+
+        public void SetAlertIndicatorVisible(bool visible)
+        {
+            SetVisible(_alertIndicator, visible);
         }
 
         public void RefreshAlertEmptyState()

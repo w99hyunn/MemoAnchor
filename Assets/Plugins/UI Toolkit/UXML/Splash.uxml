@@ -1,4 +1,4 @@
-<ui:UXML xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" noNamespaceSchemaLocation="../../../../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
+<ui:UXML xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" xmlns:ma="MemoAnchor.UI" noNamespaceSchemaLocation="../../../../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
     <Style src="project://database/Assets/Plugins/UI%20Toolkit/UnityThemes/style.uss?fileID=7433441132597879392&amp;guid=c3edbd9c191f92b49aa6a3ce9ffd69d5&amp;type=3#style"/>
     <ui:VisualElement class="splash-root">
         <ui:VisualElement class="splash-brand">
@@ -27,21 +27,21 @@
                     <ui:VisualElement class="scan-field-group">
                         <ui:Label text="이름" class="scan-field-label"/>
                         <ui:VisualElement name="signup-name-input-box" class="scan-input-box">
-                            <ui:TextField name="signup-name-input" label="" placeholder-text="이름을 입력하세요." class="scan-input-field"/>
+                            <ma:NativeTextField name="signup-name-input" label="" placeholder-text="이름을 입력하세요." class="scan-input-field"/>
                             <ui:VisualElement picking-mode="Ignore" class="signup-input-border"/>
                         </ui:VisualElement>
                     </ui:VisualElement>
                     <ui:VisualElement class="scan-field-group">
                         <ui:Label text="이메일" class="scan-field-label"/>
                         <ui:VisualElement name="signup-email-input-box" class="scan-input-box">
-                            <ui:TextField name="signup-email-input" label="" placeholder-text="이메일 주소를 입력하세요." class="scan-input-field"/>
+                            <ma:NativeTextField name="signup-email-input" label="" placeholder-text="이메일 주소를 입력하세요." class="scan-input-field"/>
                             <ui:VisualElement picking-mode="Ignore" class="signup-input-border"/>
                         </ui:VisualElement>
                     </ui:VisualElement>
                     <ui:VisualElement class="scan-field-group">
                         <ui:Label text="소속" class="scan-field-label"/>
                         <ui:VisualElement name="signup-company-input-box" class="scan-input-box">
-                            <ui:TextField name="signup-company-input" label="" placeholder-text="예: MemoAnchor" class="scan-input-field"/>
+                            <ma:NativeTextField name="signup-company-input" label="" placeholder-text="예: MemoAnchor" class="scan-input-field"/>
                             <ui:VisualElement picking-mode="Ignore" class="signup-input-border"/>
                         </ui:VisualElement>
                     </ui:VisualElement>

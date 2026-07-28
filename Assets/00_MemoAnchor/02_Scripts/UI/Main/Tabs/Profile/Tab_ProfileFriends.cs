@@ -286,23 +286,25 @@ namespace MemoAnchor.UI
             FriendRequestAlertsChanged?.Invoke();
         }
 
-        public void AddFriendRequestAlertsTo(VisualElement alertRequestList)
+        public int AddFriendRequestAlertsTo(VisualElement alertRequestList)
         {
             if (!_friendsInitialized)
             {
                 AddRequestStatus(alertRequestList, "친구 정보를 불러오는 중입니다.");
-                return;
+                return 0;
             }
 
             if (FriendsService.Instance.IncomingFriendRequests.Count == 0)
             {
-                return;
+                return 0;
             }
 
             foreach (Relationship request in FriendsService.Instance.IncomingFriendRequests)
             {
                 AddFriendRequestAlert(alertRequestList, request);
             }
+
+            return FriendsService.Instance.IncomingFriendRequests.Count;
         }
 
         private void AddFriendRequestAlert(VisualElement alertRequestList, Relationship request)

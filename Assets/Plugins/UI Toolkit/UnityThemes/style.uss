@@ -264,7 +264,12 @@
 }
 
 .tab-content-scroll .unity-scroll-view__content-container {
+    flex-grow: 1;
     align-items: stretch;
+}
+
+.page-scroll .unity-scroll-view__content-container {
+    flex-grow: 1;
 }
 
 .tab-content-inner {
@@ -272,12 +277,9 @@
     padding-bottom: 300px;
 }
 
-#memo-content-scroll .unity-scroll-view__content-container,
-#map-memo-content-scroll .unity-scroll-view__content-container {
-    flex-grow: 1;
-}
-
-#memo-trash-scroll .unity-scroll-view__content-container {
+.memo-filter-scroll .unity-scroll-view__content-container,
+.memo-search-result-section .unity-scroll-view__content-container,
+.memo-create-scroll .unity-scroll-view__content-container {
     flex-grow: 1;
 }
 
@@ -364,6 +366,21 @@
 
 .header-icon-button {
     margin-left: 50px;
+}
+
+.large-header-icon-button .common-icon-button-icon {
+    width: 58px;
+    height: 58px;
+}
+
+.home-alert-indicator {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    width: 22px;
+    height: 22px;
+    border-radius: 11px;
+    background-color: rgb(255, 53, 87);
 }
 
 .memo-tab-mode-page .header-icon-button .common-icon-button-icon {
@@ -468,6 +485,10 @@
 .memo-scroll {
     flex-grow: 1;
     height: 700px;
+}
+
+.memo-scroll .unity-scroll-view__content-container {
+    flex-grow: 1;
 }
 
 .home-memo-scroll-frame {
@@ -714,6 +735,7 @@
 }
 
 .home-memo-image-gallery .unity-scroll-view__content-container {
+    flex-grow: 1;
     flex-direction: row;
 }
 
@@ -846,15 +868,12 @@
     font-size: 40px;
     color: rgb(84, 84, 84);
     -unity-text-align: lower-left;
+    height: 100%;
+    padding-bottom: 10px;
 }
 
 .map-list-button {
     background-image: none;
-}
-
-.map-list-button .common-icon-button-icon {
-    width: 58px;
-    height: 58px;
 }
 
 .map-participants-button {
@@ -1581,7 +1600,7 @@
     border-width: 0;
     border-radius: 0;
     background-color: rgba(0, 0, 0, 0);
-    align-items: center;
+    align-items: flex-end;
     justify-content: center;
 }
 
@@ -1972,6 +1991,8 @@
 
 .unity-base-text-field__input {
     color: rgb(27, 27, 27);
+    --unity-cursor-color: rgb(27, 27, 27);
+    --unity-selection-color: rgba(149, 171, 249, 0.35);
 }
 
 .unity-base-text-field__input--placeholder {
@@ -2498,7 +2519,7 @@
     font-size: 42px;
     color: rgb(68, 68, 68);
     margin-bottom: 42px;
-    -unity-font-definition: url("project://database/Assets/Plugins/UI%20Toolkit/Fonts/Pretendard-Medium.ttf?fileID=12800000&guid=45ed9c45b09f5f2498d91e1982ab7527&type=3#Pretendard-Medium");
+    -unity-font-definition: url("project://database/Assets/Plugins/UI%20Toolkit/Fonts/Pretendard-SemiBold.ttf?fileID=12800000&guid=7136488b0fb8f924b91754e33f3b5abc&type=3#Pretendard-SemiBold");
 }
 
 .memo-filter-divider {
@@ -3258,21 +3279,46 @@
     padding-bottom: 34px;
 }
 
-.memo-create-repairer-card {
+.profile-card.memo-create-repairer-card {
     margin-top: 18px;
     margin-bottom: 0;
+    padding-left: 0;
+    padding-right: 0;
+    border-width: 2px;
+    border-color: rgb(219, 219, 219);
+    border-radius: 60px;
+}
+
+.memo-create-repairer-card .profile-friend-list-button {
+    position: relative;
+    height: 120px;
+    margin-left: 0;
+    margin-right: 0;
+    padding-left: 48px;
+    padding-right: 48px;
+    border-radius: 58px;
 }
 
 .memo-create-repairer-card .profile-row-title {
     flex-grow: 1;
-    -unity-text-align: middle-left;
+    -unity-text-align: middle-center;
+}
+
+.memo-create-repairer-card .profile-friend-list-button .horizontal-row {
+    position: absolute;
+    right: 48px;
+    top: 0;
+    bottom: 0;
+    align-items: center;
 }
 
 .memo-create-repairer-card .profile-friend-name {
     -unity-text-align: middle-left;
 }
 
-.memo-create-repairer-card .profile-friend-list {
+.profile-friend-list-card.memo-create-repairer-card .profile-friend-list {
+    margin-left: 0;
+    margin-right: 0;
     border-top-width: 0;
 }
 
@@ -3282,6 +3328,40 @@
 
 .memo-create-title-box {
     margin-top: 18px;
+}
+
+.memo-create-content-title-row {
+    flex-direction: row;
+    align-items: center;
+    margin-bottom: 42px;
+}
+
+.memo-create-content-title-row .memo-filter-section-title {
+    margin-bottom: 0;
+}
+
+.memo-create-content-limit {
+    margin-left: 12px;
+    color: rgb(158, 158, 158);
+    -unity-font-definition: url("project://database/Assets/Plugins/UI%20Toolkit/Fonts/Pretendard-Regular.ttf?fileID=12800000&guid=c19593ccf51a3b643a58d19da7851c10&type=3#Pretendard-Regular");
+}
+
+.memo-create-title-box.scan-input-box,
+.memo-create-body-box.scan-input-box,
+.memo-create-checklist-input-box.scan-input-box,
+.memo-create-voice-item-row.scan-input-box {
+    padding-left: 48px;
+    padding-right: 48px;
+    border-width: 2px;
+    border-color: rgb(219, 219, 219);
+    border-radius: 60px;
+}
+
+.memo-create-title-box.scan-input-box .signup-input-border,
+.memo-create-body-box.scan-input-box .signup-input-border,
+.memo-create-checklist-input-box.scan-input-box .signup-input-border,
+.memo-create-voice-item-row.scan-input-box .signup-input-border {
+    border-radius: 60px;
 }
 
 .memo-create-checklist-content {
@@ -3574,24 +3654,24 @@
 }
 
 .memo-create-voice-item {
-    margin-bottom: 18px;
+    margin-bottom: 30px;
 }
 
 .memo-create-voice-item-row.scan-input-box {
-    height: 104px;
-    padding-right: 180px;
+    height: 120px;
+    padding-right: 192px;
 }
 
 .memo-create-voice-play-button.memo-filter-calendar-close {
-    right: 92px;
-    top: 20px;
+    right: 104px;
+    top: 28px;
     align-items: center;
     justify-content: center;
 }
 
 .memo-create-voice-icon {
-    width: 42px;
-    height: 42px;
+    width: 52px;
+    height: 52px;
     margin: 0;
     background-image: url("project://database/Assets/00_MemoAnchor/03_Media/Icon/memo-list/mic.png?fileID=2800000&guid=e1f4d2312692f9349895fec4b29840df&type=3#mic");
     -unity-background-scale-mode: scale-to-fit;
@@ -3607,17 +3687,22 @@
 }
 
 .memo-create-voice-remove-button.memo-filter-calendar-close {
-    right: 4px;
-    top: 20px;
+    right: 20px;
+    top: 28px;
+}
+
+.memo-create-voice-remove-button .memo-calendar-close-icon {
+    width: 52px;
+    height: 52px;
 }
 
 .memo-create-voice-item.is-detail .memo-create-voice-item-row.scan-input-box {
     padding-right: 108px;
-    border-radius: 52px;
+    border-radius: 60px;
 }
 
 .memo-create-voice-item.is-detail .memo-create-voice-item-row .signup-input-border {
-    border-radius: 52px;
+    border-radius: 60px;
 }
 
 .memo-create-voice-item.is-detail .memo-create-voice-play-button.memo-filter-calendar-close {
@@ -3755,8 +3840,8 @@
 }
 
 .memo-voice-recorder-mic-icon {
-    width: 132px;
-    height: 132px;
+    width: 180px;
+    height: 180px;
     align-self: center;
     background-image: url("project://database/Assets/00_MemoAnchor/03_Media/Icon/record.png?fileID=2800000&guid=bab2b719f1f1ce34e81d59e5db8fb498&type=3#record");
     -unity-background-scale-mode: scale-to-fit;
@@ -3782,9 +3867,9 @@
 
 .memo-voice-recorder-guide-label {
     position: absolute;
-    bottom: 190px;
+    bottom: 300px;
     color: rgb(92, 92, 92);
-    font-size: 34px;
+    font-size: 40px;
     -unity-text-align: middle-center;
 }
 
@@ -3854,28 +3939,28 @@
 }
 
 .memo-create-checklist-row {
-    height: 110px;
-    margin-bottom: 22px;
+    height: 120px;
+    margin-bottom: 30px;
     flex-direction: row;
     align-items: center;
 }
 
 .memo-create-checklist-input-box {
     flex-grow: 1;
-    height: 110px;
+    height: 120px;
 }
 
 .memo-create-checklist-row .memo-filter-calendar-close {
     position: absolute;
     right: 22px;
-    top: 23px;
+    top: 28px;
 }
 
 .memo-create-checklist-add-button {
-    height: 110px;
+    height: 120px;
     border-width: 2px;
     border-color: rgb(219, 219, 219);
-    border-radius: 55px;
+    border-radius: 60px;
     background-color: rgb(255, 255, 255);
     flex-direction: row;
     align-items: center;
@@ -3895,10 +3980,12 @@
     border-color: rgb(170, 170, 170);
 }
 
-.memo-create-checklist-add-label {
-    font-size: 34px;
+.memo-create-checklist-add-label,
+.memo-create-repairer-card .profile-row-title {
+    font-size: 38px;
     color: rgb(28, 28, 28);
     -unity-text-align: middle-center;
+    -unity-font-definition: url("project://database/Assets/Plugins/UI%20Toolkit/Fonts/Pretendard-Regular.ttf?fileID=12800000&guid=c19593ccf51a3b643a58d19da7851c10&type=3#Pretendard-Regular");
 }
 
 .memo-create-checklist-add-button .scan-address-add-icon {
@@ -3906,6 +3993,11 @@
     right: 42px;
     margin-right: 0;
     color: rgb(184, 184, 184);
+}
+
+.memo-create-add-image {
+    background-image: url("project://database/Assets/00_MemoAnchor/03_Media/Icon/plus_white.png?fileID=2800000&guid=85cc5cef3ba373244b87e4ab4e888732&type=3#plus_white");
+    -unity-background-scale-mode: scale-to-fit;
 }
 
 .memo-create-calendar {
@@ -4008,8 +4100,10 @@
 }
 
 .memo-create-urgency-grid .memo-filter-chip {
-    width: 30%;
+    width: 32%;
+    height: 120px;
     margin-right: 0;
+    border-radius: 60px;
 }
 
 .memo-create-time-icon {
@@ -4038,6 +4132,10 @@
     margin-bottom: 38px;
     padding-left: 62px;
     padding-right: 62px;
+}
+
+.profile-tab-page .profile-card {
+    border-radius: 50px;
 }
 
 .profile-summary-card {

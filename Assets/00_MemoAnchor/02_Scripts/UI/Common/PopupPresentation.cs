@@ -37,6 +37,33 @@ namespace MemoAnchor.UI
             return root.childCount > 0 ? root[0] : root;
         }
 
+        public static void BlurFocusedElement(VisualElement scope)
+        {
+            scope.Query<NativeTextField>().ForEach(DismissTextFieldKeyboard);
+
+            if (scope.focusController?.focusedElement is not VisualElement focusedElement)
+            {
+                return;
+            }
+
+            for (VisualElement current = focusedElement; current != null; current = current.parent)
+            {
+                if (current != scope)
+                {
+                    continue;
+                }
+
+                focusedElement.Blur();
+                return;
+            }
+        }
+
+        private static void DismissTextFieldKeyboard(NativeTextField textField)
+        {
+            textField.DismissNativeKeyboard();
+            textField.Blur();
+        }
+
         public static void ScheduleOpen(VisualElement root)
         {
             if (root != null)
@@ -75,7 +102,13 @@ namespace MemoAnchor.UI
             Action teardownIfStillOwned = null,
             Action whenFinished = null)
         {
-            if (root == null || !TryBeginClose(root))
+            if (root == null)
+            {
+                return;
+            }
+
+            BlurFocusedElement(root);
+            if (!TryBeginClose(root))
             {
                 return;
             }
@@ -89,7 +122,13 @@ namespace MemoAnchor.UI
             Action teardownIfStillOwned = null,
             Action whenFinished = null)
         {
-            if (root == null || !TryBeginClose(root))
+            if (root == null)
+            {
+                return;
+            }
+
+            BlurFocusedElement(root);
+            if (!TryBeginClose(root))
             {
                 return;
             }

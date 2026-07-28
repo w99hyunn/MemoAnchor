@@ -1,7 +1,7 @@
-<ui:UXML xmlns:ui="UnityEngine.UIElements">
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:ma="MemoAnchor.UI">
     <ui:VisualElement name="memo-voice-item" class="memo-create-voice-item">
         <ui:VisualElement name="memo-voice-item-row" class="scan-input-box memo-create-voice-item-row">
-            <ui:TextField name="memo-voice-item-name" class="scan-input-field"/>
+            <ma:NativeTextField name="memo-voice-item-name" class="scan-input-field"/>
             <ui:Button name="memo-voice-item-play-button" class="memo-filter-calendar-close memo-create-voice-play-button">
                 <ui:VisualElement picking-mode="Ignore" class="memo-create-voice-icon"/>
             </ui:Button>

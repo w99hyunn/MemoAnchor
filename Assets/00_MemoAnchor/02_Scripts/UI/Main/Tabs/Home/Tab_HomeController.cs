@@ -32,6 +32,7 @@ namespace MemoAnchor.UI
             _view.HideAlertDialog();
             _view.ApplyHomeMode(_isHomeWorkMode);
             _mainTabView.ApplyMemoRoleMode(_isHomeWorkMode);
+            RebuildAlertItems();
         }
 
         private void OnDisable()
@@ -77,7 +78,8 @@ namespace MemoAnchor.UI
         private void RebuildAlertItems()
         {
             _view.ClearAlertItems();
-            _mainTabView.AddFriendRequestAlertsTo(_view.AlertList);
+            int alertCount = _mainTabView.AddFriendRequestAlertsTo(_view.AlertList);
+            _view.SetAlertIndicatorVisible(alertCount > 0);
             _view.RefreshAlertEmptyState();
         }
     }

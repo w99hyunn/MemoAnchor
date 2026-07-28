@@ -1,4 +1,4 @@
-<ui:UXML xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" noNamespaceSchemaLocation="../../../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
+<ui:UXML xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" xmlns:ma="MemoAnchor.UI" noNamespaceSchemaLocation="../../../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
     <Style src="project://database/Assets/Plugins/UI%20Toolkit/UnityThemes/style.uss?fileID=7433441132597879392&amp;guid=c3edbd9c191f92b49aa6a3ce9ffd69d5&amp;type=3#style"/>
     <ui:VisualElement name="common-confirm-popup-overlay" class="common-confirm-popup-overlay">
         <ui:VisualElement name="common-confirm-popup-sheet" class="common-confirm-popup-sheet">
@@ -6,7 +6,7 @@
             <ui:Label name="common-confirm-popup-message" text="진행할까요?" class="common-confirm-popup-message"/>
             <ui:VisualElement name="common-confirm-input-box" class="memo-search-page common-confirm-input-section" style="display: none;">
                 <ui:VisualElement class="scan-input-box memo-search-input-box">
-                    <ui:TextField name="common-confirm-input" label="" placeholder-text="코드 입력" class="scan-input-field"/>
+                    <ma:NativeTextField name="common-confirm-input" label="" placeholder-text="코드 입력" class="scan-input-field"/>
                 </ui:VisualElement>
             </ui:VisualElement>
             <ui:Label name="common-confirm-status-label" text="" class="common-confirm-status-label is-hidden"/>

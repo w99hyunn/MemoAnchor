@@ -26,7 +26,7 @@ namespace MemoAnchor.UI
         private Button _memoCreateDateButton, _memoCreateTimeButton, _memoCreateTimeCloseButton;
         private Button _memoCreateChecklistAddButton, _memoCreateMediaAddButton, _memoCreateMediaGalleryButton, _memoCreateMediaCameraButton;
         private Button _memoCreateUrgencyHighButton, _memoCreateUrgencyMiddleButton, _memoCreateUrgencyLowButton;
-        private Label _memoCreateDateLabel, _memoCreateTimeLabel, _memoCreateCalendarTitle, _memoCreateContentTitle, _memoCreateRepairerLabel, _memoCreatePageTitle;
+        private Label _memoCreateDateLabel, _memoCreateTimeLabel, _memoCreateCalendarTitle, _memoCreateContentTitle, _memoCreateContentLimit, _memoCreateRepairerLabel, _memoCreatePageTitle;
         private TextField _memoCreateTitleInput, _memoCreateBodyInput;
         private VisualElement _memoCreateTitleContent, _memoCreateTextContent, _memoCreateChecklistContent, _memoCreateChecklistList;
         private readonly List<TextField> _memoCreateChecklistInputs = new();
@@ -70,6 +70,7 @@ namespace MemoAnchor.UI
             _memoCreateTimeLabel = _root.Q<Label>("memo-create-time-label");
             _memoCreateCalendarTitle = _root.Q<Label>("memo-create-calendar-title");
             _memoCreateContentTitle = _root.Q<Label>("memo-create-content-title");
+            _memoCreateContentLimit = _root.Q<Label>("memo-create-content-limit");
             _memoCreateTitleContent = _root.Q<VisualElement>("memo-create-title-content");
             _memoCreateTextContent = _root.Q<VisualElement>("memo-create-text-content");
             _memoCreateChecklistContent = _root.Q<VisualElement>("memo-create-checklist-content");
@@ -561,7 +562,8 @@ namespace MemoAnchor.UI
             bool isChecklist = _memoCreateKind == "checklist";
             bool isVoice = _memoCreateKind == "voice";
             bool isMedia = _memoCreateKind == "image";
-            _memoCreateContentTitle.text = isChecklist ? "체크리스트 (최대 10개)" : isVoice ? "음성녹음 (최대 3개)" : isMedia ? "메모 내용" : "타이핑";
+            _memoCreateContentTitle.text = isChecklist ? "체크리스트 (최대 10개)" : isVoice ? "음성녹음" : isMedia ? "메모 내용" : "타이핑";
+            SetVisible(_memoCreateContentLimit, isVoice);
             SetVisible(_memoCreateTitleContent, true);
             SetVisible(_memoCreateTextContent, !isChecklist && !isVoice);
             SetVisible(_memoCreateChecklistContent, isChecklist);
