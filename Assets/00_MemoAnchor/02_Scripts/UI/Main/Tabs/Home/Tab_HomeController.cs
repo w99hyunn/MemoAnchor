@@ -1,3 +1,4 @@
+using Unity.Services.Authentication;
 using UnityEngine;
 using UnityEngine.UIElements;
 
@@ -28,6 +29,7 @@ namespace MemoAnchor.UI
             _mainTabView.FriendRequestAlertsChanged += RebuildAlertItems;
             _isRegistered = true;
 
+            _isHomeWorkMode = PlayerPrefs.GetInt(GetRoleModePrefsKey(), 1) == 1;
             _view.ApplyGreeting(MemoAnchor.PlayerSession.Profile.Name);
             _view.HideAlertDialog();
             _view.ApplyHomeMode(_isHomeWorkMode);
@@ -54,8 +56,15 @@ namespace MemoAnchor.UI
         private void ToggleHomeMode()
         {
             _isHomeWorkMode = !_isHomeWorkMode;
+            PlayerPrefs.SetInt(GetRoleModePrefsKey(), _isHomeWorkMode ? 1 : 0);
+            PlayerPrefs.Save();
             _view.ApplyHomeMode(_isHomeWorkMode);
             _mainTabView.ApplyMemoRoleMode(_isHomeWorkMode);
+        }
+
+        private static string GetRoleModePrefsKey()
+        {
+            return $"MemoAnchor.RoleMode.{AuthenticationService.Instance.PlayerId}";
         }
 
         private void ShowMemoCollection()
