@@ -18,7 +18,7 @@ namespace MemoAnchor
             }
         }
 
-        public const string SCAN_SCENE_NAME = "ARKitMeshScanScene";
+        public const string SCAN_SCENE_NAME = "ARScan";
 
         public enum SessionMode
         {
