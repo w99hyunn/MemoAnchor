@@ -34,6 +34,81 @@ namespace MemoAnchor.UI
         public VisualElement TabViewport => _tabViewport;
         public bool IsMapNavAvailable => _isMapNavAvailable;
 
+        public bool TryHandleSystemBack(int tabIndex)
+        {
+            if (tabIndex == 1)
+            {
+                if (IsVisible(_memoVoiceRecorderPage))
+                {
+                    RequestCloseMemoVoiceRecorder();
+                    return true;
+                }
+
+                if (IsVisible(_memoCreatePage))
+                {
+                    OnClickMemoCreateBack();
+                    return true;
+                }
+
+                if (IsVisible(_memoDetailPage))
+                {
+                    OnClickMemoDetailBack();
+                    return true;
+                }
+
+                if (IsVisible(_memoTrashPage))
+                {
+                    HideMemoTrashPage();
+                    return true;
+                }
+
+                if (IsVisible(_memoSearchPage))
+                {
+                    HideMemoSearchPage();
+                    return true;
+                }
+
+                if (IsVisible(_memoFilterPage))
+                {
+                    HideMemoFilterPage();
+                    return true;
+                }
+            }
+            else if (tabIndex == 3)
+            {
+                if (IsVisible(_memoVoiceRecorderPage))
+                {
+                    RequestCloseMemoVoiceRecorder();
+                    return true;
+                }
+
+                if (IsVisible(_memoCreatePage))
+                {
+                    OnClickMemoCreateBack();
+                    return true;
+                }
+
+                if (_mapFriendInviteOverlay.pickingMode == PickingMode.Position)
+                {
+                    HideMapFriendInvite();
+                    return true;
+                }
+
+                if (IsVisible(_mapMemoPage))
+                {
+                    HideMapMemoPage();
+                    return true;
+                }
+            }
+            else if (tabIndex == 4 && IsVisible(_profileAccountSettingsPage))
+            {
+                HideProfileAccountSettings();
+                return true;
+            }
+
+            return false;
+        }
+
         private void Awake()
         {
             TryGetComponent<UIDocument>(out var uiDocument);
@@ -147,6 +222,11 @@ namespace MemoAnchor.UI
         private static void SetVisible(VisualElement element, bool visible)
         {
             element.EnableInClassList(HIDDEN_CLASS, !visible);
+        }
+
+        private static bool IsVisible(VisualElement element)
+        {
+            return !element.ClassListContains(HIDDEN_CLASS);
         }
 
         public void BlurFocusedElement()

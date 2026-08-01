@@ -198,6 +198,17 @@ namespace MemoAnchor.UI
             PopupManager.HideBottomSheet(_friendDialogOverlay);
         }
 
+        public bool TryHandleSystemBack()
+        {
+            if (_friendDialogOverlay.pickingMode != PickingMode.Position)
+            {
+                return false;
+            }
+
+            HideFriendDialog();
+            return true;
+        }
+
         private void SelectFriendItem(ScanFriendOption friend, Button selectedButton)
         {
             if (!_pendingFriendSelections.Remove(friend.Id))

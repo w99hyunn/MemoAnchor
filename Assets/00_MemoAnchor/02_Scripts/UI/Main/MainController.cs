@@ -1,10 +1,14 @@
 using UnityEngine;
+#if UNITY_ANDROID && !UNITY_EDITOR
+using UnityEngine.InputSystem;
+#endif
 using UnityEngine.SceneManagement;
 using UnityEngine.UIElements;
 
 namespace MemoAnchor.UI
 {
     [RequireComponent(typeof(MainView), typeof(Tab_ScanView), typeof(Tab_ScanController))]
+    [RequireComponent(typeof(Tab_HomeView))]
     [RequireComponent(typeof(FadeTransition))]
     public class MainController : MonoBehaviour
     {
@@ -12,6 +16,7 @@ namespace MemoAnchor.UI
         private const int NAV_TAP_DOWN_DURATION_MS = 105;
 
         private MainView _view;
+        private Tab_HomeView _homeView;
         private Tab_ScanView _scanView;
         private Tab_ScanController _scanController;
         private FadeTransition _fadeTransition;
@@ -21,14 +26,78 @@ namespace MemoAnchor.UI
         private bool _isMapNavModeActive;
         private bool _isRegistered;
         private bool _isOpeningScanScene;
+        private float _lastBackPressedTime = float.NegativeInfinity;
 
         private void Awake()
         {
             TryGetComponent<MainView>(out _view);
+            TryGetComponent<Tab_HomeView>(out _homeView);
             TryGetComponent<Tab_ScanView>(out _scanView);
             TryGetComponent<Tab_ScanController>(out _scanController);
             TryGetComponent<FadeTransition>(out _fadeTransition);
             _mainCamera = Camera.main;
+        }
+
+        private void Update()
+        {
+#if UNITY_ANDROID && !UNITY_EDITOR
+            if (Keyboard.current != null && Keyboard.current.escapeKey.wasPressedThisFrame)
+            {
+                HandleAndroidBack();
+            }
+#endif
+        }
+
+        private void HandleAndroidBack()
+        {
+            if (PopupManager.TryHandleSystemBack())
+            {
+                return;
+            }
+
+            if (_currentTabIndex == 0 && _homeView.TryHandleSystemBack())
+            {
+                return;
+            }
+
+            if (_currentTabIndex == 2 && _scanView.TryHandleSystemBack())
+            {
+                return;
+            }
+
+            if (_view.TryHandleSystemBack(_currentTabIndex))
+            {
+                return;
+            }
+
+            if (Time.unscaledTime - _lastBackPressedTime <= 2f)
+            {
+                Application.Quit();
+                return;
+            }
+
+            _lastBackPressedTime = Time.unscaledTime;
+            ShowAndroidToast("뒤로가기 버튼을 한 번 더 누르면 종료됩니다.");
+        }
+
+        private static void ShowAndroidToast(string message)
+        {
+#if UNITY_ANDROID && !UNITY_EDITOR
+            using AndroidJavaClass unityPlayer = new("com.unity3d.player.UnityPlayer");
+            using AndroidJavaObject activity = unityPlayer.GetStatic<AndroidJavaObject>("currentActivity");
+            activity.Call("runOnUiThread", new AndroidJavaRunnable(() =>
+            {
+                using AndroidJavaClass currentUnityPlayer = new("com.unity3d.player.UnityPlayer");
+                using AndroidJavaObject currentActivity = currentUnityPlayer.GetStatic<AndroidJavaObject>("currentActivity");
+                using AndroidJavaClass toastClass = new("android.widget.Toast");
+                using AndroidJavaObject toast = toastClass.CallStatic<AndroidJavaObject>(
+                    "makeText",
+                    currentActivity,
+                    message,
+                    0);
+                toast.Call("show");
+            }));
+#endif
         }
 
         private void Start()
@@ -238,6 +307,7 @@ namespace MemoAnchor.UI
             bool enteringMapTab = _currentTabIndex != nextTabIndex && nextTabIndex == 3;
             if (_currentTabIndex != nextTabIndex)
             {
+                _lastBackPressedTime = float.NegativeInfinity;
                 _view.HideMemoOverlayPages();
             }
 

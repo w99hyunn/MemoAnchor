@@ -76,6 +76,17 @@ namespace MemoAnchor.UI
             SetVisible(_alertDialogPage, false);
         }
 
+        public bool TryHandleSystemBack()
+        {
+            if (_alertDialogPage.ClassListContains(HIDDEN_CLASS))
+            {
+                return false;
+            }
+
+            HideAlertDialog();
+            return true;
+        }
+
         public void ClearAlertItems()
         {
             _alertList.Clear();

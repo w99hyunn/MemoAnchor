@@ -370,6 +370,23 @@ public class ARKitMeshScanController : MonoBehaviour
 
     private void Update()
     {
+#if UNITY_ANDROID && !UNITY_EDITOR
+        if (UnityEngine.InputSystem.Keyboard.current != null
+            && UnityEngine.InputSystem.Keyboard.current.escapeKey.wasPressedThisFrame)
+        {
+            if (MemoAnchor.UI.PopupManager.TryHandleSystemBack())
+                return;
+
+            if (scanHudBackButton.enabledSelf
+                && !scanHudBackButton.ClassListContains("is-hidden")
+                && scanHudBackButton.resolvedStyle.visibility == Visibility.Visible)
+            {
+                GoBack();
+                return;
+            }
+        }
+#endif
+
         if (Time.unscaledTime >= nextStatsRefreshTime)
         {
             nextStatsRefreshTime = Time.unscaledTime + 0.25f;

@@ -192,6 +192,17 @@ namespace MemoAnchor.UI
             Instance.HideConfirmInternal();
         }
 
+        public static bool TryHandleSystemBack()
+        {
+            if (Instance == null || Instance._confirmRoot.resolvedStyle.display == DisplayStyle.None)
+            {
+                return false;
+            }
+
+            Instance.HideConfirmInternal();
+            return true;
+        }
+
         public static void SetConfirmButtonsEnabled(bool enabled)
         {
             Instance.SetConfirmButtonsEnabledInternal(enabled);
