@@ -153,6 +153,12 @@
                 </ui:Button>
             </ui:VisualElement>
             <ui:ScrollView name="memo-detail-scroll" mode="Vertical" horizontal-scroller-visibility="Hidden" vertical-scroller-visibility="Hidden" touch-scroll-type="Elastic" class="page-scroll">
+                <ui:VisualElement name="memo-detail-preview-box" class="memo-preview-box">
+                    <ui:Image name="memo-detail-preview-image" picking-mode="Position" scale-mode="StretchToFill" class="memo-detail-preview-image is-hidden"/>
+                    <ui:VisualElement name="memo-detail-preview-marker" picking-mode="Ignore" class="map-reconstruction-memo-marker memo-detail-preview-marker is-hidden"/>
+                    <ui:VisualElement name="memo-detail-preview-spinner" picking-mode="Ignore" class="loading-spinner memo-detail-preview-spinner is-hidden"/>
+                    <ui:Label name="memo-detail-preview-status" text="" picking-mode="Ignore" class="memo-detail-preview-status is-hidden"/>
+                </ui:VisualElement>
                 <ui:VisualElement name="memo-detail-content" class="memo-detail-content"/>
             </ui:ScrollView>
             <ui:VisualElement name="memo-detail-menu" class="memo-detail-menu is-hidden">

@@ -385,7 +385,25 @@ namespace MemoAnchor.UI
         private void OnProfileFriendAddClicked(ClickEvent evt)
         {
             evt.StopPropagation();
-            PopupManager.ShowTextInput("친구 추가", "친구코드를 입력해주세요.", string.Empty, "취소", "추가", SubmitFriendRequest);
+            ShowProfileFriendAddPopup();
+        }
+
+        private void ShowProfileFriendAddPopup()
+        {
+            PopupManager.ShowTextInput(
+                "친구 추가",
+                "친구코드를 입력해주세요.",
+                string.Empty,
+                "친구 코드 입력",
+                "취소",
+                "추가",
+                ShowMissingFriendCodePopup,
+                SubmitFriendRequest);
+        }
+
+        private void ShowMissingFriendCodePopup()
+        {
+            PopupManager.ShowMessage("친구 추가", "친구코드를 입력해주세요.", "확인", ShowProfileFriendAddPopup);
         }
 
         private void SubmitFriendRequest(string friendCode)

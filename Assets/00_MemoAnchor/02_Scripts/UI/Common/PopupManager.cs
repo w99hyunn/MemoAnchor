@@ -27,6 +27,7 @@ namespace MemoAnchor.UI
         private Label _confirmTitleLabel, _confirmMessageLabel, _confirmCancelLabel, _confirmSubmitLabel, _confirmStatusLabel;
         private Action _onConfirmSubmit;
         private Action _onConfirmCancel;
+        private Action _onInputEmptySubmit;
         private Action<string> _onInputSubmit;
         private bool _confirmUsesInput;
         private int _confirmPresentationVersion;
@@ -161,14 +162,24 @@ namespace MemoAnchor.UI
             Instance.ShowConfirmInternal(title, message, string.Empty, submitText, false, null);
         }
 
+        public static void ShowMessage(string title, string message, string submitText, Action onSubmit)
+        {
+            Instance.ShowConfirmInternal(title, message, string.Empty, submitText, false, onSubmit);
+        }
+
         public static void ShowTextInput(string title, string message, string value, string cancelText, string submitText, Action<string> onSubmit)
         {
-            Instance.ShowTextInputInternal(title, message, value, "코드 입력", cancelText, submitText, onSubmit);
+            Instance.ShowTextInputInternal(title, message, value, "코드 입력", cancelText, submitText, null, onSubmit);
         }
 
         public static void ShowTextInput(string title, string message, string value, string placeholder, string cancelText, string submitText, Action<string> onSubmit)
         {
-            Instance.ShowTextInputInternal(title, message, value, placeholder, cancelText, submitText, onSubmit);
+            Instance.ShowTextInputInternal(title, message, value, placeholder, cancelText, submitText, null, onSubmit);
+        }
+
+        public static void ShowTextInput(string title, string message, string value, string placeholder, string cancelText, string submitText, Action onEmptySubmit, Action<string> onSubmit)
+        {
+            Instance.ShowTextInputInternal(title, message, value, placeholder, cancelText, submitText, onEmptySubmit, onSubmit);
         }
 
         public static void HideConfirm()
@@ -194,6 +205,7 @@ namespace MemoAnchor.UI
             _confirmSubmitLabel.text = submitText;
             _onConfirmSubmit = onSubmit;
             _onConfirmCancel = null;
+            _onInputEmptySubmit = null;
             _onInputSubmit = null;
             _confirmUsesInput = false;
             _confirmInputBox.style.display = DisplayStyle.None;
@@ -209,7 +221,7 @@ namespace MemoAnchor.UI
             PopupPresentation.ScheduleOpen(_confirmOverlay);
         }
 
-        private void ShowTextInputInternal(string title, string message, string value, string placeholder, string cancelText, string submitText, Action<string> onSubmit)
+        private void ShowTextInputInternal(string title, string message, string value, string placeholder, string cancelText, string submitText, Action onEmptySubmit, Action<string> onSubmit)
         {
             _confirmTitleLabel.text = title;
             _confirmMessageLabel.text = message;
@@ -219,6 +231,7 @@ namespace MemoAnchor.UI
             _confirmInput.textEdition.placeholder = placeholder;
             _onConfirmSubmit = null;
             _onConfirmCancel = null;
+            _onInputEmptySubmit = onEmptySubmit;
             _onInputSubmit = onSubmit;
             _confirmUsesInput = true;
             _confirmInputBox.style.display = DisplayStyle.Flex;
@@ -244,6 +257,7 @@ namespace MemoAnchor.UI
         {
             _onConfirmSubmit = null;
             _onConfirmCancel = null;
+            _onInputEmptySubmit = null;
             _onInputSubmit = null;
             _confirmUsesInput = false;
 
@@ -295,7 +309,13 @@ namespace MemoAnchor.UI
             string value = _confirmInput.value.Trim();
             if (string.IsNullOrWhiteSpace(value))
             {
-                _confirmStatusLabel.text = "친구코드를 입력해주세요.";
+                if (_onInputEmptySubmit != null)
+                {
+                    _ = SubmitEmptyTextInputAsync();
+                    return;
+                }
+
+                _confirmStatusLabel.text = "내용을 입력해주세요.";
                 _confirmStatusLabel.RemoveFromClassList("is-hidden");
                 return;
             }
@@ -308,6 +328,13 @@ namespace MemoAnchor.UI
             Action<string> onSubmit = _onInputSubmit;
             await HideConfirmAsync();
             onSubmit?.Invoke(value);
+        }
+
+        private async Awaitable SubmitEmptyTextInputAsync()
+        {
+            Action onEmptySubmit = _onInputEmptySubmit;
+            await HideConfirmAsync();
+            onEmptySubmit.Invoke();
         }
 
         private void SetConfirmButtonsEnabledInternal(bool enabled)

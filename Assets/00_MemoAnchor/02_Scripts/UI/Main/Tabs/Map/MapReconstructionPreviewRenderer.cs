@@ -57,11 +57,35 @@ namespace MemoAnchor.UI
         private float _maximumDistance;
         private float _pinchStartDistance;
         private float _pinchStartCameraDistance;
+        private float _fitDistanceScale = 1f;
+        private float _viewRadius;
+        private Vector3 _focusPosition;
         private int _firstPointerId = -1;
         private int _secondPointerId = -1;
+        private int _previewLayer;
         private int _selectedMemoMarkerIndex = -1;
         private bool _isDragging;
         private bool _isViewActive;
+        private bool _hasFocusPosition;
+
+        public void Initialize(Image target)
+        {
+            Initialize(target, PREVIEW_LAYER);
+        }
+
+        public void Initialize(Image target, int previewLayer)
+        {
+            _target = target;
+            _previewLayer = previewLayer;
+            _target.RegisterCallback<GeometryChangedEvent>(OnGeometryChanged);
+            _target.RegisterCallback<PointerDownEvent>(OnPointerDown);
+            _target.RegisterCallback<PointerMoveEvent>(OnPointerMove);
+            _target.RegisterCallback<PointerUpEvent>(OnPointerUp);
+            _target.RegisterCallback<PointerCancelEvent>(OnPointerCancel);
+            _target.RegisterCallback<WheelEvent>(OnWheel);
+
+            CreatePreviewCamera();
+        }
 
         public void Initialize(
             Image target,
@@ -71,21 +95,13 @@ namespace MemoAnchor.UI
             VisualElement memoCardStem,
             Label memoCardTitle)
         {
-            _target = target;
+            Initialize(target);
             _memoMarkerContainer = memoMarkerContainer;
             _memoCard = memoCard;
             _memoCardKind = memoCardKind;
             _memoCardStem = memoCardStem;
             _memoCardTitle = memoCardTitle;
-            _target.RegisterCallback<GeometryChangedEvent>(OnGeometryChanged);
-            _target.RegisterCallback<PointerDownEvent>(OnPointerDown);
-            _target.RegisterCallback<PointerMoveEvent>(OnPointerMove);
-            _target.RegisterCallback<PointerUpEvent>(OnPointerUp);
-            _target.RegisterCallback<PointerCancelEvent>(OnPointerCancel);
-            _target.RegisterCallback<WheelEvent>(OnWheel);
             _memoCard.clicked += OpenSelectedMemoDetail;
-
-            CreatePreviewCamera();
         }
 
         public void Show(Mesh mesh)
@@ -102,12 +118,12 @@ namespace MemoAnchor.UI
             _previewRoot = new GameObject("Map Reconstruction Preview");
             _previewRoot.transform.SetParent(transform, false);
             _previewRoot.transform.position = Vector3.one * 10000f;
-            _previewRoot.layer = PREVIEW_LAYER;
+            _previewRoot.layer = _previewLayer;
 
             GameObject surface = new("Map Reconstruction Surface");
             surface.transform.SetParent(_previewRoot.transform, false);
             surface.transform.localScale = new Vector3(1f, 1f, -1f);
-            surface.layer = PREVIEW_LAYER;
+            surface.layer = _previewLayer;
             surface.AddComponent<MeshFilter>().sharedMesh = _mesh;
             _previewSurface = surface.transform;
 
@@ -116,9 +132,9 @@ namespace MemoAnchor.UI
 
             Bounds bounds = _mesh.bounds;
             float radius = Mathf.Max(bounds.extents.magnitude, 0.1f);
-            _minimumDistance = radius * 0.75f;
-            _maximumDistance = radius * 8f;
-            _distance = CalculateFitDistance(radius);
+            _hasFocusPosition = false;
+            _fitDistanceScale = 1f;
+            ApplyViewRadius(radius);
             _yaw = -35f;
             _pitch = 28f;
 
@@ -128,6 +144,22 @@ namespace MemoAnchor.UI
             {
                 _previewCamera.enabled = true;
             }
+        }
+
+        public void FocusOn(Vector3 position)
+        {
+            if (!_mesh)
+            {
+                return;
+            }
+
+            _focusPosition = position;
+            _hasFocusPosition = true;
+            _fitDistanceScale = 0.82f;
+            ApplyViewRadius(CalculateRadiusFromPosition(
+                _mesh.bounds,
+                new Vector3(position.x, position.y, -position.z)));
+            UpdateCameraTransform();
         }
 
         public void SetMarkers(IReadOnlyList<MapPreviewMemoMarker> markers)
@@ -194,7 +226,15 @@ namespace MemoAnchor.UI
 
         private void ClearMemoMarkers()
         {
-            HideSelectedMemoCard();
+            if (_memoMarkerContainer == null)
+            {
+                return;
+            }
+
+            if (_memoCard != null)
+            {
+                HideSelectedMemoCard();
+            }
             _memoMarkerContainer.Clear();
             _memoMarkerButtons.Clear();
             _memoMarkers.Clear();
@@ -282,12 +322,12 @@ namespace MemoAnchor.UI
         {
             GameObject cameraObject = new("Map Reconstruction Preview Camera");
             cameraObject.transform.SetParent(transform, false);
-            cameraObject.layer = PREVIEW_LAYER;
+            cameraObject.layer = _previewLayer;
 
             _previewCamera = cameraObject.AddComponent<Camera>();
             _previewCamera.clearFlags = CameraClearFlags.SolidColor;
             _previewCamera.backgroundColor = new Color(0.675f, 0.675f, 0.675f, 1f);
-            _previewCamera.cullingMask = 1 << PREVIEW_LAYER;
+            _previewCamera.cullingMask = 1 << _previewLayer;
             _previewCamera.fieldOfView = 40f;
             _previewCamera.allowHDR = false;
             _previewCamera.allowMSAA = true;
@@ -296,12 +336,12 @@ namespace MemoAnchor.UI
             GameObject lightObject = new("Map Reconstruction Preview Light");
             lightObject.transform.SetParent(transform, false);
             lightObject.transform.localRotation = new Quaternion(0.40821794f, -0.23456973f, 0.10938166f, 0.8754261f);
-            lightObject.layer = PREVIEW_LAYER;
+            lightObject.layer = _previewLayer;
 
             Light previewLight = lightObject.AddComponent<Light>();
             previewLight.type = LightType.Directional;
             previewLight.intensity = 0.6f;
-            previewLight.cullingMask = 1 << PREVIEW_LAYER;
+            previewLight.cullingMask = 1 << _previewLayer;
             previewLight.shadows = LightShadows.None;
         }
 
@@ -330,10 +370,40 @@ namespace MemoAnchor.UI
 
             if (_mesh)
             {
-                float radius = Mathf.Max(_mesh.bounds.extents.magnitude, 0.1f);
-                _distance = Mathf.Clamp(CalculateFitDistance(radius), _minimumDistance, _maximumDistance);
+                _distance = Mathf.Clamp(CalculateFitDistance(_viewRadius) * _fitDistanceScale, _minimumDistance, _maximumDistance);
                 UpdateCameraTransform();
             }
+        }
+
+        private void ApplyViewRadius(float radius)
+        {
+            _viewRadius = Mathf.Max(radius, 0.1f);
+            _minimumDistance = _viewRadius * 0.75f;
+            _maximumDistance = _viewRadius * 8f;
+            _distance = CalculateFitDistance(_viewRadius) * _fitDistanceScale;
+        }
+
+        private static float CalculateRadiusFromPosition(Bounds bounds, Vector3 position)
+        {
+            float radius = 0.1f;
+            Vector3 min = bounds.min;
+            Vector3 max = bounds.max;
+            for (int x = 0; x < 2; x++)
+            {
+                for (int y = 0; y < 2; y++)
+                {
+                    for (int z = 0; z < 2; z++)
+                    {
+                        Vector3 corner = new(
+                            x == 0 ? min.x : max.x,
+                            y == 0 ? min.y : max.y,
+                            z == 0 ? min.z : max.z);
+                        radius = Mathf.Max(radius, Vector3.Distance(position, corner));
+                    }
+                }
+            }
+
+            return radius;
         }
 
         private float CalculateFitDistance(float radius)
@@ -460,14 +530,15 @@ namespace MemoAnchor.UI
 
         private void UpdateCameraTransform()
         {
-            Vector3 center = _previewSurface.TransformPoint(_mesh.bounds.center);
+            Vector3 center = _hasFocusPosition
+                ? _previewRoot.transform.TransformPoint(_focusPosition)
+                : _previewSurface.TransformPoint(_mesh.bounds.center);
             Quaternion orbit = Quaternion.Euler(_pitch, _yaw, 0f);
             _previewCamera.transform.position = center - orbit * Vector3.forward * _distance;
             _previewCamera.transform.rotation = Quaternion.LookRotation(center - _previewCamera.transform.position, Vector3.up);
 
-            float radius = Mathf.Max(_mesh.bounds.extents.magnitude, 0.1f);
-            _previewCamera.nearClipPlane = Mathf.Max(0.01f, _distance - radius * 2f);
-            _previewCamera.farClipPlane = _distance + radius * 4f;
+            _previewCamera.nearClipPlane = Mathf.Max(0.01f, _distance - _viewRadius * 2f);
+            _previewCamera.farClipPlane = _distance + _viewRadius * 4f;
             UpdateMemoMarkerPositions();
         }
 
@@ -493,6 +564,7 @@ namespace MemoAnchor.UI
             _previewSurface = null;
             _material = null;
             _mesh = null;
+            _hasFocusPosition = false;
         }
 
         private void ResetPointerInput()
@@ -536,7 +608,10 @@ namespace MemoAnchor.UI
             _target.UnregisterCallback<PointerUpEvent>(OnPointerUp);
             _target.UnregisterCallback<PointerCancelEvent>(OnPointerCancel);
             _target.UnregisterCallback<WheelEvent>(OnWheel);
-            _memoCard.clicked -= OpenSelectedMemoDetail;
+            if (_memoCard != null)
+            {
+                _memoCard.clicked -= OpenSelectedMemoDetail;
+            }
             ClearMesh();
             ReleaseRenderTexture();
         }

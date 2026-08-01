@@ -19,14 +19,14 @@ namespace MemoAnchor.UI
         private readonly List<Texture2D> _memoDetailMediaTextures = new();
         private readonly List<VisualElement> _memoDetailMediaSpinners = new();
         private readonly HashSet<string> _selectedTrashMemoIds = new(StringComparer.OrdinalIgnoreCase);
-        private VisualElement _memoListContainer, _memoDetailPage, _memoDetailMenu, _memoDetailContent, _memoTrashPage, _memoTrashListContainer, _mainLoadingOverlay, _mainLoadingSpinner;
+        private VisualElement _memoListContainer, _memoDetailPage, _memoDetailMenu, _memoDetailContent, _memoDetailPreviewBox, _memoDetailPreviewMarker, _memoDetailPreviewSpinner, _memoTrashPage, _memoTrashListContainer, _mainLoadingOverlay, _mainLoadingSpinner;
         private VisualElement _memoMediaViewerOverlay, _memoMediaViewerPanel, _memoMediaViewerSpinner, _memoMediaViewerVideoControls;
-        private Image _memoMediaViewerImage;
+        private Image _memoDetailPreviewImage, _memoMediaViewerImage;
         private VisualElement _memoMediaViewerPlayIcon;
         private Button _memoDetailBackButton, _memoDetailMenuButton, _memoDetailEditButton, _memoDetailDeleteButton, _memoDetailExportButton, _memoTrashButton, _memoTrashBackButton, _memoTrashSelectButton;
         private Button _memoDetailRequestButton, _memoDetailCompleteButton;
         private Button _memoTrashPermanentDeleteButton, _memoTrashRestoreButton, _memoMediaViewerCloseButton, _memoMediaViewerRotateButton, _memoMediaViewerPlayButton;
-        private Label _memoDetailPlaceLabel, _memoMediaViewerTimeLabel;
+        private Label _memoDetailPlaceLabel, _memoDetailPreviewStatus, _memoMediaViewerTimeLabel;
         private Slider _memoMediaViewerSeekSlider;
         private MemoDetailItem _currentMemoDetailItem;
         private bool _isMemoListLoading;
@@ -41,6 +41,7 @@ namespace MemoAnchor.UI
         private string _memoMediaViewerVideoError = string.Empty;
         private IVisualElementScheduledItem _memoMediaViewerControlsSchedule;
         private int _memoMediaViewerLoadToken;
+        private int _memoDetailPreviewLoadToken;
         private int _memoMediaViewerRotation;
         private int _memoMediaViewerFirstPointerId = -1;
         private int _memoMediaViewerSecondPointerId = -1;
@@ -49,6 +50,7 @@ namespace MemoAnchor.UI
         private float _memoMediaViewerZoom = 1f;
         private float _memoMediaViewerPinchStartDistance;
         private float _memoMediaViewerPinchStartZoom = 1f;
+        private MapReconstructionPreviewRenderer _memoDetailPreviewRenderer;
 
         private void RegisterMemoDetailPage()
         {
@@ -57,6 +59,11 @@ namespace MemoAnchor.UI
             _memoDetailPage = _root.Q<VisualElement>("memo-detail-page");
             _memoDetailMenu = _root.Q<VisualElement>("memo-detail-menu");
             _memoDetailContent = _root.Q<VisualElement>("memo-detail-content");
+            _memoDetailPreviewBox = _root.Q<VisualElement>("memo-detail-preview-box");
+            _memoDetailPreviewImage = _root.Q<Image>("memo-detail-preview-image");
+            _memoDetailPreviewMarker = _root.Q<VisualElement>("memo-detail-preview-marker");
+            _memoDetailPreviewSpinner = _root.Q<VisualElement>("memo-detail-preview-spinner");
+            _memoDetailPreviewStatus = _root.Q<Label>("memo-detail-preview-status");
             _memoTrashPage = _root.Q<VisualElement>("memo-trash-page");
             _memoTrashListContainer = _root.Q<VisualElement>("memo-trash-list-container");
             _mainLoadingOverlay = _root.Q<VisualElement>("main-loading-overlay");
@@ -87,6 +94,8 @@ namespace MemoAnchor.UI
             _memoMediaViewerTimeLabel = _root.Q<Label>("memo-media-viewer-time-label");
             RegisterHomeMemoCards();
             RegisterHomeMapCards();
+            _memoDetailPreviewRenderer = gameObject.AddComponent<MapReconstructionPreviewRenderer>();
+            _memoDetailPreviewRenderer.Initialize(_memoDetailPreviewImage, 30);
 
             if (!TryGetComponent<VideoPlayer>(out _memoMediaViewerVideoPlayer))
             {
@@ -138,6 +147,7 @@ namespace MemoAnchor.UI
         {
             StopMemoVoicePreview();
             ClearMemoDetailMediaTextures();
+            ClearMemoDetailPreview();
             UnregisterHomeMemoCards();
             HideMemoMediaViewer();
             _memoDetailBackButton.clicked -= OnClickMemoDetailBack;
@@ -335,6 +345,7 @@ namespace MemoAnchor.UI
                 Assignee = GetFirstNonEmpty(memo.assigneeName, string.Empty),
                 Author = GetFirstNonEmpty(memo.authorName, string.Empty),
                 DeletedAt = GetFirstNonEmpty(memo.deletedAt, string.Empty),
+                IsRead = memo.isRead,
                 HasSpatialAnchor = memo.hasSpatialAnchor,
                 ReconstructionScanId = memo.reconstructionScanId,
                 SpatialPosition = new Vector3(memo.positionX, memo.positionY, memo.positionZ)
@@ -447,12 +458,19 @@ namespace MemoAnchor.UI
                 ? string.Empty
                 : $"마감 {item.DueText}";
             row.Q<Label>("memo-list-item-assignee-label").text = item.Assignee;
+            SetVisible(row.Q<VisualElement>(className: "memo-list-item-dot"), !item.IsRead);
         }
 
         private void ShowMemoDetailPage(
             MemoDetailItem item,
             MemoDetailReturnTarget returnTarget = MemoDetailReturnTarget.MemoTab)
         {
+            if (!item.IsRead)
+            {
+                item.IsRead = true;
+                _ = MarkMemoAsReadAsync(item);
+            }
+
             _memoDetailReturnTarget = returnTarget;
             _currentMemoDetailItem = item;
             bool canManageMemo = CanManageMemo(item) || CanDeleteMemo(item);
@@ -463,6 +481,7 @@ namespace MemoAnchor.UI
             SetVisible(_memoDetailPage, true);
             ApplyMemoDetailWorkActions(item);
             BuildMemoDetailContent(item);
+            _ = LoadMemoDetailPreviewAsync(item);
         }
 
         private void OnClickMemoDetailBack()
@@ -479,6 +498,19 @@ namespace MemoAnchor.UI
             {
                 RequestTabSwitch(3);
             }
+            else
+            {
+                RebuildMemoList();
+            }
+        }
+
+        private async Awaitable MarkMemoAsReadAsync(MemoDetailItem item)
+        {
+            if (!await _memoService.MarkMemoReadAsync(item.Id))
+            {
+                item.IsRead = false;
+                RebuildMemoList();
+            }
         }
 
         private void HideMemoDetailPage()
@@ -488,6 +520,7 @@ namespace MemoAnchor.UI
             StopMemoVoicePreview();
             HideMemoMediaViewer();
             ClearMemoDetailMediaTextures();
+            ClearMemoDetailPreview();
             SetVisible(_memoDetailPage, false);
             HideMemoDetailMenu();
             SetMemoDetailNavMode(false);
@@ -1022,13 +1055,112 @@ namespace MemoAnchor.UI
             }
         }
 
+        private async Awaitable LoadMemoDetailPreviewAsync(MemoDetailItem item)
+        {
+            int loadToken = ++_memoDetailPreviewLoadToken;
+            _memoDetailPreviewRenderer.Clear();
+            _memoDetailPreviewRenderer.SetViewActive(true);
+            SetVisible(_memoDetailPreviewBox, true);
+            SetVisible(_memoDetailPreviewMarker, false);
+            SetVisible(_memoDetailPreviewStatus, false);
+
+            ScanMapItem map = _scanMaps.Find(scanMap => string.Equals(scanMap.id, item.MapId, StringComparison.OrdinalIgnoreCase));
+            if (map == null && string.Equals(_readOnlyMap?.id, item.MapId, StringComparison.OrdinalIgnoreCase))
+            {
+                map = _readOnlyMap;
+            }
+            if (map == null)
+            {
+                ShowMemoDetailPreviewStatus("해당 3D MAP을 찾을 수 없습니다.");
+                return;
+            }
+
+            string scanId = string.IsNullOrWhiteSpace(item.ReconstructionScanId)
+                ? map.reconstructionScanId
+                : item.ReconstructionScanId;
+            if (string.IsNullOrWhiteSpace(scanId))
+            {
+                ShowMemoDetailPreviewStatus("저장된 3D MAP 모델이 없습니다.");
+                return;
+            }
+
+            SetVisible(_memoDetailPreviewSpinner, true);
+            LoadingSpinnerController.Start(_memoDetailPreviewSpinner);
+
+            byte[] data;
+            string mapId = UnityWebRequest.EscapeURL(map.id);
+            string escapedScanId = UnityWebRequest.EscapeURL(scanId);
+            using (UnityWebRequest request = ServicesManager.CreateAuthorizedGetRequest(
+                $"/api/scan/maps/{mapId}/reconstruction/{escapedScanId}/result"))
+            {
+                request.timeout = 900;
+                await ServicesManager.SendRequestAsync(request);
+                if (loadToken != _memoDetailPreviewLoadToken)
+                {
+                    return;
+                }
+                if (request.result != UnityWebRequest.Result.Success)
+                {
+                    HideMemoDetailPreviewSpinner();
+                    ShowMemoDetailPreviewStatus("3D MAP 모델을 불러오지 못했습니다.");
+                    return;
+                }
+
+                data = request.downloadHandler.data;
+            }
+
+            if (!ARKitMeshScanController.TryCreateMeshFromPly(data, out Mesh mesh, out string error))
+            {
+                Debug.LogWarning($"[MainView] Memo detail map preview failed: {error}");
+                HideMemoDetailPreviewSpinner();
+                ShowMemoDetailPreviewStatus("3D MAP 모델을 표시하지 못했습니다.");
+                return;
+            }
+            if (loadToken != _memoDetailPreviewLoadToken)
+            {
+                Destroy(mesh);
+                return;
+            }
+
+            _memoDetailPreviewRenderer.Show(mesh);
+            if (item.HasSpatialAnchor)
+            {
+                _memoDetailPreviewRenderer.FocusOn(item.SpatialPosition);
+            }
+
+            _memoDetailPreviewMarker.EnableInClassList(
+                "is-completion-requested",
+                string.Equals(item.WorkStatus, "completion-requested", StringComparison.OrdinalIgnoreCase));
+            SetVisible(_memoDetailPreviewMarker, item.HasSpatialAnchor);
+            HideMemoDetailPreviewSpinner();
+        }
+
+        private void ShowMemoDetailPreviewStatus(string message)
+        {
+            HideMemoDetailPreviewSpinner();
+            _memoDetailPreviewStatus.text = message;
+            SetVisible(_memoDetailPreviewStatus, true);
+        }
+
+        private void HideMemoDetailPreviewSpinner()
+        {
+            LoadingSpinnerController.Stop(_memoDetailPreviewSpinner);
+            SetVisible(_memoDetailPreviewSpinner, false);
+        }
+
+        private void ClearMemoDetailPreview()
+        {
+            _memoDetailPreviewLoadToken++;
+            HideMemoDetailPreviewSpinner();
+            SetVisible(_memoDetailPreviewMarker, false);
+            SetVisible(_memoDetailPreviewStatus, false);
+            _memoDetailPreviewRenderer.SetViewActive(false);
+            _memoDetailPreviewRenderer.Clear();
+        }
+
         private void BuildMemoDetailContent(MemoDetailItem item)
         {
             ClearMemoDetailMediaTextures();
-            VisualElement preview = new();
-            preview.AddToClassList("memo-preview-box");
-            _memoDetailContent.Add(preview);
-
             VisualElement titleCard = new();
             titleCard.AddToClassList("memo-card");
             titleCard.AddToClassList("memo-title-card");
@@ -1724,6 +1856,7 @@ namespace MemoAnchor.UI
             public string Assignee;
             public string Author;
             public string DeletedAt;
+            public bool IsRead;
             public bool HasSpatialAnchor;
             public string ReconstructionScanId;
             public Vector3 SpatialPosition;

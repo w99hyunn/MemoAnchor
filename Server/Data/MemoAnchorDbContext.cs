@@ -15,6 +15,7 @@ public sealed class MemoAnchorDbContext : DbContext
     public DbSet<MapEntity> Maps => Set<MapEntity>();
     public DbSet<MapMemberEntity> MapMembers => Set<MapMemberEntity>();
     public DbSet<MemoEntity> Memos => Set<MemoEntity>();
+    public DbSet<MemoReadEntity> MemoReads => Set<MemoReadEntity>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -138,6 +139,20 @@ public sealed class MemoAnchorDbContext : DbContext
                 .HasForeignKey(item => item.MapId)
                 .OnDelete(DeleteBehavior.Cascade);
         });
+
+        modelBuilder.Entity<MemoReadEntity>(entity =>
+        {
+            entity.ToTable("memo_reads");
+            entity.HasKey(item => new { item.MemoId, item.UnityPlayerId });
+            entity.HasIndex(item => item.UnityPlayerId);
+            entity.Property(item => item.MemoId).HasColumnName("memo_id");
+            entity.Property(item => item.UnityPlayerId).HasColumnName("unity_player_id").HasMaxLength(128).IsRequired();
+            entity.Property(item => item.ReadAt).HasColumnName("read_at");
+            entity.HasOne<MemoEntity>()
+                .WithMany()
+                .HasForeignKey(item => item.MemoId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
     }
 }
 
@@ -232,4 +247,11 @@ public sealed class MemoEntity
     public DateTimeOffset CreatedAt { get; set; }
     public DateTimeOffset UpdatedAt { get; set; }
     public DateTimeOffset? DeletedAt { get; set; }
+}
+
+public sealed class MemoReadEntity
+{
+    public Guid MemoId { get; set; }
+    public string UnityPlayerId { get; set; } = string.Empty;
+    public DateTimeOffset ReadAt { get; set; }
 }

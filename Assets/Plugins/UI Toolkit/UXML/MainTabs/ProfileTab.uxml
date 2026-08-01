@@ -34,13 +34,13 @@
                 </ui:VisualElement>
                 <ui:VisualElement class="profile-card profile-toggle-row">
                     <ui:Label text="푸시 알림" class="profile-row-title"/>
-                    <ui:Button name="profile-push-toggle" class="profile-switch">
+                    <ui:Button name="profile-push-toggle" enabled="false" class="profile-switch">
                         <ui:VisualElement class="profile-switch-thumb"/>
                     </ui:Button>
                 </ui:VisualElement>
                 <ui:VisualElement class="profile-card profile-toggle-row">
                     <ui:Label text="알림음" class="profile-row-title"/>
-                    <ui:Button name="profile-sound-toggle" class="profile-switch is-selected">
+                    <ui:Button name="profile-sound-toggle" enabled="false" class="profile-switch">
                         <ui:VisualElement class="profile-switch-thumb"/>
                     </ui:Button>
                 </ui:VisualElement>

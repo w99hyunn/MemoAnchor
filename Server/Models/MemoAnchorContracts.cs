@@ -31,6 +31,7 @@ public interface IMapMemoStore
     Task<IReadOnlyList<MemoInfo>> RestoreMemoAsync(string playerId, string memoId, CancellationToken cancellationToken);
     Task<IReadOnlyList<MemoInfo>> DeleteMemoPermanentlyAsync(string playerId, string memoId, CancellationToken cancellationToken);
     Task<IReadOnlyList<MemoInfo>> SetMemoWorkStatusAsync(string playerId, string memoId, string status, CancellationToken cancellationToken);
+    Task MarkMemoReadAsync(string playerId, string memoId, CancellationToken cancellationToken);
 }
 
 public sealed record UserAccountInfo(
@@ -134,6 +135,7 @@ public sealed record MemoInfo(
     DateTimeOffset CreatedAt,
     DateTimeOffset UpdatedAt,
     DateTimeOffset? DeletedAt,
+    bool IsRead,
     IReadOnlyList<MemoChecklistEntry> ChecklistItems,
     IReadOnlyList<MemoVoiceEntry> VoiceItems,
     IReadOnlyList<string> ImageUrls);

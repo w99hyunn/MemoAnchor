@@ -2342,7 +2342,7 @@
 }
 
 .memo-detail-content {
-    padding-top: 40px;
+    padding-top: 0;
     padding-left: 40px;
     padding-right: 40px;
     padding-bottom: 218px;
@@ -2352,7 +2352,44 @@
     height: 760px;
     border-radius: 28px;
     background-color: rgb(220, 220, 220);
+    margin-top: 40px;
+    margin-left: 40px;
+    margin-right: 40px;
     margin-bottom: 26px;
+    position: relative;
+    overflow: hidden;
+}
+
+.memo-detail-preview-image {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+}
+
+.memo-detail-preview-marker {
+    left: 50%;
+    top: 50%;
+}
+
+.memo-detail-preview-spinner {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    margin-left: -32px;
+    margin-top: -32px;
+}
+
+.memo-detail-preview-status {
+    position: absolute;
+    left: 40px;
+    right: 40px;
+    top: 0;
+    bottom: 0;
+    font-size: 34px;
+    color: rgb(110, 110, 110);
+    -unity-text-align: middle-center;
 }
 
 .memo-detail-page .memo-card {

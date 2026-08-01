@@ -42,11 +42,18 @@ namespace MemoAnchor.UI
             HideScanActionDialog();
             PopupManager.ShowTextInput(
                 "맵 참여",
-                "알림창을 통해 참여코드를 확인해주세요.",
+                "관리자에게 받은 참여 코드를 입력하세요.",
                 string.Empty,
+                "참여 코드 입력",
                 "취소",
                 "참여하기",
+                ShowMissingMapInviteCodePopup,
                 code => _ = OpenReadOnlyMapAsync(code));
+        }
+
+        private void ShowMissingMapInviteCodePopup()
+        {
+            PopupManager.ShowMessage("참여 코드", "참여 코드를 입력해주세요.", "확인", ShowScanJoinDialog);
         }
 
         private void EnsureScanActionDialog()

@@ -443,6 +443,7 @@ namespace MemoAnchor.UI
             foreach (MemoDetailItem item in items)
             {
                 TemplateContainer template = _memoListItemAsset.Instantiate();
+                template.Q<VisualElement>(className: "memo-list-swipe-row").userData = item;
                 ApplyMemoListRow(template, item);
                 template.Q<VisualElement>("memo-list-item-foreground").RegisterCallback<ClickEvent>(_ =>
                 {

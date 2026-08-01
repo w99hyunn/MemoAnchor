@@ -279,7 +279,10 @@ namespace MemoAnchor.UI
             titleWrap.Add(icon);
             titleWrap.Add(title);
             titleRow.Add(titleWrap);
-            titleRow.Add(dot);
+            if (sourceRow.userData is MemoDetailItem unreadItem && !unreadItem.IsRead)
+            {
+                titleRow.Add(dot);
+            }
             body.Add(titleRow);
 
             AddMemoSearchResultMetaRows(sourceRow, body);

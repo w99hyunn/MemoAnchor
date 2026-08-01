@@ -41,6 +41,7 @@ namespace MemoAnchor
         public string dueText;
         public string createdAt;
         public string deletedAt;
+        public bool isRead;
         public bool hasSpatialAnchor;
         public string reconstructionScanId;
         public float positionX;
@@ -366,6 +367,25 @@ namespace MemoAnchor
         {
             string path = $"{MEMOS_API_PATH}/{UnityWebRequest.EscapeURL(memoId)}/work-status/{UnityWebRequest.EscapeURL(status)}";
             return await MutateMemoAsync(path, UnityWebRequest.kHttpVerbPOST, _lastResponse, response => _lastResponse = response);
+        }
+
+        public async Awaitable<bool> MarkMemoReadAsync(string memoId)
+        {
+            if (!AuthenticationService.Instance.IsSignedIn)
+            {
+                return false;
+            }
+
+            string path = $"{MEMOS_API_PATH}/{UnityWebRequest.EscapeURL(memoId)}/read";
+            using UnityWebRequest request = ServicesManager.CreateAuthorizedRequest(path, UnityWebRequest.kHttpVerbPOST);
+            await ServicesManager.SendRequestAsync(request);
+            if (request.result == UnityWebRequest.Result.Success)
+            {
+                return true;
+            }
+
+            Debug.LogWarning($"Memo read update failed: {request.error}");
+            return false;
         }
 
         private async Awaitable<MemoListResponse> MutateMemoAsync(string path, string method, MemoListResponse fallback, Action<MemoListResponse> applyResponse)

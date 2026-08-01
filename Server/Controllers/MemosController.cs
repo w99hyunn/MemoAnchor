@@ -255,6 +255,34 @@ public sealed class MemosController : ControllerBase
         return await HandleMemoMutation(memoId, (playerId, id) => mapMemoStore.SetMemoWorkStatusAsync(playerId, id, status, cancellationToken));
     }
 
+    [HttpPost("{memoId}/read")]
+    public async Task<IActionResult> MarkRead(string memoId, CancellationToken cancellationToken)
+    {
+        string? playerId = GetUnityPlayerId();
+        if (string.IsNullOrWhiteSpace(playerId))
+        {
+            return Unauthorized();
+        }
+
+        try
+        {
+            await mapMemoStore.MarkMemoReadAsync(playerId, memoId, cancellationToken);
+            return NoContent();
+        }
+        catch (UnauthorizedAccessException exception)
+        {
+            return StatusCode(StatusCodes.Status403Forbidden, new { message = exception.Message });
+        }
+        catch (InvalidOperationException exception)
+        {
+            return NotFound(new { message = exception.Message });
+        }
+        catch (ArgumentException exception)
+        {
+            return BadRequest(new { message = exception.Message });
+        }
+    }
+
     private async Task<IActionResult> HandleMemoMutation(string memoId, Func<string, string, Task<IReadOnlyList<MemoInfo>>> action)
     {
         string? playerId = GetUnityPlayerId();

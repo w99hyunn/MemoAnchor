@@ -372,7 +372,7 @@ public sealed class PostgresMapMemoStore : IMapMemoStore
             mapInfo = mapInfo with { CurrentUserRole = ScanMapRoles.READ_ONLY, Members = [] };
         }
         string creatorPlayerId = map.Members.FirstOrDefault(member => string.Equals(member.Role, ScanMapRoles.MANAGER, StringComparison.OrdinalIgnoreCase))?.UnityPlayerId ?? string.Empty;
-        return new ReadOnlyMapInfo(mapInfo, await ToMemoInfosAsync(memos, cancellationToken), creatorPlayerId);
+        return new ReadOnlyMapInfo(mapInfo, await ToMemoInfosAsync(memos, playerId, cancellationToken), creatorPlayerId);
     }
 
     public async Task<IReadOnlyList<ScanMapInfo>> RemoveMapMemberAsync(string playerId, string mapId, string memberPlayerId, CancellationToken cancellationToken)
@@ -436,7 +436,7 @@ public sealed class PostgresMapMemoStore : IMapMemoStore
             .OrderByDescending(item => item.CreatedAt)
             .ToListAsync(cancellationToken);
 
-        return await ToMemoInfosAsync(memos, cancellationToken);
+        return await ToMemoInfosAsync(memos, playerId, cancellationToken);
     }
 
     public async Task<IReadOnlyList<MemoInfo>> LoadTrashedMemosAsync(string playerId, CancellationToken cancellationToken)
@@ -446,7 +446,7 @@ public sealed class PostgresMapMemoStore : IMapMemoStore
             .OrderByDescending(item => item.DeletedAt)
             .ToListAsync(cancellationToken);
 
-        return await ToMemoInfosAsync(memos, cancellationToken);
+        return await ToMemoInfosAsync(memos, playerId, cancellationToken);
     }
 
     public async Task<MemoCreateResult> AddMemoAsync(string playerId, SaveMemoRequest request, CancellationToken cancellationToken)
@@ -541,7 +541,7 @@ public sealed class PostgresMapMemoStore : IMapMemoStore
         await db.SaveChangesAsync(cancellationToken);
 
         MemoEntity createdMemo = await QueryMemoById(memo.Id).FirstAsync(cancellationToken);
-        MemoInfo createdInfo = (await ToMemoInfosAsync([createdMemo], cancellationToken))[0];
+        MemoInfo createdInfo = (await ToMemoInfosAsync([createdMemo], playerId, cancellationToken))[0];
         IReadOnlyList<MemoInfo> memos = await LoadMemosAsync(playerId, cancellationToken);
         return new MemoCreateResult(createdInfo, memos);
     }
@@ -612,7 +612,7 @@ public sealed class PostgresMapMemoStore : IMapMemoStore
         DeleteMemoMediaFiles(removedMediaUrls, remainingMediaUrls);
 
         MemoEntity updatedMemo = await QueryMemoById(memo.Id).FirstAsync(cancellationToken);
-        MemoInfo updatedInfo = (await ToMemoInfosAsync([updatedMemo], cancellationToken))[0];
+        MemoInfo updatedInfo = (await ToMemoInfosAsync([updatedMemo], playerId, cancellationToken))[0];
         IReadOnlyList<MemoInfo> memos = await LoadMemosAsync(playerId, cancellationToken);
         return new MemoCreateResult(updatedInfo, memos);
     }
@@ -663,6 +663,38 @@ public sealed class PostgresMapMemoStore : IMapMemoStore
         memo.UpdatedAt = DateTimeOffset.UtcNow;
         await db.SaveChangesAsync(cancellationToken);
         return await LoadMemosAsync(playerId, cancellationToken);
+    }
+
+    public async Task MarkMemoReadAsync(string playerId, string memoId, CancellationToken cancellationToken)
+    {
+        Guid id = ParseGuid(memoId, nameof(memoId));
+        MemoEntity memo = await db.Memos
+            .AsNoTracking()
+            .Include(item => item.Map).ThenInclude(item => item.Members)
+            .FirstOrDefaultAsync(item => item.Id == id && item.DeletedAt == null, cancellationToken)
+            ?? throw new InvalidOperationException("Memo not found.");
+        if (!memo.Map.Members.Any(member => string.Equals(member.UnityPlayerId, playerId, StringComparison.OrdinalIgnoreCase)))
+        {
+            throw new UnauthorizedAccessException("Memo does not belong to the current user.");
+        }
+
+        if (string.Equals(memo.AuthorUnityPlayerId, playerId, StringComparison.OrdinalIgnoreCase))
+        {
+            return;
+        }
+
+        MemoReadEntity? read = await db.MemoReads
+            .FirstOrDefaultAsync(item => item.MemoId == id && item.UnityPlayerId == playerId, cancellationToken);
+        if (read == null)
+        {
+            db.MemoReads.Add(new MemoReadEntity
+            {
+                MemoId = id,
+                UnityPlayerId = playerId,
+                ReadAt = DateTimeOffset.UtcNow
+            });
+            await db.SaveChangesAsync(cancellationToken);
+        }
     }
 
     public async Task<IReadOnlyList<MemoInfo>> DeleteMemoPermanentlyAsync(string playerId, string memoId, CancellationToken cancellationToken)
@@ -766,7 +798,7 @@ public sealed class PostgresMapMemoStore : IMapMemoStore
             .Where(item => item.Id == memoId);
     }
 
-    private async Task<List<MemoInfo>> ToMemoInfosAsync(IReadOnlyList<MemoEntity> memos, CancellationToken cancellationToken)
+    private async Task<List<MemoInfo>> ToMemoInfosAsync(IReadOnlyList<MemoEntity> memos, string playerId, CancellationToken cancellationToken)
     {
         string[] playerIds = memos
             .SelectMany(item => new[] { item.AuthorUnityPlayerId, item.AssigneeUnityPlayerId })
@@ -779,7 +811,18 @@ public sealed class PostgresMapMemoStore : IMapMemoStore
             .Where(item => playerIds.Contains(item.UnityPlayerId))
             .ToDictionaryAsync(item => item.UnityPlayerId, StringComparer.OrdinalIgnoreCase, cancellationToken);
 
-        return memos.Select(memo => ToMemoInfo(memo, usersByPlayerId)).ToList();
+        Guid[] memoIds = memos.Select(item => item.Id).ToArray();
+        HashSet<Guid> readMemoIds = (await db.MemoReads
+            .AsNoTracking()
+            .Where(item => item.UnityPlayerId == playerId && memoIds.Contains(item.MemoId))
+            .Select(item => item.MemoId)
+            .ToListAsync(cancellationToken))
+            .ToHashSet();
+
+        return memos.Select(memo => ToMemoInfo(
+            memo,
+            usersByPlayerId,
+            string.Equals(memo.AuthorUnityPlayerId, playerId, StringComparison.OrdinalIgnoreCase) || readMemoIds.Contains(memo.Id))).ToList();
     }
 
     private async Task<AddressEntity> ResolveAddressAsync(string playerId, SaveScanMapRequest request, CancellationToken cancellationToken)
@@ -941,7 +984,7 @@ public sealed class PostgresMapMemoStore : IMapMemoStore
         return new string(characters);
     }
 
-    private static MemoInfo ToMemoInfo(MemoEntity memo, IReadOnlyDictionary<string, AppUserEntity> usersByPlayerId)
+    private static MemoInfo ToMemoInfo(MemoEntity memo, IReadOnlyDictionary<string, AppUserEntity> usersByPlayerId, bool isRead)
     {
         usersByPlayerId.TryGetValue(memo.AuthorUnityPlayerId, out AppUserEntity? author);
         usersByPlayerId.TryGetValue(memo.AssigneeUnityPlayerId, out AppUserEntity? assignee);
@@ -974,6 +1017,7 @@ public sealed class PostgresMapMemoStore : IMapMemoStore
             memo.CreatedAt,
             memo.UpdatedAt,
             memo.DeletedAt,
+            isRead,
             DeserializeJson<List<MemoChecklistEntry>>(memo.ChecklistItemsJson),
             DeserializeVoiceItems(memo.VoiceItemsJson),
             DeserializeJson<List<string>>(memo.ImageUrlsJson));

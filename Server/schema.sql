@@ -125,3 +125,13 @@ ON memos (assignee_unity_player_id);
 
 CREATE INDEX IF NOT EXISTS ix_memos_deleted_at
 ON memos (deleted_at);
+
+CREATE TABLE IF NOT EXISTS memo_reads (
+    memo_id uuid NOT NULL REFERENCES memos (id) ON DELETE CASCADE,
+    unity_player_id varchar(128) NOT NULL,
+    read_at timestamptz NOT NULL,
+    PRIMARY KEY (memo_id, unity_player_id)
+);
+
+CREATE INDEX IF NOT EXISTS ix_memo_reads_unity_player_id
+ON memo_reads (unity_player_id);

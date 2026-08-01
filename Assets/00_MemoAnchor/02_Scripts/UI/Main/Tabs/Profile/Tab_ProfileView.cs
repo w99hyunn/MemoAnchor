@@ -17,7 +17,7 @@ namespace MemoAnchor.UI
         private Label _profileNameLabel, _profileCompanyLabel;
         private FadeTransition _fadeTransition;
         private bool _profilePushEnabled;
-        private bool _profileSoundEnabled = true;
+        private bool _profileSoundEnabled = false;
         private bool _profileFriendListExpanded;
         private bool _isLoggingOut;
 
