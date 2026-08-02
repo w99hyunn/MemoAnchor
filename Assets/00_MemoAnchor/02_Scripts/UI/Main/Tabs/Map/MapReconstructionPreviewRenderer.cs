@@ -122,7 +122,6 @@ namespace MemoAnchor.UI
 
             GameObject surface = new("Map Reconstruction Surface");
             surface.transform.SetParent(_previewRoot.transform, false);
-            surface.transform.localScale = new Vector3(1f, 1f, -1f);
             surface.layer = _previewLayer;
             surface.AddComponent<MeshFilter>().sharedMesh = _mesh;
             _previewSurface = surface.transform;
@@ -158,7 +157,7 @@ namespace MemoAnchor.UI
             _fitDistanceScale = 0.82f;
             ApplyViewRadius(CalculateRadiusFromPosition(
                 _mesh.bounds,
-                new Vector3(position.x, position.y, -position.z)));
+                position));
             UpdateCameraTransform();
         }
 

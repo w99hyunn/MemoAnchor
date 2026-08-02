@@ -252,7 +252,6 @@ namespace MemoAnchor.UI
 
             GameObject surface = new("Home Map Thumbnail Surface");
             surface.transform.SetParent(previewRoot.transform, false);
-            surface.transform.localScale = new Vector3(1f, 1f, -1f);
             surface.layer = previewLayer;
             surface.AddComponent<MeshFilter>().sharedMesh = mesh;
             MeshRenderer meshRenderer = surface.AddComponent<MeshRenderer>();

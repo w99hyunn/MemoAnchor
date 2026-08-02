@@ -1693,6 +1693,33 @@
     padding-left: 60px;
 }
 
+.home-map-card .scan-map-thumbnail {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    flex-grow: 0;
+}
+
+.home-map-thumbnail-dim {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+}
+
+.home-map-card .home-map-info {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    flex-grow: 0;
+    background-color: rgba(0, 0, 0, 0);
+}
+
 .scan-map-title {
     font-size: 55px;
     color: rgb(245, 245, 245);

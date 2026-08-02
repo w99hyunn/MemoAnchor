@@ -289,13 +289,32 @@ def run_reconstruction(dataset, args, output_dir: str, voxel_size: float) -> Dic
     clean, cleanup_stats = clean_mesh(raw_mesh, args.min_cluster_triangles)
 
     fused_pcd_path = os.path.join(output_dir, "fused_point_cloud.ply")
+    unity_fused_pcd_path = os.path.join(output_dir, "fused_point_cloud_unity.ply")
     raw_mesh_path = os.path.join(output_dir, "fused_mesh_raw.ply")
     clean_mesh_ply_path = os.path.join(output_dir, "fused_mesh_clean.ply")
+    unity_clean_mesh_ply_path = os.path.join(output_dir, "fused_mesh_clean_unity.ply")
     clean_mesh_obj_path = os.path.join(output_dir, "fused_mesh_clean.obj")
     o3d.io.write_point_cloud(fused_pcd_path, point_cloud)
     o3d.io.write_triangle_mesh(raw_mesh_path, raw_mesh)
     o3d.io.write_triangle_mesh(clean_mesh_ply_path, clean)
     o3d.io.write_triangle_mesh(clean_mesh_obj_path, clean)
+
+    # TSDF stays in Open3D's right-handed world internally. Public artifacts use
+    # the Unity scan world recorded by the client so every consumer can use the
+    # mesh, localized camera pose, and memo anchors without a display-time flip.
+    open3d_world_to_unity_world = np.diag([1.0, 1.0, -1.0, 1.0])
+    unity_point_cloud = o3d.geometry.PointCloud(point_cloud)
+    unity_point_cloud.transform(open3d_world_to_unity_world)
+    o3d.io.write_point_cloud(unity_fused_pcd_path, unity_point_cloud)
+
+    unity_clean = o3d.geometry.TriangleMesh(clean)
+    unity_clean.transform(open3d_world_to_unity_world)
+    unity_triangles = np.asarray(unity_clean.triangles)
+    if unity_triangles.size > 0:
+        unity_clean.triangles = o3d.utility.Vector3iVector(unity_triangles[:, [0, 2, 1]])
+    unity_clean.compute_vertex_normals()
+    unity_clean.compute_triangle_normals()
+    o3d.io.write_triangle_mesh(unity_clean_mesh_ply_path, unity_clean)
 
     trajectory = analyze_trajectory(dataset.frames, include_initializing=args.include_initializing, pose_jump_threshold_m=args.pose_jump_threshold)
     write_trajectory_ply(os.path.join(output_dir, "camera_trajectory.ply"), trajectory)
@@ -328,6 +347,8 @@ def run_reconstruction(dataset, args, output_dir: str, voxel_size: float) -> Dic
         "coordinate_conversion": {
             "unity_camera_to_world_to_open3d_camera_to_world": "S_world @ unity_camera_to_world @ C_camera, with S_world=diag(1,1,-1,1), C_camera=diag(1,-1,1,1)",
             "tsdf_extrinsic": "Open3D integrate() receives world-to-camera, inverse of converted camera-to-world.",
+            "public_artifact_space": "unity_scan_world_v1",
+            "public_artifact_conversion": "Unity public mesh = diag(1,1,-1,1) @ Open3D internal mesh; reflected triangle winding is reversed.",
         },
         "trajectory": {k: v for k, v in trajectory.items() if k != "frames"},
         "raw_mesh": geometry_stats(raw_mesh),
@@ -336,8 +357,10 @@ def run_reconstruction(dataset, args, output_dir: str, voxel_size: float) -> Dic
         "processing_time_seconds": elapsed,
         "outputs": {
             "fused_point_cloud": fused_pcd_path,
+            "fused_point_cloud_unity": unity_fused_pcd_path,
             "fused_mesh_raw": raw_mesh_path,
             "fused_mesh_clean_ply": clean_mesh_ply_path,
+            "fused_mesh_clean_unity_ply": unity_clean_mesh_ply_path,
             "fused_mesh_clean_obj": clean_mesh_obj_path,
             "camera_trajectory": os.path.join(output_dir, "camera_trajectory.ply"),
             "preview": os.path.join(output_dir, "preview.png"),

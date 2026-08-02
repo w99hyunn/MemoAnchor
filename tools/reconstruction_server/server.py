@@ -413,16 +413,19 @@ def run_rgbd_reconstruction(scan_id: str, rgbd_dir: Path, result_dir: Path) -> t
     (result_dir / "worker_stdout.txt").write_text("\n".join(stdout_parts), encoding="utf-8")
     (result_dir / "worker_stderr.txt").write_text("\n".join(stderr_parts), encoding="utf-8")
 
-    preferred_mesh = color_dir / "fused_mesh_clean.ply"
-    geometry_mesh = geometry_dir / "fused_mesh_clean.ply"
-    point_cloud = color_dir / "fused_point_cloud.ply"
+    preferred_mesh = color_dir / "fused_mesh_clean_unity.ply"
+    geometry_mesh = geometry_dir / "fused_mesh_clean_unity.ply"
+    point_cloud = color_dir / "fused_point_cloud_unity.ply"
+    localization_mesh = color_dir / "fused_mesh_clean.ply"
     if not preferred_mesh.exists():
         preferred_mesh = geometry_mesh
+        localization_mesh = geometry_dir / "fused_mesh_clean.ply"
 
     if not preferred_mesh.exists():
         return False, "Open3D completed but no clean mesh was produced", reports
 
     shutil.copy2(preferred_mesh, result_dir / "result.ply")
+    shutil.copy2(localization_mesh, result_dir / "result_open3d.ply")
     if geometry_mesh.exists():
         shutil.copy2(geometry_mesh, result_dir / "result_geometry.ply")
     if point_cloud.exists():
@@ -442,6 +445,7 @@ def run_rgbd_reconstruction(scan_id: str, rgbd_dir: Path, result_dir: Path) -> t
     color_report = reports.get("color") if isinstance(reports.get("color"), dict) else {}
     metrics = {
         "pipeline": "open3d_rgbd_tsdf",
+        "coordinateSpace": "unity_scan_world_v1",
         "rgbdDataset": str(rgbd_dir),
         "depthTransform": RGBD_DEFAULT_DEPTH_TRANSFORM,
         "colorTransform": RGBD_DEFAULT_COLOR_TRANSFORM,
@@ -455,6 +459,8 @@ def run_rgbd_reconstruction(scan_id: str, rgbd_dir: Path, result_dir: Path) -> t
         "scanId": scan_id,
         "rgbdDataset": str(rgbd_dir),
         "resultFile": "result.ply",
+        "coordinateSpace": "unity_scan_world_v1",
+        "localizationMesh": "result_open3d.ply",
         "viewerUrl": f"/viewer?scan={scan_id}",
         "metrics": metrics,
         "reports": reports,
@@ -1074,6 +1080,7 @@ def reconstruction_worker(scan_id: str, scan_dir: Path) -> None:
                 resultFile="result.ply" if ok else "",
                 viewerUrl=f"/viewer?scan={scan_id}",
                 pipeline="open3d_rgbd_tsdf",
+                coordinateSpace="unity_scan_world_v1",
                 metrics=metrics,
                 files=summarize_result_files(result_dir),
             )

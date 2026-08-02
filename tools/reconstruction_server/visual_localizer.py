@@ -12,7 +12,7 @@ from typing import Any
 MAX_REFERENCE_FRAMES = 120
 MIN_HOMOGRAPHY_INLIERS = 18
 _INDEX_CACHE: dict[str, tuple[float, list["ReferenceFrame"]]] = {}
-_MESH_CACHE: dict[str, tuple[float, Any]] = {}
+_MESH_CACHE: dict[str, tuple[float, "LocalizationMesh"]] = {}
 _INDEX_CACHE_LOCK = threading.Lock()
 
 
@@ -21,7 +21,21 @@ class ReferenceFrame:
     frame_id: int
     keypoints: Any
     descriptors: Any
+    retrieval_descriptors: Any
     metadata: dict[str, Any]
+
+
+@dataclass
+class LocalizationMesh:
+    scene: Any
+
+
+def _normalize_capture_image(image: Any) -> Any:
+    import cv2
+
+    # Unity records every RGB frame with XRCpuImage.Transformation.MirrorY,
+    # which mirrors left and right. Undo it before applying the camera intrinsics.
+    return cv2.flip(image, 1)
 
 
 def _is_rgbd_dataset(path: Path) -> bool:
@@ -49,6 +63,7 @@ def _sample_records(records: list[dict[str, Any]]) -> list[dict[str, Any]]:
 
 def _load_index(scan_id: str, scan_dir: Path) -> tuple[Path, list[ReferenceFrame]]:
     import cv2
+    import numpy as np
 
     dataset = _find_rgbd_dataset(scan_dir)
     if dataset is None:
@@ -80,10 +95,18 @@ def _load_index(scan_id: str, scan_dir: Path) -> tuple[Path, list[ReferenceFrame
         image = cv2.imread(str(image_path), cv2.IMREAD_GRAYSCALE)
         if image is None:
             continue
+        image = _normalize_capture_image(image)
         keypoints, descriptors = orb.detectAndCompute(image, None)
         if descriptors is None or len(keypoints) < MIN_HOMOGRAPHY_INLIERS:
             continue
-        references.append(ReferenceFrame(int(record.get("frame_id", 0)), keypoints, descriptors, record))
+        strongest = np.argsort([-keypoint.response for keypoint in keypoints])[:320]
+        references.append(ReferenceFrame(
+            int(record.get("frame_id", 0)),
+            keypoints,
+            descriptors,
+            descriptors[strongest],
+            record,
+        ))
 
     if not references:
         raise RuntimeError("No usable visual reference frames were found for this scan.")
@@ -94,27 +117,20 @@ def _load_index(scan_id: str, scan_dir: Path) -> tuple[Path, list[ReferenceFrame
 
 
 def _query_orientations(image: Any) -> list[tuple[int, Any]]:
-    import cv2
-
-    return [
-        (0, image),
-        (90, cv2.rotate(image, cv2.ROTATE_90_CLOCKWISE)),
-        (180, cv2.rotate(image, cv2.ROTATE_180)),
-        (270, cv2.rotate(image, cv2.ROTATE_90_COUNTERCLOCKWISE)),
-    ]
+    # XRCpuImage is captured in the sensor orientation for both scan references
+    # and localization queries, independent of the screen orientation.
+    return [(0, image)]
 
 
-def _load_mesh_vertices(scan_id: str, result_root: Path) -> Any:
-    import numpy as np
+def _load_localization_mesh(scan_id: str, result_root: Path) -> LocalizationMesh:
     import open3d as o3d
 
     status_path = result_root / scan_id / "status.json"
     if not status_path.exists():
         raise FileNotFoundError("Reconstruction status was not found.")
     status = json.loads(status_path.read_text(encoding="utf-8"))
-    result_file = str(status.get("resultFile", ""))
-    mesh_path = result_root / scan_id / result_file
-    if not result_file or not mesh_path.exists():
+    mesh_path = result_root / scan_id / "result_open3d.ply"
+    if not mesh_path.exists():
         raise FileNotFoundError("Reconstruction mesh was not found.")
 
     modified_at = mesh_path.stat().st_mtime
@@ -124,16 +140,15 @@ def _load_mesh_vertices(scan_id: str, result_root: Path) -> Any:
             return cached[1]
 
     mesh = o3d.io.read_triangle_mesh(str(mesh_path))
-    vertices = np.asarray(mesh.vertices, dtype=np.float64)
-    if vertices.shape[0] < 6:
+    if len(mesh.vertices) < 6 or len(mesh.triangles) < 2:
         raise RuntimeError("Reconstruction mesh has too few vertices for localization.")
-    if vertices.shape[0] > 300_000:
-        step = max(1, vertices.shape[0] // 300_000)
-        vertices = vertices[::step]
+    scene = o3d.t.geometry.RaycastingScene()
+    scene.add_triangles(o3d.t.geometry.TriangleMesh.from_legacy(mesh))
+    localization_mesh = LocalizationMesh(scene)
 
     with _INDEX_CACHE_LOCK:
-        _MESH_CACHE[scan_id] = (modified_at, vertices)
-    return vertices
+        _MESH_CACHE[scan_id] = (modified_at, localization_mesh)
+    return localization_mesh
 
 
 def _matrix_from_frame(frame: dict[str, Any]) -> Any:
@@ -188,9 +203,14 @@ def _quaternion_from_rotation(rotation: Any) -> list[float]:
     return quaternion.tolist()
 
 
-def _estimate_query_pose(best: dict[str, Any], vertices: Any, intrinsics: dict[str, float]) -> tuple[list[float], list[float], int] | None:
+def _estimate_query_pose(
+    best: dict[str, Any],
+    localization_mesh: LocalizationMesh,
+    intrinsics: dict[str, float],
+) -> tuple[list[float], list[float], int] | None:
     import cv2
     import numpy as np
+    import open3d as o3d
 
     if best["rotation"] != 0:
         return None
@@ -198,46 +218,39 @@ def _estimate_query_pose(best: dict[str, Any], vertices: Any, intrinsics: dict[s
     reference = best["reference"]
     frame = reference.metadata
     reference_camera_to_world = _unity_camera_to_open3d_camera(_matrix_from_frame(frame))
-    world_to_reference_camera = np.linalg.inv(reference_camera_to_world)
-    homogeneous = np.concatenate([vertices, np.ones((vertices.shape[0], 1), dtype=np.float64)], axis=1)
-    camera_points = (world_to_reference_camera @ homogeneous.T).T[:, :3]
-    valid = camera_points[:, 2] > 0.12
-    camera_points = camera_points[valid]
-    world_points = vertices[valid]
-    if camera_points.shape[0] < 6:
+    homography_mask = best["homographyMask"]
+    matches = [
+        match
+        for index, match in enumerate(best["goodMatches"])
+        if homography_mask[index]
+    ]
+    if len(matches) < 8:
         return None
 
-    fx = float(frame["fx"])
-    fy = float(frame["fy"])
-    cx = float(frame["cx"])
-    cy = float(frame["cy"])
-    projected = np.column_stack([
-        fx * camera_points[:, 0] / camera_points[:, 2] + cx,
-        fy * camera_points[:, 1] / camera_points[:, 2] + cy,
-    ])
-    inside = (
-        (projected[:, 0] >= 0.0)
-        & (projected[:, 0] < float(frame["rgb_width"]))
-        & (projected[:, 1] >= 0.0)
-        & (projected[:, 1] < float(frame["rgb_height"]))
+    reference_points = np.asarray(
+        [reference.keypoints[match.trainIdx].pt for match in matches],
+        dtype=np.float64,
     )
-    projected = projected[inside]
-    world_points = world_points[inside]
-    if projected.shape[0] < 6:
+    camera_directions = np.column_stack([
+        (reference_points[:, 0] - float(frame["cx"])) / float(frame["fx"]),
+        (reference_points[:, 1] - float(frame["cy"])) / float(frame["fy"]),
+        np.ones(len(reference_points), dtype=np.float64),
+    ])
+    camera_directions /= np.linalg.norm(camera_directions, axis=1, keepdims=True)
+    world_directions = camera_directions @ reference_camera_to_world[:3, :3].T
+    origins = np.repeat(reference_camera_to_world[None, :3, 3], len(matches), axis=0)
+    rays = np.concatenate([origins, world_directions], axis=1).astype(np.float32)
+    hits = localization_mesh.scene.cast_rays(o3d.core.Tensor(rays))
+    hit_distances = hits["t_hit"].numpy().astype(np.float64)
+    valid_hits = np.isfinite(hit_distances) & (hit_distances > 0.12) & (hit_distances < 8.0)
+    if int(np.count_nonzero(valid_hits)) < 8:
         return None
 
-    object_points: list[Any] = []
-    image_points: list[Any] = []
-    used_vertex_indices: set[int] = set()
-    for match in best["goodMatches"]:
-        reference_point = np.asarray(reference.keypoints[match.trainIdx].pt, dtype=np.float64)
-        distances = np.sum((projected - reference_point) ** 2, axis=1)
-        vertex_index = int(np.argmin(distances))
-        if distances[vertex_index] > 12.0 ** 2 or vertex_index in used_vertex_indices:
-            continue
-        used_vertex_indices.add(vertex_index)
-        object_points.append(world_points[vertex_index])
-        image_points.append(best["queryKeypoints"][match.queryIdx].pt)
+    object_points = origins[valid_hits] + world_directions[valid_hits] * hit_distances[valid_hits, None]
+    image_points = np.asarray(
+        [best["queryKeypoints"][match.queryIdx].pt for match, valid in zip(matches, valid_hits) if valid],
+        dtype=np.float64,
+    )
 
     if len(object_points) < 8:
         return None
@@ -248,8 +261,8 @@ def _estimate_query_pose(best: dict[str, Any], vertices: Any, intrinsics: dict[s
         [0.0, 0.0, 1.0],
     ], dtype=np.float64)
     success, rotation_vector, translation, inliers = cv2.solvePnPRansac(
-        np.asarray(object_points, dtype=np.float64),
-        np.asarray(image_points, dtype=np.float64),
+        object_points,
+        image_points,
         camera_matrix,
         None,
         iterationsCount=240,
@@ -263,8 +276,8 @@ def _estimate_query_pose(best: dict[str, Any], vertices: Any, intrinsics: dict[s
     inlier_indices = inliers.reshape(-1)
     if hasattr(cv2, "solvePnPRefineLM"):
         rotation_vector, translation = cv2.solvePnPRefineLM(
-            np.asarray(object_points, dtype=np.float64)[inlier_indices],
-            np.asarray(image_points, dtype=np.float64)[inlier_indices],
+            object_points[inlier_indices],
+            image_points[inlier_indices],
             camera_matrix,
             None,
             rotation_vector,
@@ -304,6 +317,7 @@ def localize(
     image = cv2.imdecode(encoded, cv2.IMREAD_GRAYSCALE)
     if image is None:
         raise ValueError("The camera image could not be decoded.")
+    image = _normalize_capture_image(image)
 
     orb = cv2.ORB_create(nfeatures=2000, scaleFactor=1.2, nlevels=8, fastThreshold=12)
     matcher = cv2.BFMatcher(cv2.NORM_HAMMING, crossCheck=False)
@@ -314,7 +328,16 @@ def localize(
         if query_descriptors is None or len(query_keypoints) < MIN_HOMOGRAPHY_INLIERS:
             continue
 
+        strongest_query = np.argsort([-keypoint.response for keypoint in query_keypoints])[:500]
+        query_retrieval_descriptors = query_descriptors[strongest_query]
+        retrieval_scores: list[tuple[int, ReferenceFrame]] = []
         for reference in references:
+            pairs = matcher.knnMatch(query_retrieval_descriptors, reference.retrieval_descriptors, k=2)
+            retrieval_score = sum(1 for first, second in pairs if first.distance < 0.80 * second.distance)
+            retrieval_scores.append((retrieval_score, reference))
+
+        retrieval_scores.sort(key=lambda item: item[0], reverse=True)
+        for _, reference in retrieval_scores[:12]:
             pairs = matcher.knnMatch(query_descriptors, reference.descriptors, k=2)
             good = [first for first, second in pairs if first.distance < 0.74 * second.distance]
             if len(good) < MIN_HOMOGRAPHY_INLIERS:
@@ -339,6 +362,7 @@ def localize(
                     "reference": reference,
                     "queryKeypoints": query_keypoints,
                     "goodMatches": good,
+                    "homographyMask": mask.ravel().astype(bool),
                 }
 
     if best is None or best["inliers"] < MIN_HOMOGRAPHY_INLIERS or best["inlierRatio"] < 0.22:
@@ -349,8 +373,8 @@ def localize(
         }
 
     reference = best["reference"]
-    vertices = _load_mesh_vertices(scan_id, result_root)
-    pose = _estimate_query_pose(best, vertices, intrinsics)
+    localization_mesh = _load_localization_mesh(scan_id, result_root)
+    pose = _estimate_query_pose(best, localization_mesh, intrinsics)
     if pose is None:
         return {
             "localized": False,

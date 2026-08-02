@@ -153,6 +153,14 @@ public class ARKitMeshScanController : MonoBehaviour
     private float previousPinchDistance;
     private bool previewMouseDragging;
     private Vector3 previousMousePosition;
+    private Vector2 completionFirstPointerPosition;
+    private Vector2 completionSecondPointerPosition;
+    private Vector3 completionPreviousPointerPosition;
+    private float completionPinchStartDistance;
+    private float completionPinchStartCameraDistance;
+    private int completionFirstPointerId = -1;
+    private int completionSecondPointerId = -1;
+    private bool completionPreviewDragging;
     private Material previewMaterial;
     private Material pathMaterial;
     private Material weakCoverageMaterial;
@@ -307,6 +315,11 @@ public class ARKitMeshScanController : MonoBehaviour
         memoPlacementVoiceButton.clicked += CompleteVoiceMemoPlacement;
         memoPlacementChecklistButton.clicked += CompleteChecklistMemoPlacement;
         scanHudCompletionMapImage.RegisterCallback<GeometryChangedEvent>(OnCompletionPreviewGeometryChanged);
+        scanHudCompletionMapImage.RegisterCallback<PointerDownEvent>(OnCompletionPreviewPointerDown);
+        scanHudCompletionMapImage.RegisterCallback<PointerMoveEvent>(OnCompletionPreviewPointerMove);
+        scanHudCompletionMapImage.RegisterCallback<PointerUpEvent>(OnCompletionPreviewPointerUp);
+        scanHudCompletionMapImage.RegisterCallback<PointerCancelEvent>(OnCompletionPreviewPointerCancel);
+        scanHudCompletionMapImage.RegisterCallback<WheelEvent>(OnCompletionPreviewWheel);
     }
 
     private void OnDisable()
@@ -330,16 +343,25 @@ public class ARKitMeshScanController : MonoBehaviour
         memoPlacementVoiceButton.clicked -= CompleteVoiceMemoPlacement;
         memoPlacementChecklistButton.clicked -= CompleteChecklistMemoPlacement;
         scanHudCompletionMapImage.UnregisterCallback<GeometryChangedEvent>(OnCompletionPreviewGeometryChanged);
+        scanHudCompletionMapImage.UnregisterCallback<PointerDownEvent>(OnCompletionPreviewPointerDown);
+        scanHudCompletionMapImage.UnregisterCallback<PointerMoveEvent>(OnCompletionPreviewPointerMove);
+        scanHudCompletionMapImage.UnregisterCallback<PointerUpEvent>(OnCompletionPreviewPointerUp);
+        scanHudCompletionMapImage.UnregisterCallback<PointerCancelEvent>(OnCompletionPreviewPointerCancel);
+        scanHudCompletionMapImage.UnregisterCallback<WheelEvent>(OnCompletionPreviewWheel);
+        ResetCompletionPreviewPointerInput();
     }
 
     private void OnDestroy()
     {
         StopRgbdRecorder();
         DestroyLiveCoverageOverlay();
+        DestroyPreview();
         ClearKeyframes();
         ReleaseCompletionPreviewTexture();
         if (completionPreviewCamera)
             Destroy(completionPreviewCamera.gameObject);
+        if (previewCamera)
+            Destroy(previewCamera.gameObject);
         DestroyMemoPlacementSurface();
     }
 
@@ -1283,12 +1305,12 @@ public class ARKitMeshScanController : MonoBehaviour
             }
             else
             {
+                reconstructionCompletedSuccessfully = true;
                 ShowServerReconstructionPreview(mesh, serverScanId, localPath);
                 SetExportStatus($"Server reconstruction loaded in app.\n{mesh.vertexCount:N0} vertices / {mesh.triangles.Length / 3:N0} triangles");
                 if (useMemoAnchorServer)
                     MapScanSession.SetReconstructionResult(serverScanId, fileName);
                 MapScanSession.SetCompletedReconstruction(mesh, previewMaterial);
-                reconstructionCompletedSuccessfully = true;
             }
         }
     }
@@ -1682,6 +1704,7 @@ public class ARKitMeshScanController : MonoBehaviour
             return;
         }
 
+        ResetCompletionPreviewPointerInput();
         ReleaseCompletionPreviewTexture();
     }
 
@@ -1689,6 +1712,131 @@ public class ARKitMeshScanController : MonoBehaviour
     {
         if (completionReviewVisible)
             EnsureCompletionPreviewTexture(evt.newRect);
+    }
+
+    private void OnCompletionPreviewPointerDown(PointerDownEvent evt)
+    {
+        if (!completionReviewVisible || evt.button != 0)
+            return;
+
+        if (completionFirstPointerId < 0)
+        {
+            scanHudCompletionMapImage.CapturePointer(evt.pointerId);
+            completionFirstPointerId = evt.pointerId;
+            completionFirstPointerPosition = evt.position;
+            completionPreviousPointerPosition = evt.position;
+            completionPreviewDragging = true;
+        }
+        else if (completionSecondPointerId < 0 && evt.pointerId != completionFirstPointerId)
+        {
+            scanHudCompletionMapImage.CapturePointer(evt.pointerId);
+            completionSecondPointerId = evt.pointerId;
+            completionSecondPointerPosition = evt.position;
+            completionPinchStartDistance = Vector2.Distance(
+                completionFirstPointerPosition,
+                completionSecondPointerPosition);
+            completionPinchStartCameraDistance = previewDistance;
+            completionPreviewDragging = false;
+        }
+
+        evt.StopPropagation();
+    }
+
+    private void OnCompletionPreviewPointerMove(PointerMoveEvent evt)
+    {
+        if (evt.pointerId == completionFirstPointerId)
+            completionFirstPointerPosition = evt.position;
+        else if (evt.pointerId == completionSecondPointerId)
+            completionSecondPointerPosition = evt.position;
+        else
+            return;
+
+        if (completionSecondPointerId >= 0 && completionPinchStartDistance > 0f)
+        {
+            float pinchDistance = Vector2.Distance(
+                completionFirstPointerPosition,
+                completionSecondPointerPosition);
+            previewDistance = Mathf.Clamp(
+                completionPinchStartCameraDistance * completionPinchStartDistance / Mathf.Max(pinchDistance, 1f),
+                previewMinDistance,
+                previewMaxDistance);
+            UpdatePreviewCameraTransform();
+            evt.StopPropagation();
+            return;
+        }
+
+        if (!completionPreviewDragging
+            || evt.pointerId != completionFirstPointerId
+            || !scanHudCompletionMapImage.HasPointerCapture(evt.pointerId))
+            return;
+
+        Vector3 delta = evt.position - completionPreviousPointerPosition;
+        completionPreviousPointerPosition = evt.position;
+        previewYaw += delta.x * rotationSensitivity;
+        previewPitch = Mathf.Clamp(previewPitch - delta.y * rotationSensitivity, -80f, 80f);
+        UpdatePreviewCameraTransform();
+        evt.StopPropagation();
+    }
+
+    private void OnCompletionPreviewPointerUp(PointerUpEvent evt)
+    {
+        RemoveCompletionPreviewPointer(evt.pointerId);
+    }
+
+    private void OnCompletionPreviewPointerCancel(PointerCancelEvent evt)
+    {
+        RemoveCompletionPreviewPointer(evt.pointerId);
+    }
+
+    private void OnCompletionPreviewWheel(WheelEvent evt)
+    {
+        if (!completionReviewVisible)
+            return;
+
+        previewDistance = Mathf.Clamp(
+            previewDistance * (1f + evt.delta.y * 0.04f),
+            previewMinDistance,
+            previewMaxDistance);
+        UpdatePreviewCameraTransform();
+        evt.StopPropagation();
+    }
+
+    private void RemoveCompletionPreviewPointer(int pointerId)
+    {
+        if (scanHudCompletionMapImage.HasPointerCapture(pointerId))
+            scanHudCompletionMapImage.ReleasePointer(pointerId);
+
+        if (pointerId == completionFirstPointerId)
+        {
+            completionFirstPointerId = completionSecondPointerId;
+            completionFirstPointerPosition = completionSecondPointerPosition;
+            completionSecondPointerId = -1;
+        }
+        else if (pointerId == completionSecondPointerId)
+        {
+            completionSecondPointerId = -1;
+        }
+
+        completionPinchStartDistance = 0f;
+        completionPinchStartCameraDistance = previewDistance;
+        completionPreviewDragging = completionFirstPointerId >= 0;
+        completionPreviousPointerPosition = completionFirstPointerPosition;
+    }
+
+    private void ResetCompletionPreviewPointerInput()
+    {
+        if (completionFirstPointerId >= 0
+            && scanHudCompletionMapImage.HasPointerCapture(completionFirstPointerId))
+            scanHudCompletionMapImage.ReleasePointer(completionFirstPointerId);
+        if (completionSecondPointerId >= 0
+            && scanHudCompletionMapImage.HasPointerCapture(completionSecondPointerId))
+            scanHudCompletionMapImage.ReleasePointer(completionSecondPointerId);
+
+        completionFirstPointerId = -1;
+        completionSecondPointerId = -1;
+        completionPinchStartDistance = 0f;
+        completionPinchStartCameraDistance = previewDistance;
+        completionPreviewDragging = false;
     }
 
     private void EnsureCompletionPreviewTexture()
@@ -1855,7 +2003,7 @@ public class ARKitMeshScanController : MonoBehaviour
         previewHasProjectedColors = false;
         previewProjectedColorCoverage = 0f;
 
-        previewRoot = new GameObject("Scanned Map Preview");
+        previewRoot = CreateSceneOwnedGameObject("Scanned Map Preview");
         previewMeshCount = 0;
         previewVertexCount = 0;
         previewTriangleCount = 0;
@@ -1985,7 +2133,7 @@ public class ARKitMeshScanController : MonoBehaviour
         if (vertices.Count == 0)
             return null;
 
-        previewRoot = new GameObject("Scanned Map Preview");
+        previewRoot = CreateSceneOwnedGameObject("Scanned Map Preview");
         var previewMesh = new Mesh
         {
             name = "ARCore_Depth_Map",
@@ -2232,7 +2380,7 @@ public class ARKitMeshScanController : MonoBehaviour
         previewHasProjectedColors = mesh.colors != null && mesh.colors.Length == mesh.vertexCount;
         previewProjectedColorCoverage = 0f;
 
-        previewRoot = new GameObject($"Server Reconstruction Preview {serverScanId}");
+        previewRoot = CreateSceneOwnedGameObject($"Server Reconstruction Preview {serverScanId}");
 
         var previewGo = new GameObject("Server Reconstruction Surface");
         previewGo.transform.SetParent(previewRoot.transform, false);
@@ -2249,7 +2397,6 @@ public class ARKitMeshScanController : MonoBehaviour
 
         scanMode = ScanMode.Preview;
         ShowPreviewCamera(mesh.bounds, MapScanSession.IsViewingStoredResult);
-        BuildVisualKeyframePreview(mesh.bounds);
         UpdateButtonStates();
         UpdateStats(force: true);
 
@@ -2260,10 +2407,9 @@ public class ARKitMeshScanController : MonoBehaviour
     {
         DestroyMemoPlacementSurface();
 
-        memoPlacementRoot = new GameObject("Memo Placement Map Space");
+        memoPlacementRoot = CreateSceneOwnedGameObject("Memo Placement Map Space");
         var surface = new GameObject("Memo Placement Reconstruction Surface");
         surface.transform.SetParent(memoPlacementRoot.transform, false);
-        surface.transform.localScale = new Vector3(1f, 1f, -1f);
         surface.AddComponent<MeshFilter>().sharedMesh = mesh;
         memoPlacementCollider = surface.AddComponent<MeshCollider>();
         memoPlacementCollider.sharedMesh = mesh;
@@ -2411,7 +2557,7 @@ public class ARKitMeshScanController : MonoBehaviour
             localization.cameraRotation[1],
             localization.cameraRotation[2],
             localization.cameraRotation[3]);
-        Matrix4x4 sessionFromCamera = Matrix4x4.TRS(arCamera.transform.position, arCamera.transform.rotation, Vector3.one);
+        Matrix4x4 sessionFromCamera = Matrix4x4.TRS(frame.CameraPosition, frame.CameraRotation, Vector3.one);
         Matrix4x4 scanFromCamera = Matrix4x4.TRS(scanCameraPosition, scanCameraRotation, Vector3.one);
         Matrix4x4 sessionFromScan = sessionFromCamera * scanFromCamera.inverse;
         Vector3 rootPosition = sessionFromScan.GetColumn(3);
@@ -3114,6 +3260,8 @@ public class ARKitMeshScanController : MonoBehaviour
         if (!arCameraManager.TryAcquireLatestCpuImage(out var image))
             return false;
 
+        Vector3 cameraPosition = arCamera.transform.position;
+        Quaternion cameraRotation = arCamera.transform.rotation;
         Texture2D texture = null;
         CpuImageFrame depth = null;
         CpuImageFrame confidence = null;
@@ -3181,6 +3329,8 @@ public class ARKitMeshScanController : MonoBehaviour
             frame = new CameraTextureFrame
             {
                 Texture = texture,
+                CameraPosition = cameraPosition,
+                CameraRotation = cameraRotation,
                 CameraTimestamp = cameraTimestamp,
                 RgbDepthTimestampDeltaSeconds = rgbDepthDelta,
                 RgbConfidenceTimestampDeltaSeconds = rgbConfidenceDelta,
@@ -3648,7 +3798,8 @@ public class ARKitMeshScanController : MonoBehaviour
             return right.SampleCount.CompareTo(left.SampleCount);
         });
 
-        var root = new GameObject(isLiveOverlay ? "Live Scan Coverage Overlay" : "Preview Scan Coverage Overlay");
+        var root = CreateSceneOwnedGameObject(
+            isLiveOverlay ? "Live Scan Coverage Overlay" : "Preview Scan Coverage Overlay");
         if (parent)
             root.transform.SetParent(parent, false);
 
@@ -4236,7 +4387,7 @@ public class ARKitMeshScanController : MonoBehaviour
         if (previewCamera)
             return;
 
-        var cameraGo = new GameObject("Scanned Map Preview Camera");
+        var cameraGo = CreateSceneOwnedGameObject("Scanned Map Preview Camera");
         previewCamera = cameraGo.AddComponent<Camera>();
         previewCamera.clearFlags = CameraClearFlags.SolidColor;
         previewCamera.backgroundColor = new Color(0.02f, 0.025f, 0.03f, 1f);
@@ -4664,6 +4815,13 @@ public class ARKitMeshScanController : MonoBehaviour
             Destroy(previewRoot);
 
         previewRoot = null;
+    }
+
+    private GameObject CreateSceneOwnedGameObject(string objectName)
+    {
+        var sceneObject = new GameObject(objectName);
+        SceneManager.MoveGameObjectToScene(sceneObject, gameObject.scene);
+        return sceneObject;
     }
 
     private void ClearKeyframes()
@@ -5349,6 +5507,8 @@ public class ARKitMeshScanController : MonoBehaviour
     private struct CameraTextureFrame
     {
         public Texture2D Texture;
+        public Vector3 CameraPosition;
+        public Quaternion CameraRotation;
         public double CameraTimestamp;
         public double RgbDepthTimestampDeltaSeconds;
         public double RgbConfidenceTimestampDeltaSeconds;

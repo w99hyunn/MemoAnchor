@@ -33,7 +33,7 @@
         <ui:Label name="scan-status-label" text="스캔을 시작하려면 버튼을 누르십시오." picking-mode="Ignore" class="scan-field-label scan-hud-status is-ready"/>
         <ui:VisualElement name="scan-completion-layer" picking-mode="Ignore" class="scan-completion-layer is-hidden">
             <ma:ScreenSpaceBlurElement blur-opacity="0.99" blur-brightness="0.46" corner-segments="1" picking-mode="Ignore" class="scan-completion-background-blur"/>
-            <ui:Image name="scan-completion-map-image" picking-mode="Ignore" scale-mode="StretchToFill" class="scan-completion-map-image"/>
+            <ui:Image name="scan-completion-map-image" picking-mode="Position" scale-mode="StretchToFill" class="scan-completion-map-image"/>
             <ui:VisualElement name="scan-completion-nav-wrapper" class="bottom-nav-wrapper is-scan-mode scan-completion-nav-wrapper">
                 <ui:VisualElement class="bottom-nav is-scan-mode">
                     <ui:Button name="nav-scan" class="nav-item">
@@ -41,7 +41,7 @@
                         <ui:VisualElement picking-mode="Ignore" class="nav-icon scan-completion-regenerate-icon" style="background-image: url(&quot;project://database/Assets/00_MemoAnchor/03_Media/Icon/re.png?fileID=2800000&amp;guid=1dc1282e661cdc343885fcf301f17b53&amp;type=3#re&quot;);"/>
                     </ui:Button>
                 </ui:VisualElement>
-                <ui:VisualElement class="scan-start-bg">
+                <ui:VisualElement class="scan-start-bg scan-nav-action-bg">
                     <ui:Button name="scan-save-button" text="저장하기" class="scan-nav-start"/>
                 </ui:VisualElement>
             </ui:VisualElement>
