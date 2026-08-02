@@ -392,7 +392,7 @@ namespace MemoAnchor.UI
         {
             PopupManager.ShowTextInput(
                 "친구 추가",
-                "친구코드를 입력해주세요.",
+                "친구코드를 입력해주세요.\r\n(이름#태그 형식)",
                 string.Empty,
                 "친구 코드 입력",
                 "취소",

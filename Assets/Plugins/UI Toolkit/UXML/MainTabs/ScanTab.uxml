@@ -4,8 +4,8 @@
         <ui:VisualElement class="home-header tab-fixed-header">
             <ui:Label text="새로운 공간 스캔" class="home-greeting"/>
         </ui:VisualElement>
-        <ui:ScrollView name="scan-content-scroll" mode="Vertical" horizontal-scroller-visibility="Hidden" vertical-scroller-visibility="Hidden" touch-scroll-type="Elastic" class="tab-content-scroll" style="padding-right: 50px; padding-left: 50px;">
-            <ui:VisualElement class="tab-content-inner" style="padding-bottom: 0;">
+        <ui:ScrollView name="scan-content-scroll" mode="Vertical" horizontal-scroller-visibility="Hidden" vertical-scroller-visibility="Hidden" touch-scroll-type="Elastic" class="tab-content-scroll">
+            <ui:VisualElement class="tab-content-inner" style="margin-right: 50px; margin-left: 50px; padding-bottom: 0;">
                 <ui:Label text="①  스캔 전 설정" class="scan-step-title"/>
                 <ui:VisualElement class="scan-field-group">
                     <ui:Label text="주소 선택" class="scan-field-label"/>

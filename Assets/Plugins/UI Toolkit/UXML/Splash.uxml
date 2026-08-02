@@ -21,8 +21,8 @@
                 <ui:Label text="추가 정보 작성" class="home-greeting"/>
                 <ui:Label text="회원가입을 위해 필요한 정보를 입력해주세요." class="splash-signup-description"/>
             </ui:VisualElement>
-            <ui:ScrollView name="signup-content-scroll" mode="Vertical" horizontal-scroller-visibility="Hidden" vertical-scroller-visibility="Hidden" touch-scroll-type="Elastic" class="tab-content-scroll" style="padding-right: 50px; padding-left: 50px;">
-                <ui:VisualElement class="tab-content-inner">
+            <ui:ScrollView name="signup-content-scroll" mode="Vertical" horizontal-scroller-visibility="Hidden" vertical-scroller-visibility="Hidden" touch-scroll-type="Elastic" class="tab-content-scroll">
+                <ui:VisualElement class="tab-content-inner" style="margin-right: 50px; margin-left: 50px;">
                     <ui:Label text="프로필 설정" class="scan-step-title"/>
                     <ui:VisualElement class="scan-field-group">
                         <ui:Label text="이름" class="scan-field-label"/>
