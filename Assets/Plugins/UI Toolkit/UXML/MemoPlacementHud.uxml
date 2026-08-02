@@ -4,7 +4,7 @@
         <ui:Image name="memo-placement-frozen-camera" picking-mode="Ignore" scale-mode="StretchToFill" class="memo-placement-frozen-camera is-hidden"/>
         <ui:VisualElement name="memo-placement-existing-markers" picking-mode="Ignore" class="memo-placement-existing-markers"/>
         <ui:VisualElement name="memo-placement-pin" picking-mode="Ignore" class="memo-placement-pin is-hidden" style="background-image: url(&quot;project://database/Assets/00_MemoAnchor/03_Media/Icon/map_memo_new.png?fileID=2800000&amp;guid=60bcea1ad9f6cfe4a966b49aac4da9ee&amp;type=3#map_memo_new&quot;);"/>
-        <ui:VisualElement picking-mode="Ignore" class="memo-placement-guidance">
+        <ui:VisualElement name="memo-placement-guidance" picking-mode="Ignore" class="memo-placement-guidance">
             <ma:ScreenSpaceBlurElement blur-opacity="0.98" blur-brightness="0.56" corner-segments="1" picking-mode="Ignore" class="memo-placement-guidance-blur"/>
             <ui:Button name="memo-placement-confirm-button" class="memo-placement-confirm-button is-hidden" style="top: -185px;">
                 <ma:ScreenSpaceBlurElement blur-opacity="0.98" blur-brightness="0.56" corner-segments="16" picking-mode="Ignore" class="memo-placement-confirm-blur"/>
@@ -28,8 +28,15 @@
             </ui:Button>
         </ma:ScreenSpaceBlurElement>
         <ui:Button name="memo-placement-existing-toggle" class="memo-placement-existing-toggle is-on">
+            <ma:ScreenSpaceBlurElement blur-opacity="0.98" blur-brightness="0.56" corner-segments="16" picking-mode="Ignore" class="memo-placement-existing-toggle-blur"/>
+            <ui:VisualElement picking-mode="Ignore" class="memo-placement-existing-toggle-tint"/>
             <ui:VisualElement picking-mode="Ignore" class="memo-placement-existing-toggle-thumb"/>
             <ui:Label name="memo-placement-existing-toggle-label" text="ON" picking-mode="Ignore" class="memo-placement-existing-toggle-label"/>
         </ui:Button>
+        <ma:ScreenSpaceBlurElement name="memo-placement-map-loading-overlay" blur-opacity="0.99" blur-brightness="0.48" corner-segments="1" picking-mode="Position" class="memo-placement-map-loading-overlay">
+            <ui:VisualElement picking-mode="Ignore" class="memo-placement-map-loading-tint"/>
+            <ui:Label text="3D MAP을 불러오고 있습니다." picking-mode="Ignore" class="memo-placement-map-loading-title"/>
+            <ui:Label text="잠시만 기다려주세요." picking-mode="Ignore" class="memo-placement-map-loading-message"/>
+        </ma:ScreenSpaceBlurElement>
     </ui:VisualElement>
 </ui:UXML>

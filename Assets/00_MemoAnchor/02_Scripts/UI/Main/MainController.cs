@@ -26,6 +26,8 @@ namespace MemoAnchor.UI
         private bool _isMapNavModeActive;
         private bool _isRegistered;
         private bool _isOpeningScanScene;
+        private bool _isMemoPlacementWriting;
+        private global::ARKitMeshScanController _memoPlacementScanController;
         private float _lastBackPressedTime = float.NegativeInfinity;
 
         private void Awake()
@@ -110,7 +112,10 @@ namespace MemoAnchor.UI
             _view.ScanStartButton.clicked += OnClickScanStart;
             _view.TabSwitchRequested += ShowTab;
             _view.MapMemoPlacementRequested += OnMapMemoPlacementRequested;
+            _view.MemoPlacementResumeRequested += ResumeMemoPlacement;
+            _view.MemoPlacementSceneCloseRequested += CloseSuspendedMemoPlacementScene;
             _view.MapNavAvailabilityChanged += OnMapNavAvailabilityChanged;
+            MapScanSession.MemoPlacementWritingRequested += ShowMemoPlacementWritingPage;
             _scanView.ScanStartReadinessChanged += UpdateScanStartAvailability;
             _view.TabViewport.RegisterCallback<GeometryChangedEvent>(OnViewportGeometryChanged);
             SceneManager.sceneUnloaded += OnSceneUnloaded;
@@ -134,7 +139,10 @@ namespace MemoAnchor.UI
             _view.ScanStartButton.clicked -= OnClickScanStart;
             _view.TabSwitchRequested -= ShowTab;
             _view.MapMemoPlacementRequested -= OnMapMemoPlacementRequested;
+            _view.MemoPlacementResumeRequested -= ResumeMemoPlacement;
+            _view.MemoPlacementSceneCloseRequested -= CloseSuspendedMemoPlacementScene;
             _view.MapNavAvailabilityChanged -= OnMapNavAvailabilityChanged;
+            MapScanSession.MemoPlacementWritingRequested -= ShowMemoPlacementWritingPage;
             _scanView.ScanStartReadinessChanged -= UpdateScanStartAvailability;
             _view.TabViewport.UnregisterCallback<GeometryChangedEvent>(OnViewportGeometryChanged);
             SceneManager.sceneUnloaded -= OnSceneUnloaded;
@@ -231,6 +239,54 @@ namespace MemoAnchor.UI
             _ = OpenScanSceneAsync();
         }
 
+        private void ShowMemoPlacementWritingPage()
+        {
+            if (_isMemoPlacementWriting)
+            {
+                return;
+            }
+
+            _memoPlacementScanController = FindFirstObjectByType<global::ARKitMeshScanController>();
+            _memoPlacementScanController.SetMemoPlacementWritingActive(true);
+
+            Scene mainScene = gameObject.scene;
+            SceneManager.SetActiveScene(mainScene);
+            _mainCamera.gameObject.SetActive(true);
+            _view.SetScanSceneActive(false);
+            _view.PreferMapSelection(MapScanSession.MapId, null, null);
+            ShowTab(3);
+            _view.ShowMapMemoCreatePage(MapScanSession.MapId, MapScanSession.MemoPlacementKind);
+            _isMemoPlacementWriting = true;
+            _ = _fadeTransition.FadeInAsync();
+        }
+
+        private void ResumeMemoPlacement()
+        {
+            if (!_isMemoPlacementWriting)
+            {
+                return;
+            }
+
+            _view.SetScanSceneActive(true);
+            _mainCamera.gameObject.SetActive(false);
+            Scene scanScene = SceneManager.GetSceneByName(MapScanSession.SCAN_SCENE_NAME);
+            SceneManager.SetActiveScene(scanScene);
+            _memoPlacementScanController.SetMemoPlacementWritingActive(false);
+            _isMemoPlacementWriting = false;
+        }
+
+        private void CloseSuspendedMemoPlacementScene()
+        {
+            if (!_isMemoPlacementWriting)
+            {
+                return;
+            }
+
+            _isMemoPlacementWriting = false;
+            Scene scanScene = SceneManager.GetSceneByName(MapScanSession.SCAN_SCENE_NAME);
+            SceneManager.UnloadSceneAsync(scanScene);
+        }
+
         private async Awaitable OpenScanSceneAsync()
         {
             if (_isOpeningScanScene || SceneManager.GetSceneByName(MapScanSession.SCAN_SCENE_NAME).isLoaded)
@@ -258,6 +314,9 @@ namespace MemoAnchor.UI
             {
                 return;
             }
+
+            _isMemoPlacementWriting = false;
+            _memoPlacementScanController = null;
 
             Scene mainScene = gameObject.scene;
             if (mainScene.IsValid() && mainScene.isLoaded)

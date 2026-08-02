@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Networking;
@@ -43,6 +44,8 @@ namespace MemoAnchor
         public static Vector3 MemoPlacementPosition { get; private set; }
         public static Quaternion MemoPlacementRotation { get; private set; } = Quaternion.identity;
         public static IReadOnlyList<ExistingMemoMarker> ExistingMemoMarkers => existingMemoMarkers;
+
+        public static event Action MemoPlacementWritingRequested;
 
         private static readonly List<ExistingMemoMarker> existingMemoMarkers = new();
 
@@ -114,6 +117,11 @@ namespace MemoAnchor
             MemoPlacementKind = kind?.Trim() ?? string.Empty;
             MemoPlacementPosition = position;
             MemoPlacementRotation = rotation;
+        }
+
+        public static void RequestMemoPlacementWriting()
+        {
+            MemoPlacementWritingRequested?.Invoke();
         }
 
         public static void RequestReturnToMap()

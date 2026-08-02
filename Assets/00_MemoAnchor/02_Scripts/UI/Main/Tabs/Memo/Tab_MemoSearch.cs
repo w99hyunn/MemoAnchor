@@ -90,10 +90,24 @@ namespace MemoAnchor.UI
             SetVisible(_memoSearchPage, true);
             _memoSearchPageInput.SetValueWithoutNotify(_memoSearchSourceInput.value);
             RefreshMemoSearchPageState(_memoSearchPageInput.value);
+            _memoSearchPageInput.schedule.Execute(FocusMemoSearchPageInput);
+        }
+
+        private void FocusMemoSearchPageInput()
+        {
+            if (IsVisible(_memoSearchPage))
+            {
+                _memoSearchPageInput.Focus();
+            }
         }
 
         private void HideMemoSearchPage()
         {
+            if (IsVisible(_memoSearchPage))
+            {
+                SaveCurrentMemoSearchToHistory();
+            }
+
             SetVisible(_memoSearchPage, false);
         }
 
@@ -121,10 +135,24 @@ namespace MemoAnchor.UI
 
         private void ClearMemoSearchInput()
         {
+            if (IsVisible(_memoSearchPage))
+            {
+                SaveCurrentMemoSearchToHistory();
+            }
+
             _memoSearchSourceInput.SetValueWithoutNotify(string.Empty);
             _memoSearchPageInput.SetValueWithoutNotify(string.Empty);
             RefreshMemoSearchPageState(string.Empty);
             RefreshMemoSearchClearButton();
+        }
+
+        private void SaveCurrentMemoSearchToHistory()
+        {
+            string query = _memoSearchPageInput.value.Trim();
+            if (query.Length > 0)
+            {
+                AddMemoSearchHistory(query);
+            }
         }
 
         private void OnMemoSearchKeyDown(KeyDownEvent evt)

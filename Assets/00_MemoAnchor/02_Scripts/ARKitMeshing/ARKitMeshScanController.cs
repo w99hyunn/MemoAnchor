@@ -192,6 +192,7 @@ public class ARKitMeshScanController : MonoBehaviour
     private VisualElement scanHudProcessingBlur;
     private VisualElement scanHudFrame;
     private VisualElement scanHudFrameGlow;
+    private VisualElement scanHudProgressPill;
     private Label scanHudProgressLabel;
     private Label scanHudProcessingTitleLabel;
     private Label scanHudStatusLabel;
@@ -205,6 +206,8 @@ public class ARKitMeshScanController : MonoBehaviour
     private bool completionReviewVisible;
     private string scanHudStatusMessage = string.Empty;
     private VisualElement memoPlacementLayer;
+    private VisualElement memoPlacementMapLoadingOverlay;
+    private VisualElement memoPlacementGuidance;
     private Image memoPlacementFrozenCameraImage;
     private VisualElement memoPlacementExistingMarkers;
     private Button memoPlacementExistingToggleButton;
@@ -224,6 +227,7 @@ public class ARKitMeshScanController : MonoBehaviour
     private bool memoPlacementLocalizing;
     private bool memoPlacementHasCandidate;
     private bool memoPlacementPositionSelected;
+    private bool memoPlacementWritingActive;
     private bool memoPlacementExistingMarkersVisible = true;
     private Texture2D memoPlacementFrozenCameraTexture;
     private readonly List<VisualElement> memoPlacementExistingMarkerElements = new();
@@ -370,6 +374,9 @@ public class ARKitMeshScanController : MonoBehaviour
 
     private void Update()
     {
+        if (memoPlacementWritingActive)
+            return;
+
 #if UNITY_ANDROID && !UNITY_EDITOR
         if (UnityEngine.InputSystem.Keyboard.current != null
             && UnityEngine.InputSystem.Keyboard.current.escapeKey.wasPressedThisFrame)
@@ -1632,6 +1639,7 @@ public class ARKitMeshScanController : MonoBehaviour
         scanHudProcessingBlur = documentRoot.Q<VisualElement>("scan-processing-blur");
         scanHudFrame = documentRoot.Q<VisualElement>("scan-frame");
         scanHudFrameGlow = documentRoot.Q<VisualElement>("scan-frame-glow");
+        scanHudProgressPill = documentRoot.Q<VisualElement>("scan-progress-pill");
         scanHudProgressLabel = documentRoot.Q<Label>("scan-progress-label");
         scanHudProcessingTitleLabel = documentRoot.Q<Label>("scan-processing-title-label");
         scanHudStatusLabel = documentRoot.Q<Label>("scan-status-label");
@@ -1643,6 +1651,8 @@ public class ARKitMeshScanController : MonoBehaviour
         scanHudRegenerateButton = documentRoot.Q<Button>("nav-scan");
         scanHudSaveButton = documentRoot.Q<Button>("scan-save-button");
         memoPlacementLayer = documentRoot.Q<VisualElement>("memo-placement-layer");
+        memoPlacementMapLoadingOverlay = documentRoot.Q<VisualElement>("memo-placement-map-loading-overlay");
+        memoPlacementGuidance = documentRoot.Q<VisualElement>("memo-placement-guidance");
         memoPlacementFrozenCameraImage = documentRoot.Q<Image>("memo-placement-frozen-camera");
         memoPlacementExistingMarkers = documentRoot.Q<VisualElement>("memo-placement-existing-markers");
         memoPlacementExistingToggleButton = documentRoot.Q<Button>("memo-placement-existing-toggle");
@@ -1784,12 +1794,14 @@ public class ARKitMeshScanController : MonoBehaviour
         scanHudScanLayer.EnableInClassList("is-hidden", !showViewfinder);
         scanHudProcessingBlur.EnableInClassList("is-hidden", !showProcessingBlur);
         scanHudProcessingTitleLabel.EnableInClassList("is-hidden", !showProcessingBlur);
-        scanHudProgressLabel.EnableInClassList("is-hidden", !showViewfinder || isMemoPlacement);
+        scanHudProgressPill.EnableInClassList("is-hidden", !showViewfinder || isMemoPlacement);
         scanHudStartButton.EnableInClassList("is-hidden", !isReady);
         scanHudStopButton.EnableInClassList("is-hidden", !isScanning);
         scanHudBackButton.EnableInClassList("is-hidden", showProcessingBlur || showCompletionReview);
         scanHudStatusLabel.EnableInClassList("is-hidden", showCompletionReview || isMemoPlacement);
         memoPlacementLayer.EnableInClassList("is-hidden", !isMemoPlacement);
+        memoPlacementMapLoadingOverlay.EnableInClassList("is-hidden", !isMemoPlacement || memoPlacementSurfaceReady);
+        memoPlacementGuidance.EnableInClassList("is-hidden", isMemoPlacement && !memoPlacementSurfaceReady);
         scanHudFrame.EnableInClassList("is-alert", showMovementGuidance);
         scanHudFrameGlow.EnableInClassList("is-hidden", !showMovementGuidance);
         SetCompletionReviewVisible(showCompletionReview);
@@ -2256,7 +2268,7 @@ public class ARKitMeshScanController : MonoBehaviour
         memoPlacementCollider = surface.AddComponent<MeshCollider>();
         memoPlacementCollider.sharedMesh = mesh;
         BuildExistingMemoMarkers();
-        SetExistingMemoMarkersVisible(true);
+        SetExistingMemoMarkersVisible(memoPlacementExistingMarkersVisible);
 
         memoPlacementSurfaceReady = true;
         memoPlacementLocalized = false;
@@ -2267,6 +2279,7 @@ public class ARKitMeshScanController : MonoBehaviour
         memoPlacementPin.AddToClassList("is-hidden");
         memoPlacementConfirmButton.AddToClassList("is-hidden");
         memoPlacementKindBar.AddToClassList("is-hidden");
+        UpdateScanHud();
     }
 
     private void DestroyMemoPlacementSurface()
@@ -2549,7 +2562,16 @@ public class ARKitMeshScanController : MonoBehaviour
             memoPlacementCandidatePosition,
             memoPlacementCandidateRotation,
             kind);
-        CloseScanScene();
+        MapScanSession.RequestMemoPlacementWriting();
+    }
+
+    public void SetMemoPlacementWritingActive(bool active)
+    {
+        memoPlacementWritingActive = active;
+        scanHudDocument.rootVisualElement.style.display = active ? DisplayStyle.None : DisplayStyle.Flex;
+        arCamera.gameObject.SetActive(!active);
+        memoPlacementRoot.SetActive(!active);
+        MemoAnchor.UI.ScreenSpaceUIToolkitBlurRendererFeature.SetOutputFrozen(!active);
     }
 
     public static bool TryCreateMeshFromPly(byte[] data, out Mesh mesh, out string error)

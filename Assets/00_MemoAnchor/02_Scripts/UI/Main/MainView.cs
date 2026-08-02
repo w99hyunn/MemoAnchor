@@ -23,6 +23,8 @@ namespace MemoAnchor.UI
 
         public event Action<int> TabSwitchRequested;
         public event Action<ScanMapItem> MapMemoPlacementRequested;
+        public event Action MemoPlacementResumeRequested;
+        public event Action MemoPlacementSceneCloseRequested;
         public event Action<bool> MapNavAvailabilityChanged;
 
         public Button HomeButton => _homeButton;

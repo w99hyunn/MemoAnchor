@@ -152,7 +152,7 @@
                     <ui:VisualElement class="common-icon-button-icon" style="background-image: url(&quot;project://database/Assets/00_MemoAnchor/03_Media/Icon/threedots.png?fileID=2800000&amp;guid=9dc37093cd599fa4380fb64d6504bfb7&amp;type=3#threedots&quot;);"/>
                 </ui:Button>
             </ui:VisualElement>
-            <ui:ScrollView name="memo-detail-scroll" mode="Vertical" horizontal-scroller-visibility="Hidden" vertical-scroller-visibility="Hidden" touch-scroll-type="Elastic" class="page-scroll">
+            <ui:ScrollView name="memo-detail-scroll" mode="Vertical" horizontal-scroller-visibility="Hidden" vertical-scroller-visibility="Hidden" touch-scroll-type="Clamped" class="page-scroll">
                 <ui:VisualElement name="memo-detail-preview-box" class="memo-preview-box">
                     <ui:Image name="memo-detail-preview-image" picking-mode="Position" scale-mode="StretchToFill" class="memo-detail-preview-image is-hidden"/>
                     <ui:VisualElement name="memo-detail-preview-marker" picking-mode="Ignore" class="map-reconstruction-memo-marker memo-detail-preview-marker is-hidden"/>

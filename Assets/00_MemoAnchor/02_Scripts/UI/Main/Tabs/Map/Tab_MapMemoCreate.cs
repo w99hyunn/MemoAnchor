@@ -255,6 +255,12 @@ namespace MemoAnchor.UI
             HideMapMemoCreatePage();
             if (editingItem == null)
             {
+                if (MapScanSession.IsMemoPlacement && MapScanSession.HasPendingMemoPlacement)
+                {
+                    MemoPlacementResumeRequested?.Invoke();
+                    return;
+                }
+
                 MapScanSession.ClearMemoPlacement();
                 RequestTabSwitch(3);
                 return;
@@ -438,9 +444,15 @@ namespace MemoAnchor.UI
                     return;
                 }
 
+                bool closeMemoPlacementScene = MapScanSession.IsMemoPlacement
+                    && MapScanSession.HasPendingMemoPlacement;
                 HideMapMemoCreatePage();
                 MapScanSession.ClearMemoPlacement();
                 RequestTabSwitch(3);
+                if (closeMemoPlacementScene)
+                {
+                    MemoPlacementSceneCloseRequested?.Invoke();
+                }
             }
             finally
             {
