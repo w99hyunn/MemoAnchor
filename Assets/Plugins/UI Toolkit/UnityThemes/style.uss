@@ -5978,3 +5978,33 @@
     -unity-background-scale-mode: scale-to-fit;
     -unity-background-image-tint-color: rgb(28, 28, 28);
 }
+
+/* Tablet layout ----------------------------------------------------------
+ * The runtime scaler adds this class after expanding the logical canvas.
+ * Wide controls are capped so navigation and modal surfaces retain their
+ * intended phone proportions instead of stretching edge to edge.
+ */
+.tablet-layout .bottom-nav-wrapper {
+    left: 50%;
+    right: auto;
+    width: 1200px;
+    margin-left: -600px;
+}
+
+.tablet-layout .common-confirm-popup-sheet {
+    width: 1100px;
+    max-width: 88%;
+}
+
+.tablet-layout .scan-action-dialog-sheet {
+    width: 1200px;
+    max-width: 100%;
+    align-self: center;
+}
+
+.tablet-layout #login-panel {
+    left: 50%;
+    right: auto;
+    width: 1200px;
+    margin-left: -600px;
+}

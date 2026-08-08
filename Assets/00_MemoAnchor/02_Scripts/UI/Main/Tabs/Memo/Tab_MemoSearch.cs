@@ -87,6 +87,13 @@ namespace MemoAnchor.UI
 
         private void ShowMemoSearchPage()
         {
+            // FocusIn is followed by ClickEvent for the same tap. Opening and
+            // focusing twice creates competing native-keyboard requests on iOS.
+            if (IsVisible(_memoSearchPage))
+            {
+                return;
+            }
+
             SetVisible(_memoSearchPage, true);
             _memoSearchPageInput.SetValueWithoutNotify(_memoSearchSourceInput.value);
             RefreshMemoSearchPageState(_memoSearchPageInput.value);

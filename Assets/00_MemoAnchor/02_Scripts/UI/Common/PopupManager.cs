@@ -252,11 +252,19 @@ namespace MemoAnchor.UI
             _confirmCancelButton.style.display = DisplayStyle.Flex;
             SetConfirmButtonsEnabledInternal(true);
 
-            _confirmPresentationVersion++;
+            int focusVersion = ++_confirmPresentationVersion;
             _confirmRoot.style.display = DisplayStyle.Flex;
             _confirmRoot.BringToFront();
             PopupPresentation.ScheduleOpen(_confirmOverlay);
-            _confirmInput.Focus();
+            _confirmInput.schedule.Execute(() =>
+            {
+                if (_confirmUsesInput
+                    && focusVersion == _confirmPresentationVersion
+                    && _confirmRoot.resolvedStyle.display != DisplayStyle.None)
+                {
+                    _confirmInput.Focus();
+                }
+            }).ExecuteLater(32);
         }
 
         private void HideConfirmInternal()
