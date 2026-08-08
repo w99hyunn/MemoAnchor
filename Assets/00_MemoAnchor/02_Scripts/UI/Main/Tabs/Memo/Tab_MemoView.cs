@@ -187,12 +187,9 @@ namespace MemoAnchor.UI
             try
             {
                 MemoListResponse response = await _memoService.LoadMemosAsync();
-                foreach (MemoItem memo in _readOnlyMemos)
+                if (!_memoService.LastLoadSucceeded)
                 {
-                    if (!response.memos.Exists(item => item.id == memo.id))
-                    {
-                        response.memos.Add(memo);
-                    }
+                    return;
                 }
                 ApplyMemoListResponse(response);
             }
@@ -314,8 +311,14 @@ namespace MemoAnchor.UI
             return request;
         }
 
-        private void ApplyMemoListResponse(MemoListResponse response)
+        private void ApplyMemoListResponse(MemoListResponse response, bool refreshVisibleDetail = true)
         {
+            response = BuildVisibleMemoResponse(response);
+            _appliedMemoSnapshot = JsonUtility.ToJson(response);
+            string currentMemoId = _currentMemoDetailItem?.Id;
+            string currentMemoSnapshot = BuildMemoDetailSnapshot(_currentMemoDetailItem);
+            bool wasShowingMemoDetail = _memoDetailPage != null && IsVisible(_memoDetailPage);
+
             _memoDetailItems.Clear();
             foreach (MemoItem memo in response.memos)
             {
@@ -324,6 +327,22 @@ namespace MemoAnchor.UI
 
             RebuildMemoList();
             RefreshMapMemoMarkers();
+
+            if (!refreshVisibleDetail || !wasShowingMemoDetail || string.IsNullOrWhiteSpace(currentMemoId))
+            {
+                return;
+            }
+
+            MemoDetailItem updatedItem = _memoDetailItems.Find(item =>
+                string.Equals(item.Id, currentMemoId, StringComparison.OrdinalIgnoreCase));
+            if (updatedItem == null)
+            {
+                HideMemoDetailPage();
+            }
+            else if (!string.Equals(currentMemoSnapshot, BuildMemoDetailSnapshot(updatedItem), StringComparison.Ordinal))
+            {
+                ShowMemoDetailPage(updatedItem, _memoDetailReturnTarget);
+            }
         }
 
         private static MemoDetailItem CreateMemoDetailItem(MemoItem memo)
@@ -631,12 +650,7 @@ namespace MemoAnchor.UI
             try
             {
                 MemoListResponse response = await _memoService.SetMemoWorkStatusAsync(item.Id, status);
-                ApplyMemoListResponse(response);
-                MemoDetailItem updatedItem = _memoDetailItems.Find(memo => memo.Id == item.Id);
-                if (showDetail && updatedItem != null)
-                {
-                    ShowMemoDetailPage(updatedItem, _memoDetailReturnTarget);
-                }
+                ApplyMemoListResponse(response, showDetail);
             }
             finally
             {

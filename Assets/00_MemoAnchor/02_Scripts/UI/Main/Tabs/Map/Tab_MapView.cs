@@ -192,6 +192,10 @@ namespace MemoAnchor.UI
             try
             {
                 ScanMapListResponse response = await _scanMapService.LoadMapsAsync();
+                if (!_scanMapService.LastLoadSucceeded)
+                {
+                    return;
+                }
                 ApplyMapListResponse(response);
             }
             finally
@@ -202,12 +206,10 @@ namespace MemoAnchor.UI
 
         private void ApplyMapListResponse(ScanMapListResponse response)
         {
+            response = BuildVisibleMapResponse(response);
+            _appliedMapSnapshot = JsonUtility.ToJson(response);
             _scanMaps.Clear();
             _scanMaps.AddRange(response.maps);
-            if (_readOnlyMap != null && !_scanMaps.Exists(map => map.id == _readOnlyMap.id))
-            {
-                _scanMaps.Add(_readOnlyMap);
-            }
 
             bool hasPreferredMap = !string.IsNullOrWhiteSpace(_preferredMapId)
                 && _scanMaps.Exists(map => map.id == _preferredMapId);
@@ -248,6 +250,7 @@ namespace MemoAnchor.UI
             }
 
             RebuildMemoList();
+            RefreshVisibleMemoDetailActions();
         }
 
         private async Awaitable RetryPreferredMapRefreshAsync(string mapId)
@@ -1294,16 +1297,7 @@ namespace MemoAnchor.UI
                 return;
             }
 
-            _scanMaps.Clear();
-            _scanMaps.AddRange(response.maps);
-            RebuildMapList();
-            ApplySelectedMap();
-            RebuildMemoList();
-            ScanMapItem map = GetSelectedMap();
-            if (map != null)
-            {
-                RebuildMapParticipants(map);
-            }
+            ApplyMapListResponse(response);
         }
 
         private void OnClickMapCreateTextMemo()

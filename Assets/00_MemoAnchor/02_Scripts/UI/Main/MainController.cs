@@ -14,6 +14,7 @@ namespace MemoAnchor.UI
     {
         private const string NAV_TAP_DOWN_CLASS = "is-tapping-down";
         private const int NAV_TAP_DOWN_DURATION_MS = 105;
+        private const float REMOTE_SYNC_INTERVAL_SECONDS = 5f;
 
         private MainView _view;
         private Tab_HomeView _homeView;
@@ -29,6 +30,8 @@ namespace MemoAnchor.UI
         private bool _isMemoPlacementWriting;
         private global::ARKitMeshScanController _memoPlacementScanController;
         private float _lastBackPressedTime = float.NegativeInfinity;
+        private float _nextRemoteSyncTime;
+        private bool _hasApplicationFocus = true;
 
         private void Awake()
         {
@@ -48,6 +51,20 @@ namespace MemoAnchor.UI
                 HandleAndroidBack();
             }
 #endif
+
+            if (_isRegistered && _hasApplicationFocus && Time.unscaledTime >= _nextRemoteSyncTime)
+            {
+                RequestRemoteSync();
+            }
+        }
+
+        private void OnApplicationFocus(bool hasFocus)
+        {
+            _hasApplicationFocus = hasFocus;
+            if (hasFocus && _isRegistered)
+            {
+                RequestRemoteSync();
+            }
         }
 
         private void HandleAndroidBack()
@@ -120,8 +137,15 @@ namespace MemoAnchor.UI
             _view.TabViewport.RegisterCallback<GeometryChangedEvent>(OnViewportGeometryChanged);
             SceneManager.sceneUnloaded += OnSceneUnloaded;
             _isRegistered = true;
+            _nextRemoteSyncTime = Time.unscaledTime + REMOTE_SYNC_INTERVAL_SECONDS;
             ShowTab(0);
             UpdateScanStartAvailability();
+        }
+
+        private void RequestRemoteSync()
+        {
+            _nextRemoteSyncTime = Time.unscaledTime + REMOTE_SYNC_INTERVAL_SECONDS;
+            _ = _view.RefreshRemoteChangesAsync();
         }
 
         private void OnDisable()

@@ -135,6 +135,8 @@ namespace MemoAnchor
         private bool _isManagingMembers;
         private bool _isLoadingFriendProfiles;
 
+        public bool LastLoadSucceeded { get; private set; }
+
         public async Awaitable<ScanMapListResponse> LoadMapsAsync()
         {
             if (_isLoading || !AuthenticationService.Instance.IsSignedIn)
@@ -143,6 +145,7 @@ namespace MemoAnchor
             }
 
             _isLoading = true;
+            LastLoadSucceeded = false;
 
             try
             {
@@ -156,6 +159,7 @@ namespace MemoAnchor
                 }
 
                 _lastResponse = JsonUtility.FromJson<ScanMapListResponse>(request.downloadHandler.text);
+                LastLoadSucceeded = true;
                 return _lastResponse;
             }
             finally
