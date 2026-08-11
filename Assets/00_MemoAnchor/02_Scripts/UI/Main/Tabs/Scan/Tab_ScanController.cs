@@ -1,10 +1,6 @@
 using System;
 using System.Collections.Generic;
 using Unity.Services.Authentication;
-using Unity.Services.Core;
-using Unity.Services.Friends;
-using Unity.Services.Friends.Exceptions;
-using Unity.Services.Friends.Models;
 using UnityEngine;
 
 namespace MemoAnchor.UI
@@ -13,15 +9,16 @@ namespace MemoAnchor.UI
     public class Tab_ScanController : MonoBehaviour
     {
         private Tab_ScanView _view;
+        private MainView _mainView;
         private KakaoPostcodeWebView _postcodeWebView;
         private readonly ScanAddressService _scanAddressService = new();
-        private readonly ScanMapService _scanMapService = new();
+        private readonly List<ScanFriendOption> _cachedFriendOptions = new();
         private FriendSelectionTarget _friendSelectionTarget;
-        private int _friendSelectionRequestToken;
 
         private void Awake()
         {
             TryGetComponent<Tab_ScanView>(out _view);
+            TryGetComponent<MainView>(out _mainView);
             _postcodeWebView = new KakaoPostcodeWebView(OnAddressSearchResult);
         }
 
@@ -31,6 +28,7 @@ namespace MemoAnchor.UI
             _view.AddressAddButton.clicked += OnClickAddressAddButton;
             _view.RepairerButton.clicked += OnClickRepairerButton;
             _view.ManagerButton.clicked += OnClickManagerButton;
+            _mainView.FriendsCacheChanged += HandleFriendsCacheChanged;
             _ = LoadAddressesAsync();
         }
 
@@ -40,6 +38,7 @@ namespace MemoAnchor.UI
             _view.AddressAddButton.clicked -= OnClickAddressAddButton;
             _view.RepairerButton.clicked -= OnClickRepairerButton;
             _view.ManagerButton.clicked -= OnClickManagerButton;
+            _mainView.FriendsCacheChanged -= HandleFriendsCacheChanged;
             _postcodeWebView.Close();
         }
 
@@ -62,12 +61,12 @@ namespace MemoAnchor.UI
 
         private void OnClickRepairerButton()
         {
-            _ = OpenFriendSelectionAsync(FriendSelectionTarget.Repairer);
+            OpenFriendSelection(FriendSelectionTarget.Repairer);
         }
 
         private void OnClickManagerButton()
         {
-            _ = OpenFriendSelectionAsync(FriendSelectionTarget.Manager);
+            OpenFriendSelection(FriendSelectionTarget.Manager);
         }
 
         private void SelectFriends(IReadOnlyList<ScanFriendOption> friends)
@@ -152,112 +151,53 @@ namespace MemoAnchor.UI
             };
         }
 
-        private async Awaitable OpenFriendSelectionAsync(FriendSelectionTarget target)
+        private void OpenFriendSelection(FriendSelectionTarget target)
         {
             _friendSelectionTarget = target;
-            _friendSelectionRequestToken++;
-            int token = _friendSelectionRequestToken;
-
-            _view.RebuildFriendStatus("친구 정보를 불러오는 중입니다.");
             _view.ShowFriendDialog(target == FriendSelectionTarget.Repairer ? "수리자 선택" : "관리자 선택");
+            RebuildFriendSelectionFromCache();
+        }
 
-            try
+        private void HandleFriendsCacheChanged()
+        {
+            if (_view.IsFriendDialogVisible)
             {
-                if (!AuthenticationService.Instance.IsSignedIn)
-                {
-                    _view.RebuildFriendStatus("로그인 후 친구를 선택할 수 있습니다.");
-                    return;
-                }
-
-                await FriendsService.Instance.InitializeAsync();
-                await FriendsService.Instance.ForceRelationshipsRefreshAsync();
-
-                if (token != _friendSelectionRequestToken)
-                {
-                    return;
-                }
-
-                if (FriendsService.Instance.Friends.Count == 0)
-                {
-                    _view.RebuildFriendStatus("등록된 친구가 없습니다.");
-                    return;
-                }
-
-                var relationships = new List<Relationship>(FriendsService.Instance.Friends);
-                Dictionary<string, MapFriendProfileItem> profiles = await LoadFriendProfilesAsync(relationships, token);
-                if (token != _friendSelectionRequestToken)
-                {
-                    return;
-                }
-
-                List<ScanFriendOption> friends = new(relationships.Count);
-                foreach (Relationship relationship in relationships)
-                {
-                    profiles.TryGetValue(relationship.Member.Id, out MapFriendProfileItem profile);
-                    friends.Add(new ScanFriendOption(
-                        relationship.Member.Id,
-                        string.IsNullOrWhiteSpace(profile?.name) ? GetMemberDisplayName(relationship.Member) : profile.name,
-                        profile?.companyName ?? string.Empty));
-                }
-
-                IReadOnlyDictionary<string, ScanFriendOption> selectedFriends = target == FriendSelectionTarget.Repairer
-                    ? _view.SelectedRepairers
-                    : _view.SelectedManagers;
-                _view.RebuildFriendItems(friends, selectedFriends, SelectFriends);
-            }
-            catch (Exception exception) when (IsFriendsRecoverableException(exception))
-            {
-                Debug.LogWarning($"Scan friend selection load failed: {exception.Message}");
-                if (token != _friendSelectionRequestToken)
-                {
-                    return;
-                }
-
-                _view.RebuildFriendStatus("친구 정보를 불러오지 못했습니다.");
+                RebuildFriendSelectionFromCache();
             }
         }
 
-        private async Awaitable<Dictionary<string, MapFriendProfileItem>> LoadFriendProfilesAsync(
-            IReadOnlyList<Relationship> relationships,
-            int token)
+        private void RebuildFriendSelectionFromCache()
         {
-            var profiles = new Dictionary<string, MapFriendProfileItem>(StringComparer.OrdinalIgnoreCase);
-            for (int startIndex = 0; startIndex < relationships.Count; startIndex += 20)
+            if (!AuthenticationService.Instance.IsSignedIn)
             {
-                int count = Mathf.Min(20, relationships.Count - startIndex);
-                var playerIds = new List<string>(count);
-                for (int i = 0; i < count; i++)
-                {
-                    playerIds.Add(relationships[startIndex + i].Member.Id);
-                }
-
-                MapFriendProfilesResponse response = await _scanMapService.LoadFriendProfilesAsync(playerIds);
-                if (token != _friendSelectionRequestToken)
-                {
-                    return profiles;
-                }
-                if (response == null)
-                {
-                    continue;
-                }
-
-                for (int i = 0; i < response.profiles.Count; i++)
-                {
-                    MapFriendProfileItem profile = response.profiles[i];
-                    profiles[profile.playerId] = profile;
-                }
+                _view.RebuildFriendStatus("로그인 후 친구를 선택할 수 있습니다.");
+                return;
             }
-            return profiles;
-        }
 
-        private static string GetMemberDisplayName(Member member)
-        {
-            return string.IsNullOrWhiteSpace(member.Profile.Name) ? member.Id : member.Profile.Name;
-        }
+            if (!_mainView.AreFriendsInitialized)
+            {
+                if (_mainView.DidFriendsInitializationFail)
+                {
+                    _view.RebuildFriendStatus("친구 정보를 불러오지 못했습니다.");
+                    _mainView.EnsureFriendsInitialized();
+                    return;
+                }
 
-        private static bool IsFriendsRecoverableException(Exception exception)
-        {
-            return exception is FriendsServiceException or InvalidOperationException or AuthenticationException or RequestFailedException;
+                _view.RebuildFriendStatus("친구 정보를 불러오는 중입니다.");
+                return;
+            }
+
+            _mainView.CopyCachedFriendOptions(_cachedFriendOptions);
+            if (_cachedFriendOptions.Count == 0)
+            {
+                _view.RebuildFriendStatus("등록된 친구가 없습니다.");
+                return;
+            }
+
+            IReadOnlyDictionary<string, ScanFriendOption> selectedFriends = _friendSelectionTarget == FriendSelectionTarget.Repairer
+                ? _view.SelectedRepairers
+                : _view.SelectedManagers;
+            _view.RebuildFriendItems(_cachedFriendOptions, selectedFriends, SelectFriends);
         }
 
         private enum FriendSelectionTarget

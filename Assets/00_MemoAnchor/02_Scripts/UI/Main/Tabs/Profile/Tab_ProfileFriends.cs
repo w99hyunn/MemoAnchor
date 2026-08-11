@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using Unity.Services.Authentication;
 using Unity.Services.Core;
 using Unity.Services.Friends;
@@ -20,8 +21,17 @@ namespace MemoAnchor.UI
         private bool _isFriendsRefreshing;
         private bool _friendsRefreshQueued;
         private bool _isFriendRequestSubmitting;
+        private bool _friendsInitializationFailed;
 
         public event Action FriendRequestAlertsChanged;
+        public event Action FriendsCacheChanged;
+        public bool AreFriendsInitialized => _friendsInitialized;
+        public bool DidFriendsInitializationFail => _friendsInitializationFailed;
+
+        public void EnsureFriendsInitialized()
+        {
+            _ = InitializeFriendsAsync();
+        }
 
         private async Awaitable InitializeFriendsAsync()
         {
@@ -31,6 +41,7 @@ namespace MemoAnchor.UI
             }
 
             _isFriendsInitializing = true;
+            _friendsInitializationFailed = false;
 
             try
             {
@@ -39,16 +50,24 @@ namespace MemoAnchor.UI
                     return;
                 }
 
-                await EnsurePlayerNameAsync();
+                _ = EnsurePlayerNameAsync();
                 await FriendsService.Instance.InitializeAsync();
                 _friendsInitialized = true;
                 RegisterFriendsCallbacks();
-                await RefreshFriendsAsync();
+                RebuildProfileFriendList();
+                RebuildOpenAlertFriendRequests();
+                FriendsCacheChanged?.Invoke();
+
+                await RefreshFriendProfilesAsync();
+                RebuildProfileFriendList();
+                FriendsCacheChanged?.Invoke();
             }
             catch (Exception exception) when (IsFriendsRecoverableException(exception))
             {
                 Debug.LogWarning($"UGS Friends initialization failed: {exception.Message}");
+                _friendsInitializationFailed = true;
                 RebuildProfileFriendList();
+                FriendsCacheChanged?.Invoke();
             }
             finally
             {
@@ -86,6 +105,7 @@ namespace MemoAnchor.UI
         {
             RebuildProfileFriendList();
             RebuildOpenAlertFriendRequests();
+            FriendsCacheChanged?.Invoke();
             _ = RefreshFriendsAsync();
         }
 
@@ -93,6 +113,7 @@ namespace MemoAnchor.UI
         {
             RebuildProfileFriendList();
             RebuildOpenAlertFriendRequests();
+            FriendsCacheChanged?.Invoke();
             _ = RefreshFriendsAsync();
         }
 
@@ -121,10 +142,10 @@ namespace MemoAnchor.UI
 
                 try
                 {
-                    await FriendsService.Instance.ForceRelationshipsRefreshAsync();
                     await RefreshFriendProfilesAsync();
                     RebuildProfileFriendList();
                     RebuildOpenAlertFriendRequests();
+                    FriendsCacheChanged?.Invoke();
                 }
                 catch (Exception exception) when (IsFriendsRecoverableException(exception))
                 {
@@ -139,7 +160,7 @@ namespace MemoAnchor.UI
 
         private async Awaitable RefreshFriendProfilesAsync()
         {
-            _mapFriendInviteProfiles.Clear();
+            var refreshedProfiles = new Dictionary<string, MapFriendProfileItem>(StringComparer.OrdinalIgnoreCase);
             var playerIds = new System.Collections.Generic.List<string>(MAP_FRIEND_INVITE_PAGE_SIZE);
             foreach (Relationship relationship in FriendsService.Instance.Friends)
             {
@@ -149,28 +170,59 @@ namespace MemoAnchor.UI
                     continue;
                 }
 
-                await LoadFriendProfilesAsync(playerIds);
+                if (!await LoadFriendProfilesAsync(playerIds, refreshedProfiles))
+                {
+                    return;
+                }
                 playerIds.Clear();
             }
 
-            if (playerIds.Count > 0)
-            {
-                await LoadFriendProfilesAsync(playerIds);
-            }
-        }
-
-        private async Awaitable LoadFriendProfilesAsync(System.Collections.Generic.List<string> playerIds)
-        {
-            MapFriendProfilesResponse response = await _scanMapService.LoadFriendProfilesAsync(playerIds);
-            if (response == null)
+            if (playerIds.Count > 0 && !await LoadFriendProfilesAsync(playerIds, refreshedProfiles))
             {
                 return;
             }
 
+            _mapFriendInviteProfiles.Clear();
+            foreach (KeyValuePair<string, MapFriendProfileItem> profile in refreshedProfiles)
+            {
+                _mapFriendInviteProfiles[profile.Key] = profile.Value;
+            }
+        }
+
+        public void CopyCachedFriendOptions(List<ScanFriendOption> destination)
+        {
+            destination.Clear();
+            if (!_friendsInitialized)
+            {
+                return;
+            }
+
+            foreach (Relationship relationship in FriendsService.Instance.Friends)
+            {
+                string memberId = relationship.Member.Id;
+                _mapFriendInviteProfiles.TryGetValue(memberId, out MapFriendProfileItem profile);
+                destination.Add(new ScanFriendOption(
+                    memberId,
+                    string.IsNullOrWhiteSpace(profile?.name) ? GetMemberDisplayName(relationship.Member) : profile.name,
+                    profile?.companyName ?? string.Empty));
+            }
+        }
+
+        private async Awaitable<bool> LoadFriendProfilesAsync(
+            System.Collections.Generic.List<string> playerIds,
+            Dictionary<string, MapFriendProfileItem> destination)
+        {
+            MapFriendProfilesResponse response = await _scanMapService.LoadFriendProfilesAsync(playerIds);
+            if (response == null)
+            {
+                return false;
+            }
+
             foreach (MapFriendProfileItem profile in response.profiles)
             {
-                _mapFriendInviteProfiles[profile.playerId] = profile;
+                destination[profile.playerId] = profile;
             }
+            return true;
         }
 
         private async Awaitable EnsurePlayerNameAsync()

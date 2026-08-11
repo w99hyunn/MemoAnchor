@@ -175,7 +175,7 @@ namespace MemoAnchor.UI
             HideProfileAccountSettings();
             RebuildProfileFriendList();
             ApplyProfileFriendList();
-            _ = InitializeFriendsAsync();
+            EnsureFriendsInitialized();
             ApplyProfileSwitches();
         }
 

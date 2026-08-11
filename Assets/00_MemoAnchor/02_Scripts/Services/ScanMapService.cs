@@ -128,6 +128,7 @@ namespace MemoAnchor
     public sealed class ScanMapService
     {
         private const string SCAN_MAPS_API_PATH = "/api/scan/maps";
+        private const int FRIEND_PROFILES_REQUEST_TIMEOUT_SECONDS = 15;
 
         private ScanMapListResponse _lastResponse = new();
         private bool _isLoading;
@@ -282,6 +283,7 @@ namespace MemoAnchor
             {
                 string json = JsonUtility.ToJson(new MapFriendProfilesRequest { playerIds = playerIds });
                 using UnityWebRequest request = ServicesManager.CreateAuthorizedJsonPostRequest($"{SCAN_MAPS_API_PATH}/friend-profiles", json);
+                request.timeout = FRIEND_PROFILES_REQUEST_TIMEOUT_SECONDS;
                 await ServicesManager.SendRequestAsync(request);
                 if (request.result != UnityWebRequest.Result.Success)
                 {

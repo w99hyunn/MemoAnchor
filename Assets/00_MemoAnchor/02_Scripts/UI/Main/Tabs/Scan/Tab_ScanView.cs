@@ -43,6 +43,7 @@ namespace MemoAnchor.UI
         public string SpaceName => _spaceNameField.value;
         public IReadOnlyDictionary<string, ScanFriendOption> SelectedRepairers => _selectedRepairers;
         public IReadOnlyDictionary<string, ScanFriendOption> SelectedManagers => _selectedManagers;
+        public bool IsFriendDialogVisible => _friendDialogOverlay.pickingMode == PickingMode.Position;
         public event Action ScanStartReadinessChanged;
 
         private void Awake()
