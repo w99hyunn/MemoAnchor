@@ -40,6 +40,8 @@ namespace MemoAnchor.UI
         private Transform _previewSurface;
         private Mesh _mesh;
         private Material _material;
+        private Mesh _gridMesh;
+        private Material _gridMaterial;
         private VisualElement _memoMarkerContainer;
         private Button _memoCard;
         private VisualElement _memoCardKind;
@@ -50,6 +52,7 @@ namespace MemoAnchor.UI
         private Vector3 _previousPointerPosition;
         private Vector2 _firstPointerPosition;
         private Vector2 _secondPointerPosition;
+        private Vector2 _pinchStartCenter;
         private float _yaw = -35f;
         private float _pitch = 28f;
         private float _distance;
@@ -60,6 +63,10 @@ namespace MemoAnchor.UI
         private float _fitDistanceScale = 1f;
         private float _viewRadius;
         private Vector3 _focusPosition;
+        private Vector3 _panOffset;
+        private Vector3 _pinchStartPanOffset;
+        private Vector3 _pinchStartCameraRight;
+        private Vector3 _pinchStartCameraUp;
         private int _firstPointerId = -1;
         private int _secondPointerId = -1;
         private int _previewLayer;
@@ -67,6 +74,7 @@ namespace MemoAnchor.UI
         private bool _isDragging;
         private bool _isViewActive;
         private bool _hasFocusPosition;
+        private bool _showOrientationAids;
 
         public void Initialize(Image target)
         {
@@ -83,6 +91,7 @@ namespace MemoAnchor.UI
             _target.RegisterCallback<PointerUpEvent>(OnPointerUp);
             _target.RegisterCallback<PointerCancelEvent>(OnPointerCancel);
             _target.RegisterCallback<WheelEvent>(OnWheel);
+            MapBackfaceDisplaySettings.Changed += ApplyBackfaceDisplayMode;
 
             CreatePreviewCamera();
         }
@@ -95,6 +104,7 @@ namespace MemoAnchor.UI
             VisualElement memoCardStem,
             Label memoCardTitle)
         {
+            _showOrientationAids = true;
             Initialize(target);
             _memoMarkerContainer = memoMarkerContainer;
             _memoCard = memoCard;
@@ -115,6 +125,7 @@ namespace MemoAnchor.UI
 
             _mesh = mesh;
             _material = material;
+            ApplyBackfaceDisplayMode();
             _previewRoot = new GameObject("Map Reconstruction Preview");
             _previewRoot.transform.SetParent(transform, false);
             _previewRoot.transform.position = Vector3.one * 10000f;
@@ -130,8 +141,13 @@ namespace MemoAnchor.UI
             meshRenderer.sharedMaterial = _material;
 
             Bounds bounds = _mesh.bounds;
+            if (_showOrientationAids)
+            {
+                CreateOrientationAids(bounds);
+            }
             float radius = Mathf.Max(bounds.extents.magnitude, 0.1f);
             _hasFocusPosition = false;
+            _panOffset = Vector3.zero;
             _fitDistanceScale = 1f;
             ApplyViewRadius(radius);
             _yaw = -35f;
@@ -154,6 +170,7 @@ namespace MemoAnchor.UI
 
             _focusPosition = position;
             _hasFocusPosition = true;
+            _panOffset = Vector3.zero;
             _fitDistanceScale = 0.82f;
             ApplyViewRadius(CalculateRadiusFromPosition(
                 _mesh.bounds,
@@ -344,6 +361,110 @@ namespace MemoAnchor.UI
             previewLight.shadows = LightShadows.None;
         }
 
+        private void ApplyBackfaceDisplayMode()
+        {
+            if (!_material)
+            {
+                return;
+            }
+
+            MapBackfaceDisplayMode mode = MapBackfaceDisplaySettings.Current;
+            if (_material.HasProperty("_Cull"))
+            {
+                _material.SetFloat(
+                    "_Cull",
+                    mode == MapBackfaceDisplayMode.Hidden
+                        ? (float)UnityEngine.Rendering.CullMode.Back
+                        : (float)UnityEngine.Rendering.CullMode.Off);
+            }
+            if (_material.HasProperty("_UseBackColor"))
+            {
+                bool useBackColor = mode == MapBackfaceDisplayMode.SolidColor;
+                _material.SetFloat("_UseBackColor", useBackColor ? 1f : 0f);
+                _material.SetColor("_BackColor", new Color(0.32f, 0.36f, 0.42f, 1f));
+            }
+        }
+
+        private void CreateOrientationAids(Bounds bounds)
+        {
+            CreateGroundGrid(bounds);
+        }
+
+        private void CreateGroundGrid(Bounds bounds)
+        {
+            float horizontalRadius = Mathf.Max(bounds.extents.x, bounds.extents.z, 0.1f);
+            float spacing = CalculateGridSpacing(horizontalRadius * 0.25f);
+            float halfExtent = Mathf.Ceil(horizontalRadius * 1.35f / spacing) * spacing;
+            int lineCount = Mathf.RoundToInt(halfExtent / spacing);
+            float heightOffset = Mathf.Max(bounds.size.y * 0.003f, 0.002f);
+            float gridY = bounds.min.y - heightOffset;
+            Vector3[] vertices = new Vector3[(lineCount * 2 + 1) * 4];
+            int vertexIndex = 0;
+
+            for (int i = -lineCount; i <= lineCount; i++)
+            {
+                float offset = i * spacing;
+                vertices[vertexIndex++] = new Vector3(bounds.center.x - halfExtent, gridY, bounds.center.z + offset);
+                vertices[vertexIndex++] = new Vector3(bounds.center.x + halfExtent, gridY, bounds.center.z + offset);
+                vertices[vertexIndex++] = new Vector3(bounds.center.x + offset, gridY, bounds.center.z - halfExtent);
+                vertices[vertexIndex++] = new Vector3(bounds.center.x + offset, gridY, bounds.center.z + halfExtent);
+            }
+
+            _gridMesh = new Mesh
+            {
+                name = "Map Preview Ground Grid"
+            };
+            _gridMesh.vertices = vertices;
+            int[] indices = new int[vertices.Length];
+            for (int i = 0; i < indices.Length; i++)
+            {
+                indices[i] = i;
+            }
+            _gridMesh.SetIndices(indices, MeshTopology.Lines, 0);
+            _gridMesh.RecalculateBounds();
+
+            GameObject gridObject = new("Map Preview Ground Grid");
+            gridObject.transform.SetParent(_previewRoot.transform, false);
+            gridObject.layer = _previewLayer;
+            gridObject.AddComponent<MeshFilter>().sharedMesh = _gridMesh;
+
+            Shader gridShader = Shader.Find("Sprites/Default")
+                                ?? Shader.Find("Universal Render Pipeline/Unlit");
+            _gridMaterial = new Material(gridShader)
+            {
+                name = "Map Preview Ground Grid Material"
+            };
+            Color gridColor = new(0.25f, 0.29f, 0.34f, 0.22f);
+            if (_gridMaterial.HasProperty("_Color"))
+            {
+                _gridMaterial.SetColor("_Color", gridColor);
+            }
+            if (_gridMaterial.HasProperty("_BaseColor"))
+            {
+                _gridMaterial.SetColor("_BaseColor", gridColor);
+            }
+
+            MeshRenderer gridRenderer = gridObject.AddComponent<MeshRenderer>();
+            gridRenderer.sharedMaterial = _gridMaterial;
+            gridRenderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            gridRenderer.receiveShadows = false;
+        }
+
+        private static float CalculateGridSpacing(float targetSpacing)
+        {
+            float magnitude = Mathf.Pow(10f, Mathf.Floor(Mathf.Log10(Mathf.Max(targetSpacing, 0.001f))));
+            float normalized = targetSpacing / magnitude;
+            if (normalized >= 5f)
+            {
+                return 5f * magnitude;
+            }
+            if (normalized >= 2f)
+            {
+                return 2f * magnitude;
+            }
+            return magnitude;
+        }
+
         private void OnGeometryChanged(GeometryChangedEvent evt)
         {
             float renderScale = Mathf.Min(
@@ -436,6 +557,10 @@ namespace MemoAnchor.UI
                 _secondPointerPosition = evt.position;
                 _pinchStartDistance = Vector2.Distance(_firstPointerPosition, _secondPointerPosition);
                 _pinchStartCameraDistance = _distance;
+                _pinchStartCenter = (_firstPointerPosition + _secondPointerPosition) * 0.5f;
+                _pinchStartPanOffset = _panOffset;
+                _pinchStartCameraRight = _previewCamera.transform.right;
+                _pinchStartCameraUp = _previewCamera.transform.up;
                 _isDragging = false;
             }
             evt.StopPropagation();
@@ -458,11 +583,21 @@ namespace MemoAnchor.UI
 
             if (_secondPointerId >= 0 && _pinchStartDistance > 0f)
             {
+                Vector2 pinchCenter = (_firstPointerPosition + _secondPointerPosition) * 0.5f;
                 float pinchDistance = Vector2.Distance(_firstPointerPosition, _secondPointerPosition);
                 _distance = Mathf.Clamp(
                     _pinchStartCameraDistance * _pinchStartDistance / Mathf.Max(pinchDistance, 1f),
                     _minimumDistance,
                     _maximumDistance);
+
+                Vector2 centerDelta = pinchCenter - _pinchStartCenter;
+                float viewHeight = Mathf.Max(_target.resolvedStyle.height, 1f);
+                float worldUnitsPerPixel = 2f * _pinchStartCameraDistance
+                    * Mathf.Tan(_previewCamera.fieldOfView * 0.5f * Mathf.Deg2Rad) / viewHeight;
+                _panOffset = _pinchStartPanOffset
+                    + (-_pinchStartCameraRight * centerDelta.x
+                       + _pinchStartCameraUp * centerDelta.y) * worldUnitsPerPixel;
+                ClampPanOffset();
                 UpdateCameraTransform();
                 evt.StopPropagation();
                 return;
@@ -511,8 +646,23 @@ namespace MemoAnchor.UI
 
             _pinchStartDistance = 0f;
             _pinchStartCameraDistance = _distance;
+            _pinchStartCenter = _firstPointerPosition;
             _isDragging = _firstPointerId >= 0;
             _previousPointerPosition = _firstPointerPosition;
+        }
+
+        private void ClampPanOffset()
+        {
+            Vector3 basePosition = _hasFocusPosition ? _focusPosition : _mesh.bounds.center;
+            Vector3 targetPosition = basePosition + _previewRoot.transform.InverseTransformVector(_panOffset);
+            Vector3 margin = _mesh.bounds.extents * 0.25f;
+            Vector3 minimum = _mesh.bounds.min - margin;
+            Vector3 maximum = _mesh.bounds.max + margin;
+            targetPosition = new Vector3(
+                Mathf.Clamp(targetPosition.x, minimum.x, maximum.x),
+                Mathf.Clamp(targetPosition.y, minimum.y, maximum.y),
+                Mathf.Clamp(targetPosition.z, minimum.z, maximum.z));
+            _panOffset = _previewRoot.transform.TransformVector(targetPosition - basePosition);
         }
 
         private void OnWheel(WheelEvent evt)
@@ -532,6 +682,7 @@ namespace MemoAnchor.UI
             Vector3 center = _hasFocusPosition
                 ? _previewRoot.transform.TransformPoint(_focusPosition)
                 : _previewSurface.TransformPoint(_mesh.bounds.center);
+            center += _panOffset;
             Quaternion orbit = Quaternion.Euler(_pitch, _yaw, 0f);
             _previewCamera.transform.position = center - orbit * Vector3.forward * _distance;
             _previewCamera.transform.rotation = Quaternion.LookRotation(center - _previewCamera.transform.position, Vector3.up);
@@ -554,6 +705,14 @@ namespace MemoAnchor.UI
             {
                 Destroy(_material);
             }
+            if (_gridMaterial)
+            {
+                Destroy(_gridMaterial);
+            }
+            if (_gridMesh)
+            {
+                Destroy(_gridMesh);
+            }
             if (_mesh)
             {
                 Destroy(_mesh);
@@ -562,8 +721,11 @@ namespace MemoAnchor.UI
             _previewRoot = null;
             _previewSurface = null;
             _material = null;
+            _gridMaterial = null;
+            _gridMesh = null;
             _mesh = null;
             _hasFocusPosition = false;
+            _panOffset = Vector3.zero;
         }
 
         private void ResetPointerInput()
@@ -581,6 +743,8 @@ namespace MemoAnchor.UI
             _secondPointerId = -1;
             _pinchStartDistance = 0f;
             _pinchStartCameraDistance = 0f;
+            _pinchStartCenter = Vector2.zero;
+            _pinchStartPanOffset = Vector3.zero;
             _isDragging = false;
         }
 
@@ -601,6 +765,7 @@ namespace MemoAnchor.UI
 
         private void OnDestroy()
         {
+            MapBackfaceDisplaySettings.Changed -= ApplyBackfaceDisplayMode;
             _target.UnregisterCallback<GeometryChangedEvent>(OnGeometryChanged);
             _target.UnregisterCallback<PointerDownEvent>(OnPointerDown);
             _target.UnregisterCallback<PointerMoveEvent>(OnPointerMove);

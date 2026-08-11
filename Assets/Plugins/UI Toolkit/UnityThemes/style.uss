@@ -4294,6 +4294,174 @@
     justify-content: space-between;
 }
 
+.profile-map-backface-dropdown {
+    width: 380px;
+    height: 82px;
+    padding-left: 2px;
+    padding-right: 2px;
+    overflow: visible;
+}
+
+#profile-map-backface-dropdown .unity-base-popup-field__input {
+    width: 376px;
+    height: 80px;
+    margin: 0;
+    align-self: center;
+    padding-left: 26px;
+    padding-right: 22px;
+    border-width: 2px;
+    border-color: rgb(220, 220, 220);
+    border-radius: 24px;
+    background-color: rgb(255, 255, 255);
+    transition-property: background-color, border-color;
+    transition-duration: 0.16s;
+    transition-timing-function: ease-out;
+}
+
+#profile-map-backface-dropdown:hover:enabled .unity-base-popup-field__input,
+#profile-map-backface-dropdown .unity-base-popup-field__input:hover:enabled,
+#profile-map-backface-dropdown:focus:enabled .unity-base-popup-field__input,
+#profile-map-backface-dropdown .unity-base-popup-field__input:focus:enabled {
+    border-color: rgb(194, 194, 194);
+    background-color: rgb(246, 246, 246);
+}
+
+#profile-map-backface-dropdown:active:enabled .unity-base-popup-field__input,
+#profile-map-backface-dropdown:checked:enabled .unity-base-popup-field__input,
+#profile-map-backface-dropdown .unity-base-popup-field__input:active:enabled {
+    border-color: rgb(165, 165, 165);
+    background-color: rgb(232, 232, 232);
+}
+
+#profile-map-backface-dropdown .unity-base-popup-field__text {
+    font-size: 30px;
+    color: rgb(84, 84, 84);
+    -unity-text-align: middle-left;
+    -unity-font-definition: url("project://database/Assets/Plugins/UI%20Toolkit/Fonts/Pretendard-Medium.ttf?fileID=12800000&guid=45ed9c45b09f5f2498d91e1982ab7527&type=3#Pretendard-Medium");
+}
+
+#profile-map-backface-dropdown .unity-base-popup-field__arrow {
+    width: 24px;
+    height: 24px;
+    margin-left: 16px;
+    background-image: url("project://database/Assets/00_MemoAnchor/03_Media/Icon/chevron_forward.png?fileID=2800000&guid=3ca432206e7cabb45abd1dfc722e509d&type=3#chevron_forward");
+    -unity-background-scale-mode: scale-to-fit;
+    -unity-background-image-tint-color: rgb(84, 84, 84);
+    rotate: 270deg;
+}
+
+#profile-map-backface-dropdown:hover:enabled .unity-base-popup-field__arrow,
+#profile-map-backface-dropdown:focus:enabled .unity-base-popup-field__arrow,
+#profile-map-backface-dropdown:active:enabled .unity-base-popup-field__arrow,
+#profile-map-backface-dropdown:checked:enabled .unity-base-popup-field__arrow {
+    -unity-background-image-tint-color: rgb(58, 58, 58);
+}
+
+.unity-base-dropdown__container-outer {
+    max-height: 270px;
+    border-width: 2px;
+    border-color: rgba(161, 31, 63, 0.24);
+    border-radius: 24px;
+}
+
+.unity-base-dropdown__container-inner {
+    padding: 8px;
+    border-radius: 22px;
+    background-color: rgb(255, 255, 255);
+}
+
+.unity-base-dropdown__item {
+    position: relative;
+    min-height: 68px;
+    margin-top: 6px;
+    margin-bottom: 6px;
+    padding-left: 24px;
+    padding-right: 22px;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    border-width: 0;
+    border-radius: 16px;
+    color: rgb(84, 84, 84);
+    background-color: rgb(255, 255, 255);
+    transition-duration: 0s;
+}
+
+.unity-base-dropdown__container-inner .unity-base-dropdown__item:hover:enabled,
+.unity-base-dropdown__container-inner .unity-base-dropdown__item:focus:enabled {
+    color: rgb(84, 84, 84);
+    background-color: rgba(161, 31, 63, 0.14);
+}
+
+.unity-base-dropdown__container-inner .unity-base-dropdown__item:active:enabled {
+    color: rgb(84, 84, 84);
+    background-color: rgba(161, 31, 63, 0.24);
+    transition-property: background-color;
+    transition-duration: 0.1s;
+    transition-timing-function: ease-out;
+}
+
+.unity-base-dropdown__container-inner .unity-base-dropdown__item:checked {
+    color: rgb(84, 84, 84);
+    background-color: rgba(161, 31, 63, 0.14);
+}
+
+.unity-base-dropdown__container-inner .unity-base-dropdown__item:checked:hover:enabled,
+.unity-base-dropdown__container-inner .unity-base-dropdown__item:checked:focus:enabled {
+    color: rgb(84, 84, 84);
+    background-color: rgba(161, 31, 63, 0.14);
+}
+
+.unity-base-dropdown__container-inner .unity-base-dropdown__item:checked:active:enabled {
+    color: rgb(84, 84, 84);
+    background-color: rgba(161, 31, 63, 0.24);
+    transition-property: background-color;
+    transition-duration: 0.1s;
+    transition-timing-function: ease-out;
+}
+
+.unity-base-dropdown__label {
+    flex-grow: 1;
+    margin: 0;
+    padding-right: 0;
+    font-size: 30px;
+    color: rgb(84, 84, 84);
+    background-color: rgba(0, 0, 0, 0);
+    transition-duration: 0s;
+    -unity-text-align: middle-left;
+    -unity-font-definition: url("project://database/Assets/Plugins/UI%20Toolkit/Fonts/Pretendard-Medium.ttf?fileID=12800000&guid=45ed9c45b09f5f2498d91e1982ab7527&type=3#Pretendard-Medium");
+}
+
+.unity-base-dropdown__container-inner .unity-base-dropdown__item:hover:enabled .unity-base-dropdown__label,
+.unity-base-dropdown__container-inner .unity-base-dropdown__item:active:enabled .unity-base-dropdown__label,
+.unity-base-dropdown__container-inner .unity-base-dropdown__item:focus:enabled .unity-base-dropdown__label,
+.unity-base-dropdown__container-inner .unity-base-dropdown__item:checked .unity-base-dropdown__label,
+.unity-base-dropdown__container-inner .unity-base-dropdown__item:checked:hover:enabled .unity-base-dropdown__label {
+    color: rgb(84, 84, 84);
+}
+
+.unity-base-dropdown__checkmark {
+    position: relative;
+    right: 0;
+    top: 0;
+    width: 30px;
+    height: 30px;
+    min-width: 30px;
+    min-height: 30px;
+    margin-left: 0;
+    margin-right: 18px;
+    background-color: rgba(0, 0, 0, 0);
+    transition-duration: 0s;
+    background-image: url("project://database/Assets/00_MemoAnchor/03_Media/Icon/check.png?fileID=2800000&guid=cc44cf71ac7687d4c82692e2f8ff010c&type=3#check");
+    -unity-background-scale-mode: scale-to-fit;
+    -unity-background-image-tint-color: var(--brand-pink-active);
+}
+
+.unity-base-dropdown__container-inner .unity-base-dropdown__item:hover:enabled .unity-base-dropdown__checkmark,
+.unity-base-dropdown__container-inner .unity-base-dropdown__item:checked:hover:enabled .unity-base-dropdown__checkmark {
+    -unity-background-image-tint-color: var(--brand-pink-active);
+}
+
 .profile-friend-list-card {
     padding-top: 0;
     padding-bottom: 0;

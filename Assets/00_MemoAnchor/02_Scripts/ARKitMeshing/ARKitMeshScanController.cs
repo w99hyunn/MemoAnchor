@@ -4415,8 +4415,12 @@ public class ARKitMeshScanController : MonoBehaviour
 
     private static Shader FindPreviewShader(bool hasProjectedColors)
     {
+        var previewShader = Shader.Find("MemoAnchor/Preview Vertex Colors");
+        if (previewShader)
+            return previewShader;
+
         return hasProjectedColors
-            ? Shader.Find("MemoAnchor/Preview Vertex Colors") ?? Shader.Find("Sprites/Default") ?? Shader.Find("Universal Render Pipeline/Unlit")
+            ? Shader.Find("Sprites/Default") ?? Shader.Find("Universal Render Pipeline/Unlit")
             : Shader.Find("Universal Render Pipeline/Lit") ?? Shader.Find("Standard") ?? Shader.Find("Universal Render Pipeline/Unlit");
     }
 

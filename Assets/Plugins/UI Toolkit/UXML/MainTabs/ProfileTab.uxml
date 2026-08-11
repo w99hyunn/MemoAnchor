@@ -44,6 +44,10 @@
                         <ui:VisualElement class="profile-switch-thumb"/>
                     </ui:Button>
                 </ui:VisualElement>
+                <ui:VisualElement class="profile-card profile-toggle-row">
+                    <ui:Label text="3D MAP 표시방식" class="profile-row-title"/>
+                    <ui:DropdownField name="profile-map-backface-dropdown" choices="양면 텍스처,뒷면 투명,뒷면 단색" index="2" class="profile-map-backface-dropdown"/>
+                </ui:VisualElement>
             </ui:VisualElement>
         </ui:VisualElement>
         <ui:VisualElement name="profile-account-settings-page" class="page-overlay profile-account-settings-page is-hidden">

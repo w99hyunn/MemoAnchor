@@ -14,12 +14,35 @@ namespace MemoAnchor.UI
         private Button _profilePushToggle, _profileSoundToggle;
         private VisualElement _profileMainContent, _profileAccountSettingsPage;
         private VisualElement _profileFriendListCard, _profileFriendList, _profileFriendItemsList, _profileFriendListChevron;
+        private DropdownField _profileMapBackfaceDropdown;
         private Label _profileNameLabel, _profileCompanyLabel;
         private FadeTransition _fadeTransition;
         private bool _profilePushEnabled;
         private bool _profileSoundEnabled = false;
         private bool _profileFriendListExpanded;
         private bool _isLoggingOut;
+
+        private void InitializeProfileMapBackfaceDropdown()
+        {
+            _profileMapBackfaceDropdown.index = (int)MapBackfaceDisplaySettings.Current;
+            _profileMapBackfaceDropdown.RegisterValueChangedCallback(OnProfileMapBackfaceChanged);
+        }
+
+        private void UnregisterProfileMapBackfaceDropdown()
+        {
+            _profileMapBackfaceDropdown.UnregisterValueChangedCallback(OnProfileMapBackfaceChanged);
+        }
+
+        private void OnProfileMapBackfaceChanged(ChangeEvent<string> evt)
+        {
+            MapBackfaceDisplayMode mode = evt.newValue switch
+            {
+                "양면 텍스처" => MapBackfaceDisplayMode.DoubleSidedColor,
+                "뒷면 투명" => MapBackfaceDisplayMode.Hidden,
+                _ => MapBackfaceDisplayMode.SolidColor
+            };
+            MapBackfaceDisplaySettings.Set(mode);
+        }
 
         private void ApplyProfileSummary()
         {

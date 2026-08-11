@@ -131,6 +131,7 @@ namespace MemoAnchor.UI
             _profileFriendAddButton = _root.Q<Button>("profile-friend-add-button");
             _profilePushToggle = _root.Q<Button>("profile-push-toggle");
             _profileSoundToggle = _root.Q<Button>("profile-sound-toggle");
+            _profileMapBackfaceDropdown = _root.Q<DropdownField>("profile-map-backface-dropdown");
 
             _tabViewport = _root.Q<VisualElement>("tab-viewport");
             _tabStrip = _root.Q<VisualElement>("tab-strip");
@@ -163,6 +164,7 @@ namespace MemoAnchor.UI
             _profileFriendAddButton.RegisterCallback<ClickEvent>(OnProfileFriendAddClicked);
             _profilePushToggle.clicked += ToggleProfilePush;
             _profileSoundToggle.clicked += ToggleProfileSound;
+            InitializeProfileMapBackfaceDropdown();
             InitializeMemoFilterDates();
             RegisterMemoDetailPage();
             RegisterMapMemoCreatePage();
@@ -187,6 +189,7 @@ namespace MemoAnchor.UI
             _profileFriendAddButton.UnregisterCallback<ClickEvent>(OnProfileFriendAddClicked);
             _profilePushToggle.clicked -= ToggleProfilePush;
             _profileSoundToggle.clicked -= ToggleProfileSound;
+            UnregisterProfileMapBackfaceDropdown();
             UnregisterFriendsCallbacks();
             UnregisterMemoDetailPage();
             UnregisterMapMemoCreatePage();
