@@ -73,10 +73,11 @@ public class ARKitMeshScanController : MonoBehaviour
 
     [Header("RGB-D Recorder")]
     [SerializeField] private bool recordRgbdDatasetOnScan = true;
-    [SerializeField] private float rgbdRecorderFrameIntervalSeconds = 0.2f;
-    [SerializeField] private int rgbdRecorderMaxQueue = 4;
+    [SerializeField] private float rgbdRecorderFrameIntervalSeconds = 0.15f;
+    [SerializeField] private int rgbdRecorderMaxQueue = 6;
 
     [Header("Android Depth Scan")]
+    [SerializeField] private int androidRgbCaptureWidth = 1920;
     [SerializeField] private int androidDepthPreviewMaxFrames = 48;
     [SerializeField] private int androidDepthPreviewMaxPointsPerFrame = 1800;
     [SerializeField] private int androidDepthPreviewPixelStride = 6;
@@ -84,6 +85,8 @@ public class ARKitMeshScanController : MonoBehaviour
     [SerializeField] private float androidDepthMaxMeters = 5f;
     [SerializeField] private float androidDepthTriangleMaxDifferenceMeters = 0.18f;
     [SerializeField] private float androidMaxRgbDepthTimestampDeltaSeconds = 0.12f;
+    [SerializeField] private float androidMinimumKeyframeDepthConfidenceRatio = 0.03f;
+    [SerializeField] private float androidRecommendedDepthConfidenceRatio = 0.2f;
 
     [Header("Scan Guidance")]
     [SerializeField] private bool showScanQualityGuidance = true;
@@ -196,6 +199,7 @@ public class ARKitMeshScanController : MonoBehaviour
     private int nextRgbdRecorderFrameId;
     private string lastRgbdRecorderDatasetPath = string.Empty;
     private bool depthOnlyPreview;
+    private bool androidCameraConfigurationApplied;
     private VisualElement scanHudScanLayer;
     private VisualElement scanHudProcessingBlur;
     private VisualElement scanHudFrame;
@@ -439,6 +443,9 @@ public class ARKitMeshScanController : MonoBehaviour
     private void OnARSessionStateChanged(ARSessionStateChangedEventArgs args)
     {
         UpdateSessionState(args.state);
+
+        if (args.state == ARSessionState.SessionTracking)
+            TryConfigureAndroidCameraResolution();
     }
 
     private void OnMeshesChanged(ARMeshesChangedEventArgs args)
@@ -480,6 +487,8 @@ public class ARKitMeshScanController : MonoBehaviour
     {
         if (MapScanSession.IsViewingStoredResult || reconstructionPackageRunning)
             return;
+
+        TryConfigureAndroidCameraResolution();
 
         SetCompletionReviewVisible(false);
         scanMode = ScanMode.Scanning;
@@ -1561,7 +1570,9 @@ public class ARKitMeshScanController : MonoBehaviour
             target_frame_rate_hz = frameRate,
             max_rgb_depth_timestamp_difference_ms = GetRgbDepthTimestampLimitSeconds() * 1000d,
             rgb_format = "jpg",
-            depth_format = "raw XRCpuImage plane 0",
+            depth_format = IsAndroidDepthScan
+                ? "temporally smoothed ARCore environment depth XRCpuImage plane 0, raw fallback"
+                : "ARKit environment depth XRCpuImage plane 0",
             depth_unit = "meters; DepthUint16 provider frames are normalized to contiguous DepthFloat32 before recording",
             coordinate_system = "Unity world space, meters, left-handed scene convention: +X right, +Y up",
             camera_forward_convention = "Unity camera Transform.forward is local +Z in world direction; view space convention is not converted here",
@@ -3201,7 +3212,7 @@ public class ARKitMeshScanController : MonoBehaviour
 
         if (captureDepthForReconstruction &&
             frame.Confidence != null &&
-            frame.DepthConfidenceRatio < minimumKeyframeDepthConfidenceRatio)
+            frame.DepthConfidenceRatio < GetMinimumKeyframeDepthConfidenceRatio())
         {
             if (frame.Texture)
                 Destroy(frame.Texture);
@@ -3303,7 +3314,10 @@ public class ARKitMeshScanController : MonoBehaviour
                 }
             }
 
-            var requestedWidth = Mathf.Clamp(keyframeTextureWidth, 1, 1920);
+            var requestedWidth = Mathf.Clamp(
+                IsAndroidDepthScan ? androidRgbCaptureWidth : keyframeTextureWidth,
+                1,
+                1920);
             var targetWidth = Mathf.Min(requestedWidth, image.width);
             var aspect = image.height / (float)image.width;
             var targetHeight = Mathf.Clamp(Mathf.RoundToInt(targetWidth * aspect), 1, image.height);
@@ -3375,6 +3389,75 @@ public class ARKitMeshScanController : MonoBehaviour
         }
     }
 
+    private bool TryConfigureAndroidCameraResolution()
+    {
+        if (!IsAndroidDepthScan || androidCameraConfigurationApplied || !arCameraManager || !arCameraManager.enabled)
+            return androidCameraConfigurationApplied;
+
+        using var configurations = arCameraManager.GetConfigurations(Allocator.Temp);
+        if (!configurations.IsCreated || configurations.Length == 0)
+            return false;
+
+        var maximumSide = Mathf.Clamp(androidRgbCaptureWidth, 640, 1920);
+        var bestIndex = -1;
+        var bestArea = -1L;
+        var bestFrameRateDistance = int.MaxValue;
+        var availableConfigurations = new StringBuilder();
+
+        for (var i = 0; i < configurations.Length; i++)
+        {
+            var configuration = configurations[i];
+            if (i > 0)
+                availableConfigurations.Append(", ");
+            availableConfigurations.Append(configuration);
+
+            if (Mathf.Max(configuration.width, configuration.height) > maximumSide)
+                continue;
+
+            var area = (long)configuration.width * configuration.height;
+            var frameRateDistance = Mathf.Abs((configuration.framerate ?? 30) - 30);
+            if (area < bestArea || (area == bestArea && frameRateDistance >= bestFrameRateDistance))
+                continue;
+
+            bestIndex = i;
+            bestArea = area;
+            bestFrameRateDistance = frameRateDistance;
+        }
+
+        if (bestIndex < 0)
+        {
+            for (var i = 0; i < configurations.Length; i++)
+            {
+                var configuration = configurations[i];
+                var area = (long)configuration.width * configuration.height;
+                if (bestIndex >= 0 && area >= bestArea)
+                    continue;
+
+                bestIndex = i;
+                bestArea = area;
+            }
+        }
+
+        var selectedConfiguration = configurations[bestIndex];
+        try
+        {
+            if (arCameraManager.currentConfiguration != selectedConfiguration)
+                arCameraManager.currentConfiguration = selectedConfiguration;
+
+            arCameraManager.autoFocusRequested = true;
+            androidCameraConfigurationApplied = true;
+            Debug.Log(
+                $"[ARCamera] Android RGB configuration selected: {selectedConfiguration}. " +
+                $"Available: {availableConfigurations}");
+            return true;
+        }
+        catch (Exception ex)
+        {
+            Debug.LogWarning($"[ARCamera] Android RGB configuration failed: {ex.Message}");
+            return false;
+        }
+    }
+
     private bool TryCaptureDepthImage(out CpuImageFrame frame)
     {
         frame = null;
@@ -3384,8 +3467,10 @@ public class ARKitMeshScanController : MonoBehaviour
 
         XRCpuImage image;
         var acquired = IsAndroidDepthScan
-            ? arOcclusionManager.TryAcquireRawEnvironmentDepthCpuImage(out image)
+            ? arOcclusionManager.TryAcquireSmoothedEnvironmentDepthCpuImage(out image)
             : arOcclusionManager.TryAcquireEnvironmentDepthCpuImage(out image);
+        if (!acquired && IsAndroidDepthScan)
+            acquired = arOcclusionManager.TryAcquireRawEnvironmentDepthCpuImage(out image);
         if (!acquired)
             return false;
 
@@ -3536,6 +3621,20 @@ public class ARKitMeshScanController : MonoBehaviour
             ? Mathf.Max(maxRgbConfidenceTimestampDeltaSeconds, androidMaxRgbDepthTimestampDeltaSeconds)
             : maxRgbConfidenceTimestampDeltaSeconds;
         return Mathf.Max(0.001f, configuredLimit);
+    }
+
+    private float GetMinimumKeyframeDepthConfidenceRatio()
+    {
+        return IsAndroidDepthScan
+            ? Mathf.Clamp01(androidMinimumKeyframeDepthConfidenceRatio)
+            : Mathf.Clamp01(minimumKeyframeDepthConfidenceRatio);
+    }
+
+    private float GetRecommendedDepthConfidenceRatio()
+    {
+        return IsAndroidDepthScan
+            ? Mathf.Clamp01(androidRecommendedDepthConfidenceRatio)
+            : Mathf.Clamp01(recommendedMinDepthConfidenceRatio);
     }
 
     private bool IsEnvironmentDepthUnsupported()
@@ -5053,12 +5152,15 @@ public class ARKitMeshScanController : MonoBehaviour
         var durationScore = ScoreRatio(duration, recommendedMinScanSeconds) * 10f;
         var keyframeScore = ScoreRatio(keyframeCount, recommendedMinKeyframes) * 20f;
         var pathScore = ScoreRatio(cameraPathMeters, recommendedMinCameraPathMeters) * 15f;
-        var confidenceScore = ScoreRatio(averageDepthConfidence, recommendedMinDepthConfidenceRatio) * 20f;
-        var surfaceScore = ScoreRatio(surfaceHitRatio, recommendedMinSurfaceHitRatio) * 10f;
+        var androidEvidenceRatio = IsAndroidDepthScan
+            ? ScoreRatio(keyframeCount, recommendedMinKeyframes)
+            : 1f;
+        var confidenceScore = ScoreRatio(averageDepthConfidence, GetRecommendedDepthConfidenceRatio()) * 20f * androidEvidenceRatio;
+        var surfaceScore = ScoreRatio(surfaceHitRatio, recommendedMinSurfaceHitRatio) * 10f * androidEvidenceRatio;
         var geometryScore = IsAndroidDepthScan
             ? ScoreRatio(depthFrameCount, recommendedMinKeyframes) * 15f
             : ScoreRatio(triangleCount, recommendedMinMeshTriangles) * 15f;
-        var planeScore = ScoreRatio(planeCount, recommendedMinDetectedPlanes) * 10f;
+        var planeScore = ScoreRatio(planeCount, recommendedMinDetectedPlanes) * 10f * androidEvidenceRatio;
         var score = Mathf.Clamp(durationScore + keyframeScore + pathScore + confidenceScore + surfaceScore + geometryScore + planeScore, 0f, 100f);
 
         var guidance = BuildScanGuidance(
@@ -5141,7 +5243,7 @@ public class ARKitMeshScanController : MonoBehaviour
         if (cameraPathMeters < recommendedMinCameraPathMeters)
             guidance.Add("Walk along the wall/corners; avoid only rotating in place.");
 
-        if (averageDepthConfidence < recommendedMinDepthConfidenceRatio)
+        if (averageDepthConfidence < GetRecommendedDepthConfidenceRatio())
             guidance.Add("Point at well-lit matte surfaces and slow down until depth is stable.");
 
         if (requireSynchronizedRgbdKeyframes && averageRgbdTimestampDeltaMs > GetRgbDepthTimestampLimitSeconds() * 750f)

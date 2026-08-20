@@ -32,6 +32,18 @@ namespace MemoAnchor.UI
             _nativeKeyboard = null;
         }
 
+        public bool TryDismissFocusedKeyboard()
+        {
+            if (!IsFocusedWithinThisField())
+            {
+                return false;
+            }
+
+            DismissNativeKeyboard();
+            Blur();
+            return true;
+        }
+
         private void OnFocusIn(FocusInEvent evt)
         {
             // UI Toolkit focuses an internal text-input element after the outer

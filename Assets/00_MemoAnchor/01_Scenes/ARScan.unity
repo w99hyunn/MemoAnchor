@@ -934,8 +934,9 @@ MonoBehaviour:
   uploadReconstructionPackageOnStop: 1
   reconstructionUploadUrl: 
   recordRgbdDatasetOnScan: 1
-  rgbdRecorderFrameIntervalSeconds: 0.2
-  rgbdRecorderMaxQueue: 4
+  rgbdRecorderFrameIntervalSeconds: 0.15
+  rgbdRecorderMaxQueue: 6
+  androidRgbCaptureWidth: 1920
   androidDepthPreviewMaxFrames: 48
   androidDepthPreviewMaxPointsPerFrame: 1800
   androidDepthPreviewPixelStride: 6
@@ -943,6 +944,8 @@ MonoBehaviour:
   androidDepthMaxMeters: 5
   androidDepthTriangleMaxDifferenceMeters: 0.18
   androidMaxRgbDepthTimestampDeltaSeconds: 0.12
+  androidMinimumKeyframeDepthConfidenceRatio: 0.03
+  androidRecommendedDepthConfidenceRatio: 0.2
   showScanQualityGuidance: 1
   requireMinimumQualityToStop: 1
   minimumStopQualityScore: 78

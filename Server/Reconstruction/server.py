@@ -356,6 +356,14 @@ def run_rgbd_reconstruction(scan_id: str, rgbd_dir: Path, result_dir: Path) -> t
         "0.02",
         "--sdf-trunc",
         "0.06",
+        "--android-voxel-size",
+        "0.025",
+        "--android-sdf-trunc",
+        "0.075",
+        "--android-smoothing-iterations",
+        "3",
+        "--android-hole-fill-max-radius",
+        "0.05",
         "--depth-min",
         "0.15",
         "--depth-max",
@@ -366,6 +374,9 @@ def run_rgbd_reconstruction(scan_id: str, rgbd_dir: Path, result_dir: Path) -> t
         RGBD_DEFAULT_DEPTH_TRANSFORM,
         "--preview-point-stride",
         "8",
+        "--android-plane-regularization",
+        "--android-plane-max-horizontal-count",
+        "3",
     ]
 
     jobs = [
@@ -432,6 +443,9 @@ def run_rgbd_reconstruction(scan_id: str, rgbd_dir: Path, result_dir: Path) -> t
             shutil.copy2(source, result_dir / destination_name)
 
     color_report = reports.get("color") if isinstance(reports.get("color"), dict) else {}
+    high_resolution_colors = color_report.get("android_high_resolution_colors")
+    if not isinstance(high_resolution_colors, dict):
+        high_resolution_colors = {}
     metrics = {
         "pipeline": "open3d_rgbd_tsdf",
         "coordinateSpace": "unity_scan_world_v1",
@@ -442,6 +456,12 @@ def run_rgbd_reconstruction(scan_id: str, rgbd_dir: Path, result_dir: Path) -> t
         "rejectedFrames": color_report.get("rejected_frame_count"),
         "meshVertices": (color_report.get("clean_mesh") or {}).get("vertex_count") if isinstance(color_report.get("clean_mesh"), dict) else None,
         "meshTriangles": (color_report.get("clean_mesh") or {}).get("triangle_count") if isinstance(color_report.get("clean_mesh"), dict) else None,
+        "highResolutionColoredVertices": high_resolution_colors.get("colored_vertex_count"),
+        "highResolutionColorCoverage": high_resolution_colors.get("coverage"),
+        "highResolutionSourceRgb": high_resolution_colors.get("source_rgb_resolution"),
+        "highResolutionFusionDepth": high_resolution_colors.get("fusion_depth_resolution"),
+        "highResolutionMeanSourceSharpness": high_resolution_colors.get("mean_source_sharpness"),
+        "highResolutionSelectedObservations": high_resolution_colors.get("selected_observations_per_vertex"),
         "processingTimeSeconds": round(time.time() - started, 2),
     }
     (result_dir / "server_reconstruction_summary.json").write_text(json.dumps({

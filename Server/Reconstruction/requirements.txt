@@ -1,4 +1,4 @@
-open3d>=0.18
+open3d>=0.19
 opencv-python-headless>=4.8
 numpy>=1.23
 Pillow>=10
