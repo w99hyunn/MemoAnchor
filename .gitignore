@@ -81,7 +81,7 @@ __pycache__/
 # Local data & reconstruction artifacts (large, machine-local)
 # =============================================================
 # Server-side received scan packages and results
-tools/reconstruction_server/data/
+Server/Reconstruction/data/
 
 # Offline pipeline outputs (meshes, previews, reports)
 reconstruction_output/
@@ -97,7 +97,7 @@ scan_20*/
 # =============================================================
 # Third-party source fetched by script (not vendored into git)
 # =============================================================
-tools/rtabmap_ios/vendor/
+Server/Reconstruction/rtabmap_ios/vendor/
 
 # =============================================================
 # Legacy local scratch files

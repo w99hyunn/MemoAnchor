@@ -14,7 +14,7 @@ from PIL import Image
 try:
     import open3d as o3d
 except ModuleNotFoundError as exc:
-    raise SystemExit("Open3D is not installed. Run: python3 -m pip install -r tools/reconstruction/requirements.txt") from exc
+    raise SystemExit("Open3D is not installed. Run: python3 -m pip install -r Server/Reconstruction/requirements.txt") from exc
 
 from reconstruction_common import (
     analyze_trajectory,

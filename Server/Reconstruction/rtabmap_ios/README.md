@@ -21,13 +21,13 @@ RGB/depth/pose files and the Python server tried to reconstruct them later.
 
 ```bash
 cd <repo-root>
-bash tools/rtabmap_ios/fetch_rtabmap_ios.sh
+bash Server/Reconstruction/rtabmap_ios/fetch_rtabmap_ios.sh
 ```
 
 That places the upstream source at:
 
 ```text
-tools/rtabmap_ios/vendor/rtabmap/app/ios
+Server/Reconstruction/rtabmap_ios/vendor/rtabmap/app/ios
 ```
 
 ## Build Dependencies
@@ -35,14 +35,14 @@ tools/rtabmap_ios/vendor/rtabmap/app/ios
 RTAB-Map's iOS app ships its dependency installer:
 
 ```bash
-cd tools/rtabmap_ios/vendor/rtabmap/app/ios/RTABMapApp
+cd Server/Reconstruction/rtabmap_ios/vendor/rtabmap/app/ios/RTABMapApp
 bash install_deps.sh
 ```
 
 Then open:
 
 ```text
-tools/rtabmap_ios/vendor/rtabmap/app/ios/RTABMapApp.xcodeproj
+Server/Reconstruction/rtabmap_ios/vendor/rtabmap/app/ios/RTABMapApp.xcodeproj
 ```
 
 Build the official app once on the target LiDAR iPhone/iPad. This validates the

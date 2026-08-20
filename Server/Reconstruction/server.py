@@ -21,21 +21,10 @@ from visual_localizer import localize
 
 
 ROOT = Path(__file__).resolve().parent
-WORKSPACE_ROOT = ROOT.parent.parent
-PACKAGED_RECONSTRUCTION_TOOL_ROOT = ROOT
-SOURCE_RECONSTRUCTION_TOOL_ROOT = ROOT.parent / "reconstruction"
-RECONSTRUCTION_TOOL_ROOT = (
-    PACKAGED_RECONSTRUCTION_TOOL_ROOT
-    if (PACKAGED_RECONSTRUCTION_TOOL_ROOT / "reconstruct_open3d_tsdf.py").exists()
-    else SOURCE_RECONSTRUCTION_TOOL_ROOT
-)
+WORKSPACE_ROOT = ROOT.parent
+RECONSTRUCTION_TOOL_ROOT = ROOT
 RECONSTRUCTION_SCRIPT = RECONSTRUCTION_TOOL_ROOT / "reconstruct_open3d_tsdf.py"
-PACKAGED_VENV_PYTHON = ROOT / ".venv" / "bin" / "python"
-RECONSTRUCTION_VENV_PYTHON = (
-    PACKAGED_VENV_PYTHON
-    if PACKAGED_VENV_PYTHON.exists()
-    else RECONSTRUCTION_TOOL_ROOT / ".venv" / "bin" / "python"
-)
+RECONSTRUCTION_VENV_PYTHON = ROOT / ".venv" / "bin" / "python"
 DATA_ROOT = ROOT / "data"
 UPLOAD_ROOT = DATA_ROOT / "uploads"
 SCAN_ROOT = DATA_ROOT / "scans"

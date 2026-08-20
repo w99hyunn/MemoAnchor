@@ -223,7 +223,7 @@ reconstruction_output/full_scan_rotate270_color90_candidate/fused_point_cloud.pl
 결과 위치:
 
 ```text
-tools/reconstruction_server/data/results/server_rgbd_smoke_20260718_163137/
+Server/Reconstruction/data/results/server_rgbd_smoke_20260718_163137/
 ```
 
 생성 파일:
@@ -277,7 +277,7 @@ Assets/Scripts_donghyeon/ARKitMeshing/ARKitMeshScanController.cs
 폴더:
 
 ```text
-tools/reconstruction/
+Server/Reconstruction/
 ```
 
 주요 파일:
@@ -307,7 +307,7 @@ README.md
 파일:
 
 ```text
-tools/reconstruction_server/server.py
+Server/Reconstruction/server.py
 ```
 
 주요 작업:
@@ -330,7 +330,7 @@ repo root에서 실행:
 ```bash
 cd <repo-root>
 
-tools/reconstruction/.venv/bin/python tools/reconstruction_server/server.py \
+Server/Reconstruction/.venv/bin/python Server/Reconstruction/server.py \
   --host 0.0.0.0 \
   --port 8765
 ```

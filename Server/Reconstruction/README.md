@@ -83,7 +83,7 @@ If `/home/ubuntu/MemoAnchorReconstruction/data` contains existing scans, copy th
 From the repository root:
 
 ```bash
-tools/reconstruction/.venv/bin/python tools/reconstruction_server/server.py \
+Server/Reconstruction/.venv/bin/python Server/Reconstruction/server.py \
   --host 127.0.0.1 \
   --port 8765 \
   --idle-timeout-seconds 60
