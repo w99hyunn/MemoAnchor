@@ -4,7 +4,7 @@
         <ui:VisualElement class="home-header tab-fixed-header">
             <ui:Label text="새로운 공간 스캔" class="home-greeting"/>
         </ui:VisualElement>
-        <ui:ScrollView name="scan-content-scroll" mode="Vertical" horizontal-scroller-visibility="Hidden" vertical-scroller-visibility="Hidden" touch-scroll-type="Elastic" class="tab-content-scroll">
+        <ui:ScrollView name="scan-content-scroll" mode="Vertical" horizontal-scroller-visibility="Hidden" vertical-scroller-visibility="Hidden" touch-scroll-type="Clamped" class="tab-content-scroll">
             <ui:VisualElement class="tab-content-inner" style="margin-right: 50px; margin-left: 50px; padding-bottom: 0;">
                 <ui:Label text="①  스캔 전 설정" class="scan-step-title"/>
                 <ui:VisualElement class="scan-field-group">
@@ -67,7 +67,7 @@
                     </ui:Button>
                     <ui:Label name="scan-friend-dialog-title" text="친구목록" class="map-friend-invite-title"/>
                 </ui:VisualElement>
-                <ui:ScrollView mode="Vertical" horizontal-scroller-visibility="Hidden" vertical-scroller-visibility="Hidden" touch-scroll-type="Elastic" class="full-width-list page-scroll map-friend-invite-scroll">
+                <ui:ScrollView mode="Vertical" horizontal-scroller-visibility="Hidden" vertical-scroller-visibility="Hidden" touch-scroll-type="Clamped" class="full-width-list page-scroll map-friend-invite-scroll">
                     <ui:VisualElement name="scan-friend-items-list" class="full-width-list content-list"/>
                 </ui:ScrollView>
                 <ui:Button name="scan-friend-dialog-submit-button" text="선택하기" class="map-friend-invite-submit-button"/>

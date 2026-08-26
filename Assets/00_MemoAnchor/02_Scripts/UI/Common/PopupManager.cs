@@ -22,7 +22,7 @@ namespace MemoAnchor.UI
         private VisualElement _confirmOverlay;
         private VisualElement _confirmActions;
         private VisualElement _confirmInputBox;
-        private TextField _confirmInput;
+        private NativeTextField _confirmInput;
         private Button _confirmCancelButton, _confirmSubmitButton;
         private Label _confirmTitleLabel, _confirmMessageLabel, _confirmCancelLabel, _confirmSubmitLabel, _confirmStatusLabel;
         private Action _onConfirmSubmit;
@@ -30,6 +30,7 @@ namespace MemoAnchor.UI
         private Action _onInputEmptySubmit;
         private Action<string> _onInputSubmit;
         private bool _confirmUsesInput;
+        private float _confirmInputBackGuardUntil;
         private int _confirmPresentationVersion;
 
         private void Awake()
@@ -199,6 +200,19 @@ namespace MemoAnchor.UI
                 return false;
             }
 
+            if (Instance._confirmUsesInput)
+            {
+                if (Time.unscaledTime < Instance._confirmInputBackGuardUntil)
+                {
+                    return true;
+                }
+
+                if (Instance._confirmInput.TryDismissFocusedKeyboard())
+                {
+                    return true;
+                }
+            }
+
             Instance.HideConfirmInternal();
             return true;
         }
@@ -219,6 +233,7 @@ namespace MemoAnchor.UI
             _onInputEmptySubmit = null;
             _onInputSubmit = null;
             _confirmUsesInput = false;
+            _confirmInputBackGuardUntil = 0f;
             _confirmInputBox.style.display = DisplayStyle.None;
             _confirmStatusLabel.AddToClassList("is-hidden");
             _confirmStatusLabel.text = string.Empty;
@@ -245,6 +260,7 @@ namespace MemoAnchor.UI
             _onInputEmptySubmit = onEmptySubmit;
             _onInputSubmit = onSubmit;
             _confirmUsesInput = true;
+            _confirmInputBackGuardUntil = Time.unscaledTime + 0.5f;
             _confirmInputBox.style.display = DisplayStyle.Flex;
             _confirmStatusLabel.AddToClassList("is-hidden");
             _confirmStatusLabel.text = string.Empty;
@@ -279,6 +295,7 @@ namespace MemoAnchor.UI
             _onInputEmptySubmit = null;
             _onInputSubmit = null;
             _confirmUsesInput = false;
+            _confirmInputBackGuardUntil = 0f;
 
             if (_confirmRoot.style.display.value == DisplayStyle.None)
             {
@@ -370,7 +387,7 @@ namespace MemoAnchor.UI
             _confirmTitleLabel = _confirmRoot.Q<Label>("common-confirm-popup-title");
             _confirmMessageLabel = _confirmRoot.Q<Label>("common-confirm-popup-message");
             _confirmInputBox = _confirmRoot.Q<VisualElement>("common-confirm-input-box");
-            _confirmInput = _confirmRoot.Q<TextField>("common-confirm-input");
+            _confirmInput = _confirmRoot.Q<NativeTextField>("common-confirm-input");
             _confirmStatusLabel = _confirmRoot.Q<Label>("common-confirm-status-label");
             _confirmActions = _confirmRoot.Q<VisualElement>(className: "common-confirm-popup-actions");
             _confirmCancelLabel = _confirmRoot.Q<Label>("common-confirm-cancel-label");

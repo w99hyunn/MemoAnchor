@@ -95,7 +95,7 @@
             <ui:VisualElement name="map-list-sheet" class="scan-action-dialog-sheet scan-address-dialog-sheet map-list-sheet">
                 <ui:VisualElement class="scan-action-dialog-handle scan-address-dialog-handle"/>
                 <ui:Label text="건물목록" class="map-list-title"/>
-                <ui:ScrollView name="map-list-scroll" mode="Vertical" horizontal-scroller-visibility="Hidden" vertical-scroller-visibility="Hidden" touch-scroll-type="Elastic" class="full-width-list page-scroll">
+                <ui:ScrollView name="map-list-scroll" mode="Vertical" horizontal-scroller-visibility="Hidden" vertical-scroller-visibility="Hidden" touch-scroll-type="Clamped" class="full-width-list page-scroll">
                     <ui:VisualElement name="map-list-content" class="full-width-list content-list"/>
                 </ui:ScrollView>
             </ui:VisualElement>
