@@ -2403,11 +2403,6 @@
     bottom: 0;
 }
 
-.memo-detail-preview-marker {
-    left: 50%;
-    top: 50%;
-}
-
 .memo-detail-preview-spinner {
     position: absolute;
     left: 50%;

@@ -43,6 +43,7 @@ namespace MemoAnchor.UI
         private Mesh _gridMesh;
         private Material _gridMaterial;
         private VisualElement _memoMarkerContainer;
+        private VisualElement _trackedMarker;
         private Button _memoCard;
         private VisualElement _memoCardKind;
         private VisualElement _memoCardStem;
@@ -63,6 +64,7 @@ namespace MemoAnchor.UI
         private float _fitDistanceScale = 1f;
         private float _viewRadius;
         private Vector3 _focusPosition;
+        private Vector3 _trackedMarkerPosition;
         private Vector3 _panOffset;
         private Vector3 _pinchStartPanOffset;
         private Vector3 _pinchStartCameraRight;
@@ -75,6 +77,7 @@ namespace MemoAnchor.UI
         private bool _isViewActive;
         private bool _hasFocusPosition;
         private bool _showOrientationAids;
+        private bool _hasTrackedMarker;
 
         public void Initialize(Image target)
         {
@@ -94,6 +97,12 @@ namespace MemoAnchor.UI
             MapBackfaceDisplaySettings.Changed += ApplyBackfaceDisplayMode;
 
             CreatePreviewCamera();
+        }
+
+        public void Initialize(Image target, VisualElement trackedMarker, int previewLayer)
+        {
+            Initialize(target, previewLayer);
+            _trackedMarker = trackedMarker;
         }
 
         public void Initialize(
@@ -199,6 +208,13 @@ namespace MemoAnchor.UI
             UpdateMemoMarkerPositions();
         }
 
+        public void SetTrackedMarker(Vector3 position)
+        {
+            _trackedMarkerPosition = position;
+            _hasTrackedMarker = true;
+            UpdateTrackedMarkerPosition();
+        }
+
         private void SelectMemoMarker(int markerIndex)
         {
             if (_selectedMemoMarkerIndex == markerIndex)
@@ -258,8 +274,11 @@ namespace MemoAnchor.UI
 
         private void UpdateMemoMarkerPositions()
         {
+            UpdateTrackedMarkerPosition();
             if (!_mesh || _memoMarkers.Count == 0)
+            {
                 return;
+            }
 
             float panelWidth = _target.resolvedStyle.width;
             float panelHeight = _target.resolvedStyle.height;
@@ -294,6 +313,36 @@ namespace MemoAnchor.UI
             _memoCardStem.EnableInClassList("is-concealed", _selectedMemoMarkerIndex < 0 || !selectedMarkerVisible);
             if (selectedMarkerVisible)
                 PositionMemoCard(selectedAnchor, panelWidth, panelHeight);
+        }
+
+        private void UpdateTrackedMarkerPosition()
+        {
+            if (_trackedMarker == null)
+            {
+                return;
+            }
+
+            if (!_mesh || !_hasTrackedMarker)
+            {
+                _trackedMarker.AddToClassList("is-hidden");
+                return;
+            }
+
+            Vector3 worldPosition = _previewRoot.transform.TransformPoint(_trackedMarkerPosition);
+            Vector3 viewportPosition = _previewCamera.WorldToViewportPoint(worldPosition);
+            bool visible = viewportPosition.z > 0f
+                && viewportPosition.x >= 0f
+                && viewportPosition.x <= 1f
+                && viewportPosition.y >= 0f
+                && viewportPosition.y <= 1f;
+            _trackedMarker.EnableInClassList("is-hidden", !visible);
+            if (!visible)
+            {
+                return;
+            }
+
+            _trackedMarker.style.left = viewportPosition.x * _target.resolvedStyle.width;
+            _trackedMarker.style.top = (1f - viewportPosition.y) * _target.resolvedStyle.height;
         }
 
         private void PositionMemoCard(Vector2 anchor, float panelWidth, float panelHeight)
@@ -725,7 +774,12 @@ namespace MemoAnchor.UI
             _gridMesh = null;
             _mesh = null;
             _hasFocusPosition = false;
+            _hasTrackedMarker = false;
             _panOffset = Vector3.zero;
+            if (_trackedMarker != null)
+            {
+                _trackedMarker.AddToClassList("is-hidden");
+            }
         }
 
         private void ResetPointerInput()

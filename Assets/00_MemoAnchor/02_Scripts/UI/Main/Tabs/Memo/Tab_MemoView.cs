@@ -95,7 +95,7 @@ namespace MemoAnchor.UI
             RegisterHomeMemoCards();
             RegisterHomeMapCards();
             _memoDetailPreviewRenderer = gameObject.AddComponent<MapReconstructionPreviewRenderer>();
-            _memoDetailPreviewRenderer.Initialize(_memoDetailPreviewImage, 30);
+            _memoDetailPreviewRenderer.Initialize(_memoDetailPreviewImage, _memoDetailPreviewMarker, 30);
 
             if (!TryGetComponent<VideoPlayer>(out _memoMediaViewerVideoPlayer))
             {
@@ -1139,13 +1139,12 @@ namespace MemoAnchor.UI
             _memoDetailPreviewRenderer.Show(mesh);
             if (item.HasSpatialAnchor)
             {
-                _memoDetailPreviewRenderer.FocusOn(item.SpatialPosition);
+                _memoDetailPreviewRenderer.SetTrackedMarker(item.SpatialPosition);
             }
 
             _memoDetailPreviewMarker.EnableInClassList(
                 "is-completion-requested",
                 string.Equals(item.WorkStatus, "completion-requested", StringComparison.OrdinalIgnoreCase));
-            SetVisible(_memoDetailPreviewMarker, item.HasSpatialAnchor);
             HideMemoDetailPreviewSpinner();
         }
 
