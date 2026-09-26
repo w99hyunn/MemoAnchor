@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+"""Shared RGB-D dataset and geometry helpers."""
+
 import json
 import math
 import os

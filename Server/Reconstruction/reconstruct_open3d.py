@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Best-effort Open3D reconstruction for MemoAnchor RGB-D packages."""
+"""Open3D reconstruction worker for MemoAnchor RGB-D packages."""
 
 from __future__ import annotations
 

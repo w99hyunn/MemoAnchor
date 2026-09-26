@@ -66,7 +66,7 @@ color transform: rotate_90
 ```bash
 cd <repo-root>
 
-tools/reconstruction/.venv/bin/python tools/reconstruction_server/server.py \
+Server/Reconstruction/.venv/bin/python Server/Reconstruction/server.py \
   --host 0.0.0.0 \
   --port 8765
 ```

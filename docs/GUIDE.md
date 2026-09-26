@@ -37,18 +37,18 @@ Unity 패키지는 `Packages/packages-lock.json` 이 커밋되어 있어 프로�
 저장소 루트에서 실행합니다.
 
 ```bash
-python3.10 -m venv tools/reconstruction/.venv
-tools/reconstruction/.venv/bin/python -m pip install --upgrade pip
-tools/reconstruction/.venv/bin/python -m pip install -r tools/reconstruction/requirements.txt
+python3.10 -m venv Server/Reconstruction/.venv
+Server/Reconstruction/.venv/bin/python -m pip install --upgrade pip
+Server/Reconstruction/.venv/bin/python -m pip install -r Server/Reconstruction/requirements.txt
 ```
 
 설치 확인:
 
 ```bash
-tools/reconstruction/.venv/bin/python -c "import open3d; print(open3d.__version__)"
+Server/Reconstruction/.venv/bin/python -c "import open3d; print(open3d.__version__)"
 ```
 
-> **경로를 바꾸지 마세요.** 서버는 `tools/reconstruction/.venv/bin/python` 이 존재하면 그 인터프리터로
+> **경로를 바꾸지 마세요.** 서버는 `Server/Reconstruction/.venv/bin/python` 이 존재하면 그 인터프리터로
 > 복원 스크립트를 실행하고, 없으면 서버 자신의 인터프리터로 폴백합니다. 다른 위치에 venv를 만들면
 > 폴백된 인터프리터에 Open3D가 없어서 복원이 조용히 실패합니다.
 
@@ -57,7 +57,7 @@ tools/reconstruction/.venv/bin/python -c "import open3d; print(open3d.__version_
 ## 2. 복원 서버 실행
 
 ```bash
-tools/reconstruction/.venv/bin/python tools/reconstruction_server/server.py --host 127.0.0.1 --port 8765
+Server/Reconstruction/.venv/bin/python Server/Reconstruction/server.py --host 127.0.0.1 --port 8765
 ```
 
 Python 포트는 외부에 공개하지 않습니다. iPad는 기존 MemoAnchor ASP.NET Core API에만
@@ -190,7 +190,7 @@ scan_YYYYMMDD_HHMMSS/
 ### 6-2. 데이터셋 검증
 
 ```bash
-tools/reconstruction/.venv/bin/python tools/validate_rgbd_dataset.py \
+Server/Reconstruction/.venv/bin/python tools/validate_rgbd_dataset.py \
   "/path/to/scan_YYYYMMDD_HHMMSS"
 ```
 
@@ -201,7 +201,7 @@ tools/reconstruction/.venv/bin/python tools/validate_rgbd_dataset.py \
 방향(orientation)이 맞는지 먼저 눈으로 확인합니다.
 
 ```bash
-tools/reconstruction/.venv/bin/python tools/reconstruction/inspect_rgbd_frame.py \
+Server/Reconstruction/.venv/bin/python Server/Reconstruction/inspect_rgbd_frame.py \
   "/path/to/scan_YYYYMMDD_HHMMSS" \
   --frame-id 1 \
   --output-dir reconstruction_output/frame_000001
@@ -215,7 +215,7 @@ depth 경계가 RGB 물체 경계와 맞는 후보를 고릅니다.
 **geometry only (기본, 가장 안전)**
 
 ```bash
-tools/reconstruction/.venv/bin/python tools/reconstruction/reconstruct_open3d_tsdf.py \
+Server/Reconstruction/.venv/bin/python Server/Reconstruction/reconstruct_open3d_tsdf.py \
   "/path/to/scan_YYYYMMDD_HHMMSS" \
   --output-dir reconstruction_output/full_scan \
   --depth-transform rotate_270 \
@@ -229,7 +229,7 @@ tools/reconstruction/.venv/bin/python tools/reconstruction/reconstruct_open3d_ts
 **색상 포함 (검증된 조합)**
 
 ```bash
-tools/reconstruction/.venv/bin/python tools/reconstruction/reconstruct_open3d_tsdf.py \
+Server/Reconstruction/.venv/bin/python Server/Reconstruction/reconstruct_open3d_tsdf.py \
   "/path/to/scan_YYYYMMDD_HHMMSS" \
   --output-dir reconstruction_output/full_scan_color \
   --depth-transform rotate_270 \
@@ -244,7 +244,7 @@ RGB는 `MirrorY` 가 적용되어 저장되고 depth는 원본 그대로 저장�
 **방향 후보 전수 비교**
 
 ```bash
-tools/reconstruction/.venv/bin/python tools/reconstruction/reconstruct_open3d_tsdf.py \
+Server/Reconstruction/.venv/bin/python Server/Reconstruction/reconstruct_open3d_tsdf.py \
   "/path/to/scan_YYYYMMDD_HHMMSS" \
   --output-dir reconstruction_output/sweep \
   --frame-step 2 --sweep
@@ -269,7 +269,7 @@ preview*.png
 단독 뷰어로 보려면 결과 폴더에 뷰어를 복사한 뒤 정적 서버를 띄웁니다.
 
 ```bash
-cp tools/reconstruction/viewer.html reconstruction_output/
+cp Server/Reconstruction/viewer.html reconstruction_output/
 python3 -m http.server 8899 --directory reconstruction_output
 # http://127.0.0.1:8899/viewer.html
 ```
@@ -281,8 +281,8 @@ python3 -m http.server 8899 --directory reconstruction_output
 | 위치 | 내용 | git |
 | --- | --- | --- |
 | iPad `Documents/RgbdRecorder/scan_<id>/` | 원본 RGB-D 데이터셋 | — |
-| `tools/reconstruction_server/data/scans/<id>/` | 서버가 받은 ZIP 압축 해제본 | 제외 |
-| `tools/reconstruction_server/data/results/<id>/result.ply` | 서버 복원 결과 | 제외 |
+| `Server/Reconstruction/data/scans/<id>/` | 서버가 받은 ZIP 압축 해제본 | 제외 |
+| `Server/Reconstruction/data/results/<id>/result.ply` | 서버 복원 결과 | 제외 |
 | `reconstruction_output/` | 오프라인 복원 결과 | 제외 |
 | `ios_Build/` | Unity가 생성한 Xcode 프로젝트 | 제외 |
 

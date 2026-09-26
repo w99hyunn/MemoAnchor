@@ -80,10 +80,10 @@ If `/home/ubuntu/MemoAnchorReconstruction/data` contains existing scans, copy th
 
 ## Manual Development Run
 
-From the repository root:
+From the `Server/Reconstruction` directory:
 
 ```bash
-tools/reconstruction/.venv/bin/python tools/reconstruction_server/server.py \
+.venv/bin/python server.py \
   --host 127.0.0.1 \
   --port 8765 \
   --idle-timeout-seconds 60

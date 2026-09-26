@@ -1,4 +1,4 @@
-"""Visual relocalization against the RGB frames captured with a MemoAnchor scan."""
+"""Visual relocalization for the MemoAnchor reconstruction server."""
 
 from __future__ import annotations
 

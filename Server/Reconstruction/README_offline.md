@@ -5,14 +5,14 @@ This folder is Phase C offline reconstruction tooling. It does not modify Unity 
 ## Install
 
 ```bash
-python3 -m pip install -r tools/reconstruction/requirements.txt
+python3 -m pip install -r Server/Reconstruction/requirements.txt
 ```
 
 On this machine, the default conda Python was 3.13 and Open3D was not available for it. The verified local environment is:
 
 ```bash
-python3.10 -m venv tools/reconstruction/.venv
-tools/reconstruction/.venv/bin/python -m pip install -r tools/reconstruction/requirements.txt
+python3.10 -m venv Server/Reconstruction/.venv
+Server/Reconstruction/.venv/bin/python -m pip install -r Server/Reconstruction/requirements.txt
 ```
 
 ## Dataset Schema Confirmed
@@ -50,7 +50,7 @@ RGB/depth registration is not fully proven by recorder metadata because RGB has 
 ## Single Frame Inspector
 
 ```bash
-python3 tools/reconstruction/inspect_rgbd_frame.py \
+python3 Server/Reconstruction/inspect_rgbd_frame.py \
   "/path/to/scan_YYYYMMDD_HHMMSS" \
   --frame-id 1 \
   --output-dir reconstruction_output/frame_000001
@@ -76,7 +76,7 @@ frame_report.json
 Geometry-only default:
 
 ```bash
-tools/reconstruction/.venv/bin/python tools/reconstruction/reconstruct_open3d_tsdf.py \
+Server/Reconstruction/.venv/bin/python Server/Reconstruction/reconstruct_open3d_tsdf.py \
   "/path/to/scan_YYYYMMDD_HHMMSS" \
   --output-dir reconstruction_output/full_scan \
   --voxel-size 0.02 \
@@ -106,7 +106,7 @@ rotate_270
 Colored candidate, only when visually acceptable:
 
 ```bash
-tools/reconstruction/.venv/bin/python tools/reconstruction/reconstruct_open3d_tsdf.py \
+Server/Reconstruction/.venv/bin/python Server/Reconstruction/reconstruct_open3d_tsdf.py \
   "/path/to/scan_YYYYMMDD_HHMMSS" \
   --output-dir reconstruction_output/full_scan_color \
   --depth-transform rotate_270 \
@@ -117,7 +117,7 @@ tools/reconstruction/.venv/bin/python tools/reconstruction/reconstruct_open3d_ts
 Voxel sweep:
 
 ```bash
-tools/reconstruction/.venv/bin/python tools/reconstruction/reconstruct_open3d_tsdf.py \
+Server/Reconstruction/.venv/bin/python Server/Reconstruction/reconstruct_open3d_tsdf.py \
   "/path/to/scan_YYYYMMDD_HHMMSS" \
   --output-dir reconstruction_output/sweep \
   --depth-transform rotate_270 \

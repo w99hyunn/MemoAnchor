@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+"""Inspect a captured MemoAnchor RGB-D frame."""
+
 import argparse
 import json
 import os
