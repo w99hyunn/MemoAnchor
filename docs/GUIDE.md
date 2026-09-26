@@ -143,7 +143,7 @@ CLI로 빌드하려면:
 ### 빌드에 RTAB-Map이 섞이지 않았는지 검증 (선택)
 
 ```bash
-bash tools/verify_ios_no_rtabmap_demo.sh ios_Build
+bash Server/Reconstruction/verify_ios_no_rtabmap_demo.sh ios_Build
 ```
 
 ---
@@ -190,7 +190,7 @@ scan_YYYYMMDD_HHMMSS/
 ### 6-2. 데이터셋 검증
 
 ```bash
-Server/Reconstruction/.venv/bin/python tools/validate_rgbd_dataset.py \
+Server/Reconstruction/.venv/bin/python Server/Reconstruction/validate_rgbd_dataset.py \
   "/path/to/scan_YYYYMMDD_HHMMSS"
 ```
 
@@ -333,7 +333,7 @@ Python 3.13에서는 휠이 없습니다. 3.10 가상환경을 사용하세요 (
 
 ## 참고: RTAB-Map iOS 통합에 대해
 
-`tools/rtabmap_ios/` 와 `Assets/Plugins/iOS/MemoAnchorRtabmapUnity.mm` 는
+`Server/Reconstruction/rtabmap_ios/` 와 `Assets/Plugins/iOS/MemoAnchorRtabmapUnity.mm` 는
 RTAB-Map을 앱 내부에서 직접 돌리려던 시도의 스캐폴딩입니다.
 
 iOS 빌드 복잡도와 ARSession 소유권 충돌 리스크 때문에 **현재 경로가 아닙니다.**
@@ -341,4 +341,4 @@ iOS 빌드 복잡도와 ARSession 소유권 충돌 리스크 때문에 **현재 
 그대로 두어도 빌드에 영향을 주지 않습니다.
 
 앱 내부 실시간 복원이 필요해지면 그때 다시 꺼내면 됩니다.
-자세한 내용은 [tools/rtabmap_ios/README.md](../tools/rtabmap_ios/README.md) 참고.
+자세한 내용은 [Server/Reconstruction/rtabmap_ios/README.md](../Server/Reconstruction/rtabmap_ios/README.md) 참고.

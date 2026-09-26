@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+"""Validate a MemoAnchor RGB-D dataset before reconstruction."""
+
 import argparse
 import json
 import math

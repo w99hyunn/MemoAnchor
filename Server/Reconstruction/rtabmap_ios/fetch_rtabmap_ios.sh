@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
-VENDOR_DIR="${ROOT_DIR}/tools/rtabmap_ios/vendor"
+ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
+VENDOR_DIR="${ROOT_DIR}/Server/Reconstruction/rtabmap_ios/vendor"
 RTABMAP_DIR="${VENDOR_DIR}/rtabmap"
 RTABMAP_REPO="${RTABMAP_REPO:-https://github.com/introlab/rtabmap.git}"
 RTABMAP_REF="${RTABMAP_REF:-master}"

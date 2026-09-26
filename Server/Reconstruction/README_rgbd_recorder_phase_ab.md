@@ -23,7 +23,7 @@ Use a fresh empty output directory. The old `ios_Build` may already contain RTAB
 After Unity creates a new iOS project, run:
 
 ```bash
-tools/verify_ios_no_rtabmap_demo.sh ios_Build
+Server/Reconstruction/verify_ios_no_rtabmap_demo.sh ios_Build
 ```
 
 These entries must not appear in `Unity-iPhone.xcodeproj/project.pbxproj`:
@@ -72,7 +72,7 @@ Application.persistentDataPath/RgbdRecorder/scan_YYYYMMDD_HHMMSS/
 After pulling a dataset folder from the device, run:
 
 ```bash
-python3 tools/validate_rgbd_dataset.py /path/to/scan_YYYYMMDD_HHMMSS
+python3 Server/Reconstruction/validate_rgbd_dataset.py /path/to/scan_YYYYMMDD_HHMMSS
 ```
 
 The validator writes:

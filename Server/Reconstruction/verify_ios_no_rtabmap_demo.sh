@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# Verifies that an iOS build does not contain the obsolete RTAB-Map demo sources.
 set -euo pipefail
 
 BUILD_DIR="${1:-ios_Build}"
